@@ -1,0 +1,20 @@
+<!-- assets/img/logo.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="54" viewBox="0 0 260 54">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#0066cc"></stop>
+      <stop offset="1" stop-color="#00a8ff"></stop>
+    </linearGradient>
+  </defs>
+  <!-- icon (snowflake + wrench abstract) -->
+  <g transform="translate(6,6)">
+    <rect width="42" height="42" rx="8" fill="url(#g)"></rect>
+    <path d="M22 10 L26 6 L30 10 L26 14 Z" fill="#fff" transform="translate(-4,0)"></path>
+    <path d="M18 28 L22 24 L26 28 L22 32 Z" fill="#fff" transform="translate(-4,0)"></path>
+    <circle cx="21" cy="21" r="5" fill="rgba(255,255,255,0.15)"></circle>
+  </g>
+  <g transform="translate(64,10)">
+    <text x="0" y="18" font-family="Segoe UI, Arial, sans-serif" font-weight="700" font-size="20" fill="#0b2f5a">Refri</text>
+    <text x="56" y="18" font-family="Segoe UI, Arial, sans-serif" font-weight="700" font-size="20" fill="#00a8ff">Servis</text>
+  </g>
+</svg>
