@@ -53,6 +53,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <div class="card p-3">
   <h5>Importar CSV — Digitador</h5>
+  <a href="/assets/plantillas/plantilla_mantenimientos.csv" class="btn btn-outline-secondary btn-sm">
+  Descargar plantilla CSV
+</a>
+
   <?php if($ok) echo "<div class='alert alert-success small'>$ok</div>"; if($error) echo "<div class='alert alert-danger small'>$error</div>"; ?>
 
   <form method="post" enctype="multipart/form-data" class="row g-2">
