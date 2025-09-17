@@ -1,16 +1,17 @@
 <?php
 session_start();
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE);
+
 require_once __DIR__.'/../config/db.php';
 require_once __DIR__.'/../lib/fpdf.php';
 
 // Recibir ID del reporte
 $id = $_GET['id'] ?? null;
 
-// Datos del reporte y mantenimiento
+// Datos del reporte + mantenimiento + inventario + cliente
 $stmt = $pdo->prepare("
     SELECT r.*, 
-           m.titulo, m.fecha, 
+           m.fecha, m.titulo, 
            c.nombre AS cliente, c.direccion, 
            i.nombre AS equipo, i.marca, i.modelo, i.serie, i.gas, i.codigo, i.ubicacion
     FROM reportes r
@@ -22,10 +23,10 @@ $stmt = $pdo->prepare("
 $stmt->execute([$id]);
 $reporte = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$reporte) die("Reporte no encontrado");
+if(!$reporte) die("Reporte no encontrado");
 
-// Traer parámetros
-$stmt = $pdo->prepare("SELECT * FROM parametros_reporte WHERE reporte_id=?");
+// Traer parámetros de funcionamiento
+$stmt = $pdo->prepare("SELECT * FROM parametros_reporte WHERE reporte_id=? ORDER BY id ASC");
 $stmt->execute([$id]);
 $parametros = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -34,7 +35,6 @@ $stmt = $pdo->prepare("SELECT * FROM reportes_fotos WHERE reporte_id=?");
 $stmt->execute([$id]);
 $fotos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Helper
 function safeText($txt){ return mb_convert_encoding((string)$txt, 'ISO-8859-1', 'UTF-8'); }
 
 $pdf = new FPDF();
@@ -52,6 +52,7 @@ $pdf->Ln(5);
 $pdf->SetFont('Arial','B',10);
 $pdf->Cell(35,6,'N° Reporte:',1); $pdf->SetFont('Arial','',10); $pdf->Cell(50,6,$reporte['id'],1);
 $pdf->SetFont('Arial','B',10); $pdf->Cell(35,6,'Cliente:',1); $pdf->SetFont('Arial','',10); $pdf->Cell(70,6,safeText($reporte['cliente']),1,1);
+
 $pdf->SetFont('Arial','B',10); $pdf->Cell(35,6,'Equipo:',1); $pdf->SetFont('Arial','',10); $pdf->Cell(50,6,safeText($reporte['equipo']),1);
 $pdf->SetFont('Arial','B',10); $pdf->Cell(35,6,'Fecha:',1); $pdf->SetFont('Arial','',10); $pdf->Cell(70,6,$reporte['fecha'],1,1);
 $pdf->SetFont('Arial','B',10); $pdf->Cell(35,6,'Dirección:',1); $pdf->SetFont('Arial','',10); $pdf->Cell(155,6,safeText($reporte['direccion']),1,1);
@@ -83,6 +84,7 @@ $pdf->Cell(35,6,'Antes',1,0,'C');
 $pdf->Cell(35,6,'Despues',1,0,'C');
 $pdf->Cell(35,6,'Antes',1,0,'C');
 $pdf->Cell(35,6,'Despues',1,1,'C');
+
 $pdf->SetFont('Arial','',8);
 foreach($parametros as $p){
     $pdf->Cell(50,6,safeText($p['medida']),1);
@@ -104,7 +106,11 @@ $pdf->SetFont('Arial','B',10); $pdf->Cell(0,6,'FOTOS DEL/OS EQUIPOS',0,1); $pdf-
 $x = 20; $y = $pdf->GetY();
 foreach($fotos as $f){
     $file = __DIR__.'/../uploads/'.$f['archivo'];
-    if(file_exists($file)) { $pdf->Image($file,$x,$y,80,50); $x+=90; if($x>120){$x=20;$y+=60;} }
+    if(file_exists($file)){
+        $pdf->Image($file,$x,$y,80,50);
+        $x+=90;
+        if($x>120){$x=20;$y+=60;}
+    }
 }
 $pdf->Ln(60);
 
