@@ -1,139 +1,172 @@
 <?php
-session_start();
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+session_start();
 require_once __DIR__.'/../config/db.php';
-require_once __DIR__.'/../lib/fpdf.php';
 
-// Recibir ID del reporte
-$id = $_GET['id'] ?? null;
+$mantenimiento_id = $_GET['id'] ?? null;
 
-// Datos del reporte + mantenimiento + inventario + cliente
+// Traer datos del mantenimiento + cliente + inventario
 $stmt = $pdo->prepare("
-    SELECT r.*, 
-           m.fecha, m.titulo, 
-           c.nombre AS cliente, c.direccion, 
-           i.nombre AS equipo, i.marca, i.modelo, i.serie, i.gas, i.codigo, i.ubicacion
-    FROM reportes r
-    LEFT JOIN mantenimientos m ON r.mantenimiento_id = m.id
+    SELECT m.id, m.titulo, m.fecha, c.nombre AS cliente, c.direccion, 
+           i.id AS equipo_id, i.nombre AS equipo, i.marca, i.modelo, i.serie, i.gas, i.codigo, i.ubicacion
+    FROM mantenimientos m
     LEFT JOIN clientes c ON m.cliente_id = c.id
     LEFT JOIN inventario i ON m.inventario_id = i.id
-    WHERE r.id = ?
+    WHERE m.id = ?
 ");
-$stmt->execute([$id]);
-$reporte = $stmt->fetch(PDO::FETCH_ASSOC);
+$stmt->execute([$mantenimiento_id]);
+$datos = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if(!$reporte) die("Reporte no encontrado");
+if (!$datos) die("Mantenimiento no encontrado");
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Generar Reporte</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+canvas { border:1px solid #ccc; width:100%; height:200px; }
+</style>
+</head>
+<body class="bg-light">
+<div class="container py-4">
+<div class="card shadow-sm">
+<div class="card-body">
+<h3 class="mb-3">Reporte de Servicio Técnico</h3>
 
-// Traer parámetros de funcionamiento
-$stmt = $pdo->prepare("SELECT * FROM parametros_reporte WHERE reporte_id=? ORDER BY id ASC");
-$stmt->execute([$id]);
-$parametros = $stmt->fetchAll(PDO::FETCH_ASSOC);
+<form action="guardar_informe.php" method="post" enctype="multipart/form-data">
+<input type="hidden" name="mantenimiento_id" value="<?= $datos['id'] ?>">
 
-// Traer fotos
-$stmt = $pdo->prepare("SELECT * FROM reportes_fotos WHERE reporte_id=?");
-$stmt->execute([$id]);
-$fotos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+<!-- Datos generales -->
+<div class="mb-3">
+<strong>Cliente:</strong> <?= htmlspecialchars($datos['cliente']) ?><br>
+<strong>Dirección:</strong> <?= htmlspecialchars($datos['direccion']) ?><br>
+<strong>Fecha:</strong> <?= $datos['fecha'] ?>
+</div>
 
-function safeText($txt){ return mb_convert_encoding((string)$txt, 'ISO-8859-1', 'UTF-8'); }
+<!-- Datos de identificación de equipos -->
+<h5>DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS A INTERVENIR</h5>
+<div class="table-responsive">
+<table class="table table-bordered align-middle text-center">
+<thead class="table-light">
+<tr>
+<th>#</th>
+<th>Tipo de Equipo</th>
+<th>Marca</th>
+<th>Modelo</th>
+<th>Ubicación/Serie</th>
+<th>Tipo de Gas</th>
+<th>Código de Equipo</th>
+</tr>
+</thead>
+<tbody>
+<?php for($i=1;$i<=7;$i++): ?>
+<tr>
+<td><?= $i ?></td>
+<td><input type="text" name="tipo_equipo[]" class="form-control"></td>
+<td><input type="text" name="marca[]" class="form-control" value="<?= $i==1?htmlspecialchars($datos['marca']):'' ?>"></td>
+<td><input type="text" name="modelo[]" class="form-control" value="<?= $i==1?htmlspecialchars($datos['modelo']):'' ?>"></td>
+<td><input type="text" name="ubicacion[]" class="form-control" value="<?= $i==1?htmlspecialchars($datos['serie']):'' ?>"></td>
+<td><input type="text" name="gas[]" class="form-control" value="<?= $i==1?htmlspecialchars($datos['gas']):'' ?>"></td>
+<td><input type="text" name="codigo[]" class="form-control" value="<?= $i==1?htmlspecialchars($datos['codigo']):'' ?>"></td>
+</tr>
+<?php endfor; ?>
+</tbody>
+</table>
+</div>
 
-$pdf = new FPDF();
-$pdf->AddPage();
+<!-- Parámetros de funcionamiento -->
+<h5>PARÁMETROS DE FUNCIONAMIENTO</h5>
+<div class="table-responsive">
+<table class="table table-bordered text-center align-middle">
+<thead class="table-light">
+<tr>
+<th>Medida</th>
+<?php for($i=1;$i<=7;$i++): ?>
+<th>Antes <?= $i ?></th><th>Después <?= $i ?></th>
+<?php endfor; ?>
+</tr>
+</thead>
+<tbody>
+<?php
+$parametros = ["Corriente eléctrica nominal (Amperios)","Tensión eléctrica nominal (V)","Presión de descarga (PSI)","Presión de succión (PSI)"];
+foreach($parametros as $p): ?>
+<tr>
+<td><?= $p ?><input type="hidden" name="medida[]" value="<?= $p ?>"></td>
+<?php for($i=1;$i<=7;$i++): ?>
+<td><input type="text" name="antes<?= $i ?>[]" class="form-control"></td>
+<td><input type="text" name="despues<?= $i ?>[]" class="form-control"></td>
+<?php endfor; ?>
+</tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+</div>
 
-// Encabezado
-$pdf->SetFont('Arial','B',14);
-$pdf->Cell(0,8,'REFRISERVIS S.A.C.',0,1,'C');
-$pdf->SetFont('Arial','',10);
-$pdf->Cell(0,6,'REPORTE DE SERVICIO TECNICO',0,1,'C');
-$pdf->Cell(0,6,'Oficina: (01) 6557907 | Emergencias: +51 943 048 606 | ventas@refriservissac.com',0,1,'C');
-$pdf->Ln(5);
+<!-- Trabajos y observaciones -->
+<div class="mb-3">
+<label class="form-label">Trabajos Realizados</label>
+<textarea name="trabajos" class="form-control" rows="3" required></textarea>
+</div>
 
-// Datos principales
-$pdf->SetFont('Arial','B',10);
-$pdf->Cell(35,6,'N° Reporte:',1); $pdf->SetFont('Arial','',10); $pdf->Cell(50,6,$reporte['id'],1);
-$pdf->SetFont('Arial','B',10); $pdf->Cell(35,6,'Cliente:',1); $pdf->SetFont('Arial','',10); $pdf->Cell(70,6,safeText($reporte['cliente']),1,1);
+<div class="mb-3">
+<label class="form-label">Observaciones</label>
+<textarea name="observaciones" class="form-control" rows="3"></textarea>
+</div>
 
-$pdf->SetFont('Arial','B',10); $pdf->Cell(35,6,'Equipo:',1); $pdf->SetFont('Arial','',10); $pdf->Cell(50,6,safeText($reporte['equipo']),1);
-$pdf->SetFont('Arial','B',10); $pdf->Cell(35,6,'Fecha:',1); $pdf->SetFont('Arial','',10); $pdf->Cell(70,6,$reporte['fecha'],1,1);
-$pdf->SetFont('Arial','B',10); $pdf->Cell(35,6,'Dirección:',1); $pdf->SetFont('Arial','',10); $pdf->Cell(155,6,safeText($reporte['direccion']),1,1);
-$pdf->SetFont('Arial','B',10); $pdf->Cell(35,6,'Ubicación:',1); $pdf->SetFont('Arial','',10); $pdf->Cell(155,6,safeText($reporte['ubicacion']),1,1);
-$pdf->Ln(6);
+<!-- Fotos -->
+<div class="mb-3">
+<label class="form-label">Subir Fotos</label>
+<input type="file" name="fotos[]" multiple accept="image/*" class="form-control">
+</div>
 
-// Datos de identificación del equipo
-$pdf->SetFont('Arial','B',10);
-$pdf->Cell(0,6,'DATOS DE IDENTIFICACION DE LOS EQUIPOS A INTERVENIR',0,1);
-$pdf->SetFont('Arial','B',8);
-$headers = ['Marca','Modelo','Serie','Gas','Código'];
-$widths  = [40,40,40,35,35];
-foreach($headers as $i=>$h){ $pdf->Cell($widths[$i],6,$h,1,0,'C'); }
-$pdf->Ln();
-$pdf->SetFont('Arial','',8);
-$pdf->Cell(40,6,safeText($reporte['marca']),1);
-$pdf->Cell(40,6,safeText($reporte['modelo']),1);
-$pdf->Cell(40,6,safeText($reporte['serie']),1);
-$pdf->Cell(35,6,safeText($reporte['gas']),1);
-$pdf->Cell(35,6,safeText($reporte['codigo']),1);
-$pdf->Ln(10);
+<!-- Firmas -->
+<h5>Firmas</h5>
+<div class="row">
+<div class="col-md-4 mb-3">
+<label class="form-label">Firma Cliente</label>
+<canvas id="firmaCliente"></canvas>
+<input type="hidden" name="firma_cliente" id="firmaClienteInput">
+<button type="button" class="btn btn-sm btn-secondary mt-1" onclick="limpiarFirma('firmaCliente')">Limpiar</button>
+</div>
+<div class="col-md-4 mb-3">
+<label class="form-label">Firma Técnico</label>
+<canvas id="firmaTecnico"></canvas>
+<input type="hidden" name="firma_tecnico" id="firmaTecnicoInput">
+<button type="button" class="btn btn-sm btn-secondary mt-1" onclick="limpiarFirma('firmaTecnico')">Limpiar</button>
+</div>
+<div class="col-md-4 mb-3">
+<label class="form-label">Firma Supervisor</label>
+<canvas id="firmaSupervisor"></canvas>
+<input type="hidden" name="firma_supervisor" id="firmaSupervisorInput">
+<button type="button" class="btn btn-sm btn-secondary mt-1" onclick="limpiarFirma('firmaSupervisor')">Limpiar</button>
+</div>
+</div>
 
-// Parámetros de funcionamiento
-$pdf->SetFont('Arial','B',10);
-$pdf->Cell(0,6,'PARAMETROS DE FUNCIONAMIENTO',0,1);
-$pdf->SetFont('Arial','B',8);
-$pdf->Cell(50,6,'Medida',1,0,'C');
-$pdf->Cell(35,6,'Antes',1,0,'C');
-$pdf->Cell(35,6,'Despues',1,0,'C');
-$pdf->Cell(35,6,'Antes',1,0,'C');
-$pdf->Cell(35,6,'Despues',1,1,'C');
+<button type="submit" class="btn btn-success w-100">Guardar Informe</button>
+</form>
+</div>
+</div>
+</div>
 
-$pdf->SetFont('Arial','',8);
-foreach($parametros as $p){
-    $pdf->Cell(50,6,safeText($p['medida']),1);
-    $pdf->Cell(35,6,safeText($p['antes1']),1);
-    $pdf->Cell(35,6,safeText($p['despues1']),1);
-    $pdf->Cell(35,6,safeText($p['antes2']),1);
-    $pdf->Cell(35,6,safeText($p['despues2']),1,1);
+<script>
+function initFirma(canvasId,inputId){
+    const canvas=document.getElementById(canvasId);
+    const input=document.getElementById(inputId);
+    const ctx=canvas.getContext("2d");
+    let dibujando=false;
+    canvas.addEventListener("mousedown",()=>dibujando=true);
+    canvas.addEventListener("mouseup",()=>{dibujando=false; input.value=canvas.toDataURL("image/png"); ctx.beginPath();});
+    canvas.addEventListener("mousemove",(e)=>{if(!dibujando)return; ctx.lineWidth=2; ctx.lineCap="round"; ctx.strokeStyle="black"; ctx.lineTo(e.offsetX,e.offsetY); ctx.stroke(); ctx.beginPath(); ctx.moveTo(e.offsetX,e.offsetY);});
 }
-$pdf->Ln(6);
-
-// Trabajos y observaciones
-$pdf->SetFont('Arial','B',10); $pdf->Cell(0,6,'TRABAJOS REALIZADOS',0,1); $pdf->SetFont('Arial','',9);
-$pdf->MultiCell(0,6,safeText($reporte['trabajos'] ?? '')); $pdf->Ln(6);
-$pdf->SetFont('Arial','B',10); $pdf->Cell(0,6,'OBSERVACIONES Y RECOMENDACIONES',0,1); $pdf->SetFont('Arial','',9);
-$pdf->MultiCell(0,6,safeText($reporte['observaciones'] ?? '')); $pdf->Ln(10);
-
-// Fotos
-$pdf->SetFont('Arial','B',10); $pdf->Cell(0,6,'FOTOS DEL/OS EQUIPOS',0,1); $pdf->Ln(5);
-$x = 20; $y = $pdf->GetY();
-foreach($fotos as $f){
-    $file = __DIR__.'/../uploads/'.$f['archivo'];
-    if(file_exists($file)){
-        $pdf->Image($file,$x,$y,80,50);
-        $x+=90;
-        if($x>120){$x=20;$y+=60;}
-    }
-}
-$pdf->Ln(60);
-
-// Firmas
-$pdf->Ln(10);
-$pdf->Cell(60,6,'_________________________',0,0,'C');
-$pdf->Cell(60,6,'_________________________',0,0,'C');
-$pdf->Cell(60,6,'_________________________',0,1,'C');
-$pdf->Cell(60,6,'Firma del Cliente',0,0,'C');
-$pdf->Cell(60,6,'Firma del Supervisor',0,0,'C');
-$pdf->Cell(60,6,'Firma del Tecnico',0,1,'C');
-
-$y = $pdf->GetY()-25;
-$firmas = ['firma_cliente'=>25,'firma_supervisor'=>85,'firma_tecnico'=>145];
-foreach($firmas as $col=>$xpos){
-    if(!empty($reporte[$col])){
-        $data = str_replace('data:image/png;base64,','',$reporte[$col]);
-        $imgFile = __DIR__."/../uploads/{$col}_{$reporte['id']}.png";
-        file_put_contents($imgFile,base64_decode($data));
-        $pdf->Image($imgFile,$xpos,$y,40);
-    }
-}
-
-$pdf->Output('I',"Reporte_{$reporte['id']}.pdf");
+function limpiarFirma(canvasId){const canvas=document.getElementById(canvasId); const ctx=canvas.getContext("2d"); ctx.clearRect(0,0,canvas.width,canvas.height);}
+initFirma("firmaCliente","firmaClienteInput");
+initFirma("firmaTecnico","firmaTecnicoInput");
+initFirma("firmaSupervisor","firmaSupervisorInput");
+</script>
+</body>
+</html>
