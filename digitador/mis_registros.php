@@ -1,13 +1,14 @@
 <?php
+// digitador/mis_registros.php
 session_start();
-if (!isset($_SESSION['usuario_id'])) {
-    header("Location: login.php?error=sesion");
+if (!isset($_SESSION['usuario_id']) || $_SESSION['rol'] !== 'digitador') {
+    header("Location: /login.php?error=sesion");
     exit();
 }
 
 require_once __DIR__ . "/../config/db.php";
 
-// Consulta adaptada a la BD
+// Consulta con JOIN a usuarios
 $query = "SELECT m.id, m.fecha, m.descripcion, 
                  op.nombre AS operador, 
                  dig.nombre AS digitador
@@ -20,7 +21,7 @@ $stmt = $pdo->query($query);
 $result = $stmt->fetchAll();
 
 // Exportar Excel
-if (isset($_GET['action']) && $_GET['action'] == 'excel') {
+if (isset($_GET['action']) && $_GET['action'] === 'excel') {
     header("Content-Type: application/vnd.ms-excel; charset=utf-8");
     header("Content-Disposition: attachment; filename=reporte_mantenimientos.xls");
     header("Pragma: no-cache");
@@ -32,7 +33,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'excel') {
             <td>Fecha</td>
             <td>Descripción</td>
             <td>Operador</td>
-            <td>Digitador</td>
+            <td>Subido por</td>
           </tr>";
     foreach ($result as $fila) {
         echo "<tr>
@@ -48,8 +49,8 @@ if (isset($_GET['action']) && $_GET['action'] == 'excel') {
 }
 
 // Exportar PDF con FPDF
-if (isset($_GET['action']) && $_GET['action'] == 'pdf') {
-    require("fpdf.php");
+if (isset($_GET['action']) && $_GET['action'] === 'pdf') {
+    require("../vendor/fpdf/fpdf.php"); // asegúrate de tener fpdf en vendor
 
     $pdf = new FPDF('L', 'mm', 'A4');
     $pdf->AddPage();
@@ -61,7 +62,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'pdf') {
     $pdf->Cell(30, 8, "Fecha", 1, 0, 'C');
     $pdf->Cell(100, 8, "Descripción", 1, 0, 'C');
     $pdf->Cell(60, 8, "Operador", 1, 0, 'C');
-    $pdf->Cell(60, 8, "Digitador", 1, 1, 'C');
+    $pdf->Cell(60, 8, "Subido por", 1, 1, 'C');
 
     $pdf->SetFont('Arial', '', 10);
     foreach ($result as $fila) {
@@ -81,38 +82,49 @@ if (isset($_GET['action']) && $_GET['action'] == 'pdf') {
 <head>
     <meta charset="UTF-8">
     <title>Mis Registros</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background: #f4f4f4; }
-        .btn { display: inline-block; padding: 8px 15px; margin: 5px; text-decoration: none; color: white; border-radius: 5px; }
-        .btn-excel { background: green; }
-        .btn-pdf { background: red; }
-    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-    <h1>Mis Registros</h1>
-    <a href="mis_registros.php?action=excel" class="btn btn-excel">📊 Exportar a Excel</a>
-    <a href="mis_registros.php?action=pdf" class="btn btn-pdf">📄 Exportar a PDF</a>
+<body class="bg-light">
+<div class="container py-4">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h3 class="mb-3">📋 Mis Registros</h3>
 
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>Fecha</th>
-            <th>Descripción</th>
-            <th>Operador</th>
-            <th>Digitador</th>
-        </tr>
-        <?php foreach ($result as $row) { ?>
-            <tr>
-                <td><?= $row['id'] ?></td>
-                <td><?= $row['fecha'] ?></td>
-                <td><?= $row['descripcion'] ?></td>
-                <td><?= $row['operador'] ?></td>
-                <td><?= $row['digitador'] ?></td>
-            </tr>
-        <?php } ?>
-    </table>
+            <div class="mb-3">
+                <a href="mis_registros.php?action=excel" class="btn btn-success btn-sm">📊 Exportar a Excel</a>
+                <a href="mis_registros.php?action=pdf" class="btn btn-danger btn-sm">📄 Exportar a PDF</a>
+                <a href="subir_mantenimiento.php" class="btn btn-primary btn-sm">⬆️ Subir CSV</a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Descripción</th>
+                            <th>Operador</th>
+                            <th>Subido por</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($result as $row) { ?>
+                            <tr>
+                                <td><?= htmlspecialchars($row['id']) ?></td>
+                                <td><?= htmlspecialchars($row['fecha']) ?></td>
+                                <td><?= htmlspecialchars($row['descripcion']) ?></td>
+                                <td><?= htmlspecialchars($row['operador']) ?></td>
+                                <td><span class="badge bg-info"><?= htmlspecialchars($row['digitador']) ?></span></td>
+                            </tr>
+                        <?php } ?>
+                        <?php if (empty($result)) { ?>
+                            <tr><td colspan="5" class="text-center text-muted">No hay registros</td></tr>
+                        <?php } ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
