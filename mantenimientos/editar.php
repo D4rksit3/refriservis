@@ -1,61 +1,112 @@
 <?php
 // mantenimientos/editar.php
 session_start();
-if (!isset($_SESSION['usuario'])) { header('Location: /index.php'); exit; }
-require_once __DIR__.'/../config/db.php';
-require_once __DIR__.'/../includes/header.php';
-
-$id = (int)($_GET['id'] ?? 0);
-$stmt=$pdo->prepare('SELECT * FROM mantenimientos WHERE id=?'); $stmt->execute([$id]); $m = $stmt->fetch();
-if (!$m) { echo '<div class="alert alert-danger">No existe mantenimiento.</div>'; require_once __DIR__.'/../includes/footer.php'; exit; }
-
-$errors=[];
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $estado = $_POST['estado'] ?? $m['estado'];
-  $operador_id = $_POST['operador_id'] ?: null;
-  $observ = $_POST['observ'] ?? null;
-
-  // archivo opcional
-  $archivoPath = $m['archivo'];
-  if (!empty($_FILES['archivo']['name']) && $_FILES['archivo']['error']===UPLOAD_ERR_OK) {
-    $destDir = __DIR__.'/../uploads';
-    @mkdir($destDir,0777,true);
-    $dest = $destDir.'/m_'.$id.'_'.time().'_'.basename($_FILES['archivo']['name']);
-    move_uploaded_file($_FILES['archivo']['tmp_name'],$dest);
-    $archivoPath = str_replace(__DIR__.'/../','/',$dest);
-  }
-
-  $stmt = $pdo->prepare('UPDATE mantenimientos SET estado=?, operador_id=?, archivo=?, descripcion=COALESCE(?,descripcion) WHERE id=?');
-  $stmt->execute([$estado,$operador_id,$archivoPath,$_POST['descripcion'],$id]);
-
-  header('Location: /mantenimientos/listar.php'); exit;
+if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
+    header('Location: /index.php');
+    exit;
 }
 
-// traer operadores para asignar
-$operadores = $pdo->query('SELECT id,nombre FROM usuarios WHERE rol="operador"')->fetchAll();
+require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/header.php';
+
+$id = $_GET['id'] ?? null;
+if (!$id) {
+    die("<div class='alert alert-danger'>ID inválido</div>");
+}
+
+// Obtener mantenimiento actual
+$stmt = $pdo->prepare("
+    SELECT m.*, c.nombre AS cliente, i.nombre AS inventario,
+           u.usuario AS digitador, op.usuario AS operador,
+           mod.usuario AS modificado_por_usuario
+    FROM mantenimientos m
+    LEFT JOIN clientes c ON c.id = m.cliente_id
+    LEFT JOIN inventario i ON i.id = m.inventario_id
+    LEFT JOIN usuarios u ON u.id = m.digitador_id
+    LEFT JOIN usuarios op ON op.id = m.operador_id
+    LEFT JOIN usuarios mod ON mod.id = m.modificado_por
+    WHERE m.id = ?
+");
+$stmt->execute([$id]);
+$mantenimiento = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$mantenimiento) {
+    die("<div class='alert alert-danger'>Mantenimiento no encontrado</div>");
+}
+
+// Procesar formulario
+$ok = $error = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $descripcion = $_POST['descripcion'] ?? '';
+    $estado = $_POST['estado'] ?? '';
+
+    try {
+        $upd = $pdo->prepare("
+            UPDATE mantenimientos
+            SET descripcion = ?, estado = ?, 
+                modificado_por = ?, modificado_en = NOW()
+            WHERE id = ?
+        ");
+        $upd->execute([$descripcion, $estado, $_SESSION['usuario_id'], $id]);
+
+        $ok = "Mantenimiento actualizado correctamente.";
+        // refrescar datos
+        $stmt->execute([$id]);
+        $mantenimiento = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        $error = "Error al actualizar: " . $e->getMessage();
+    }
+}
 ?>
+
 <div class="card p-3">
-  <h5>Mantenimiento #<?=$m['id']?> — <?=htmlspecialchars($m['titulo'])?></h5>
-  <form method="post" enctype="multipart/form-data" class="row g-2">
-    <div class="col-12"><label class="form-label">Descripción</label><textarea name="descripcion" class="form-control"><?=$m['descripcion']?></textarea></div>
-    <div class="col-4"><label class="form-label">Fecha</label><input class="form-control" value="<?=$m['fecha']?>" readonly></div>
-    <div class="col-4"><label class="form-label">Estado</label>
+  <h5>Editar Mantenimiento</h5>
+
+  <?php if($ok): ?>
+    <div class="alert alert-success small"><?= $ok ?></div>
+  <?php endif; ?>
+  <?php if($error): ?>
+    <div class="alert alert-danger small"><?= $error ?></div>
+  <?php endif; ?>
+
+  <form method="post" class="row g-3">
+    <div class="col-12">
+      <label class="form-label">Cliente</label>
+      <input type="text" class="form-control" value="<?= htmlspecialchars($mantenimiento['cliente']) ?>" disabled>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Inventario</label>
+      <input type="text" class="form-control" value="<?= htmlspecialchars($mantenimiento['inventario']) ?>" disabled>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Descripción</label>
+      <textarea name="descripcion" class="form-control" rows="4"><?= htmlspecialchars($mantenimiento['descripcion']) ?></textarea>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Estado</label>
       <select name="estado" class="form-select">
-        <option value="pendiente" <?=($m['estado']==='pendiente')?'selected':''?>>Pendiente</option>
-        <option value="en proceso" <?=($m['estado']==='en proceso')?'selected':''?>>En proceso</option>
-        <option value="finalizado" <?=($m['estado']==='finalizado')?'selected':''?>>Finalizado</option>
+        <option value="pendiente" <?= $mantenimiento['estado'] === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
+        <option value="en_proceso" <?= $mantenimiento['estado'] === 'en_proceso' ? 'selected' : '' ?>>En Proceso</option>
+        <option value="finalizado" <?= $mantenimiento['estado'] === 'finalizado' ? 'selected' : '' ?>>Finalizado</option>
       </select>
     </div>
-    <div class="col-4"><label class="form-label">Asignar Operador</label>
-      <select name="operador_id" class="form-select"><option value="">-- Ninguno --</option><?php foreach($operadores as $o): ?><option value="<?=$o['id']?>" <?=($m['operador_id']==$o['id'])?'selected':''?>><?=htmlspecialchars($o['nombre'])?></option><?php endforeach; ?></select>
+    <div class="col-12 text-end">
+      <button type="submit" class="btn btn-primary">💾 Guardar cambios</button>
+      <a href="/operador/mis_mantenimientos.php" class="btn btn-secondary">⬅ Volver</a>
     </div>
-
-    <div class="col-12"><label class="form-label">Adjuntar archivo (informe)</label><input type="file" name="archivo" class="form-control"></div>
-    <?php if(!empty($m['archivo'])): ?>
-      <div class="col-12"><a class="btn btn-outline-secondary btn-sm" href="<?=$m['archivo']?>" target="_blank">Ver archivo adjunto</a></div>
-    <?php endif; ?>
-
-    <div class="col-12 text-end"><button class="btn btn-primary">Guardar cambios</button></div>
   </form>
+
+  <hr>
+  <h6>Historial</h6>
+  <ul class="list-unstyled small">
+    <li><strong>Digitador:</strong> <?= htmlspecialchars($mantenimiento['digitador']) ?></li>
+    <li><strong>Operador:</strong> <?= htmlspecialchars($mantenimiento['operador']) ?></li>
+    <?php if ($mantenimiento['modificado_por_usuario']): ?>
+      <li><strong>Última modificación por:</strong> <?= htmlspecialchars($mantenimiento['modificado_por_usuario']) ?> el <?= $mantenimiento['modificado_en'] ?></li>
+    <?php else: ?>
+      <li><em>Aún no ha sido modificado.</em></li>
+    <?php endif; ?>
+  </ul>
 </div>
-<?php require_once __DIR__.'/../includes/footer.php'; ?>
+
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
