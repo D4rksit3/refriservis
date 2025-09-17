@@ -7,22 +7,22 @@ require_once __DIR__ . '/../lib/fpdf.php';
 
 // Recibir ID del reporte
 $id = $_GET['id'] ?? null;
-$stmt = $pdo->prepare("SELECT r.*, m.titulo, m.fecha, c.nombre AS cliente, i.nombre AS inventario
-                       FROM reportes r
-                       LEFT JOIN mantenimientos m ON r.mantenimiento_id = m.id
-                       LEFT JOIN clientes c ON m.cliente_id = c.id
-                       LEFT JOIN inventario i ON m.inventario_id = i.id
-                       WHERE r.id = ?");
+$stmt = $pdo->prepare("
+    SELECT r.*, m.titulo, m.fecha, c.nombre AS cliente, i.nombre AS inventario
+    FROM reportes r
+    LEFT JOIN mantenimientos m ON r.mantenimiento_id = m.id
+    LEFT JOIN clientes c ON m.cliente_id = c.id
+    LEFT JOIN inventario i ON m.inventario_id = i.id
+    WHERE r.id = ?
+");
 $stmt->execute([$id]);
 $reporte = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$reporte) {
-    die("Reporte no encontrado");
-}
+if (!$reporte) die("Reporte no encontrado");
 
-// Helper para codificación
+// Helper para codificación y valores seguros
 function safeText($txt) {
-    return mb_convert_encoding((string)$txt, 'ISO-8859-1', 'UTF-8');
+    return mb_convert_encoding((string)($txt ?? ''), 'ISO-8859-1', 'UTF-8');
 }
 
 $pdf = new FPDF();
@@ -40,7 +40,7 @@ $pdf->Ln(5);
 $pdf->SetFont('Arial','B',10);
 $pdf->Cell(35,6,'N° Reporte:',1);
 $pdf->SetFont('Arial','',10);
-$pdf->Cell(50,6,$reporte['id'],1);
+$pdf->Cell(50,6,safeText($reporte['id']),1);
 $pdf->SetFont('Arial','B',10);
 $pdf->Cell(35,6,'Cliente:',1);
 $pdf->SetFont('Arial','',10);
@@ -53,12 +53,12 @@ $pdf->Cell(50,6,safeText($reporte['inventario']),1);
 $pdf->SetFont('Arial','B',10);
 $pdf->Cell(35,6,'Fecha:',1);
 $pdf->SetFont('Arial','',10);
-$pdf->Cell(70,6,$reporte['fecha'],1,1);
+$pdf->Cell(70,6,safeText($reporte['fecha']),1,1);
 
 $pdf->SetFont('Arial','B',10);
 $pdf->Cell(35,6,'Coordinador:',1);
 $pdf->SetFont('Arial','',10);
-$pdf->Cell(50,6,safeText($_SESSION['usuario']),1);
+$pdf->Cell(50,6,safeText($_SESSION['usuario'] ?? ''),1);
 $pdf->SetFont('Arial','B',10);
 $pdf->Cell(35,6,'Local:',1);
 $pdf->SetFont('Arial','',10);
@@ -71,12 +71,11 @@ $pdf->Cell(0,6,'DATOS DE IDENTIFICACION DE LOS EQUIPOS A INTERVENIR',0,1);
 $pdf->SetFont('Arial','B',8);
 $headers = ['Tipo','Marca','Modelo','Ubicación/Serie','Gas','Código'];
 $widths  = [30,30,30,40,30,30];
-foreach ($headers as $i=>$h) {
-    $pdf->Cell($widths[$i],6,$h,1,0,'C');
-}
+foreach ($headers as $i=>$h) $pdf->Cell($widths[$i],6,$h,1,0,'C');
 $pdf->Ln();
 $pdf->SetFont('Arial','',8);
-// Simulación de una fila (en tu caso, podrías traer desde otra tabla de equipos)
+
+// Simulación de filas (rellenar según tu inventario real si tienes otra tabla)
 for ($i=0;$i<3;$i++) {
     $pdf->Cell(30,6,'---',1);
     $pdf->Cell(30,6,'---',1);
@@ -101,7 +100,7 @@ $pdf->Cell(35,6,'Despues',1,1,'C');
 $pdf->SetFont('Arial','',8);
 $parametros = ['Corriente electrica nominal (A)','Tension electrica nominal (V)','Presion de descarga (PSI)','Presion de succion (PSI)'];
 foreach ($parametros as $p) {
-    $pdf->Cell(50,6,$p,1);
+    $pdf->Cell(50,6,safeText($p),1);
     $pdf->Cell(35,6,'',1);
     $pdf->Cell(35,6,'',1);
     $pdf->Cell(35,6,'',1);
@@ -145,5 +144,5 @@ if (!empty($reporte['firma']) && file_exists(__DIR__ . '/../uploads/' . $reporte
     $pdf->Image(__DIR__ . '/../uploads/' . $reporte['firma'], 30, $pdf->GetY()-30, 40);
 }
 
-$filename = "Reporte_" . $reporte['id'] . ".pdf";
+$filename = "Reporte_" . ($reporte['id'] ?? '000') . ".pdf";
 $pdf->Output('I', $filename);
