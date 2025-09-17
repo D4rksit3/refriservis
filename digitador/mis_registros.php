@@ -1,98 +1,116 @@
 <?php
 session_start();
-if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'digitador') {
-    header('Location: /index.php');
-    exit;
+if (!isset($_SESSION['usuario_id'])) {
+    header("Location: login.php?error=sesion");
+    exit();
 }
 
-$_SESSION['usuario_id'] = $row['id'];   // id del usuario en la tabla usuarios
-$_SESSION['usuario'] = $row['usuario'];
-$_SESSION['rol'] = $row['rol'];
+require_once "/../config/db.php";
 
+// Consulta
+$query = "SELECT m.id, m.fecha, m.descripcion, o.nombre AS operador, d.nombre AS digitador
+          FROM mantenimientos m
+          LEFT JOIN operadores o ON m.operador_id = o.id
+          LEFT JOIN digitadores d ON m.digitador_id = d.id
+          ORDER BY m.fecha DESC";
+$result = $conn->query($query);
 
-require_once __DIR__ . '/../config/db.php';
+// Exportar Excel (nativo)
+if (isset($_GET['action']) && $_GET['action'] == 'excel') {
+    header("Content-Type: application/vnd.ms-excel; charset=utf-8");
+    header("Content-Disposition: attachment; filename=reporte_mantenimientos.xls");
+    header("Pragma: no-cache");
+    header("Expires: 0");
 
-// Obtener mantenimientos del digitador actual
-$stmt = $pdo->prepare("
-    SELECT m.id, m.titulo, m.fecha, m.estado,
-           c.nombre AS cliente
-    FROM mantenimientos m
-    LEFT JOIN clientes c ON c.id = m.cliente_id
-    WHERE m.usuario_id = ?
-    ORDER BY m.fecha DESC
-");
-$stmt->execute([$_SESSION['usuario_id']]);
-$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    echo "<table border='1'>";
+    echo "<tr style='background:#f2f2f2; font-weight:bold;'>
+            <td>ID</td>
+            <td>Fecha</td>
+            <td>Descripción</td>
+            <td>Operador</td>
+            <td>Digitador</td>
+          </tr>";
+    $resExcel = $conn->query($query);
+    while ($fila = $resExcel->fetch_assoc()) {
+        echo "<tr>
+                <td>{$fila['id']}</td>
+                <td>{$fila['fecha']}</td>
+                <td>{$fila['descripcion']}</td>
+                <td>{$fila['operador']}</td>
+                <td>{$fila['digitador']}</td>
+              </tr>";
+    }
+    echo "</table>";
+    exit();
+}
+
+// Exportar PDF con FPDF (nativo, requiere fpdf.php)
+if (isset($_GET['action']) && $_GET['action'] == 'pdf') {
+    require("fpdf.php");
+
+    $pdf = new FPDF('L', 'mm', 'A4');
+    $pdf->AddPage();
+    $pdf->SetFont('Arial', 'B', 14);
+    $pdf->Cell(0, 10, "Reporte de Mantenimientos", 0, 1, 'C');
+
+    $pdf->SetFont('Arial', 'B', 10);
+    $pdf->Cell(20, 8, "ID", 1, 0, 'C');
+    $pdf->Cell(30, 8, "Fecha", 1, 0, 'C');
+    $pdf->Cell(100, 8, "Descripción", 1, 0, 'C');
+    $pdf->Cell(60, 8, "Operador", 1, 0, 'C');
+    $pdf->Cell(60, 8, "Digitador", 1, 1, 'C');
+
+    $pdf->SetFont('Arial', '', 10);
+    $resPdf = $conn->query($query);
+    while ($fila = $resPdf->fetch_assoc()) {
+        $pdf->Cell(20, 8, $fila['id'], 1, 0, 'C');
+        $pdf->Cell(30, 8, $fila['fecha'], 1, 0, 'C');
+        $pdf->Cell(100, 8, $fila['descripcion'], 1, 0, 'L');
+        $pdf->Cell(60, 8, $fila['operador'], 1, 0, 'L');
+        $pdf->Cell(60, 8, $fila['digitador'], 1, 1, 'L');
+    }
+
+    $pdf->Output("D", "reporte_mantenimientos.pdf");
+    exit();
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Mis Registros</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #f4f4f4; }
+        .btn { display: inline-block; padding: 8px 15px; margin: 5px; text-decoration: none; color: white; border-radius: 5px; }
+        .btn-excel { background: green; }
+        .btn-pdf { background: red; }
+    </style>
 </head>
-<body class="bg-light">
-<div class="container py-4">
-    <h3 class="mb-3">📋 Mis Registros de Mantenimiento</h3>
+<body>
+    <h1>Mis Registros</h1>
+    <a href="mis_registros.php?action=excel" class="btn btn-excel">📊 Exportar a Excel</a>
+    <a href="mis_registros.php?action=pdf" class="btn btn-pdf">📄 Exportar a PDF</a>
 
-    <form method="post" action="combinar.php">
-        <div class="table-responsive shadow-sm rounded bg-white p-3">
-            <table class="table table-hover align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th style="width:40px;"></th>
-                        <th>ID</th>
-                        <th>Título</th>
-                        <th>Fecha</th>
-                        <th>Cliente</th>
-                        <th>Estado</th>
-                        <th class="text-end">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if ($rows): ?>
-                        <?php foreach ($rows as $r): ?>
-                            <tr>
-                                <td>
-                                    <input type="checkbox" name="seleccionados[]" value="<?= $r['id'] ?>">
-                                </td>
-                                <td><?= htmlspecialchars($r['id']) ?></td>
-                                <td><?= htmlspecialchars($r['titulo']) ?></td>
-                                <td><?= date("d/m/Y", strtotime($r['fecha'])) ?></td>
-                                <td><?= htmlspecialchars($r['cliente']) ?></td>
-                                <td>
-                                    <?php if ($r['estado'] === 'pendiente'): ?>
-                                        <span class="badge bg-warning text-dark">Pendiente</span>
-                                    <?php elseif ($r['estado'] === 'finalizado'): ?>
-                                        <span class="badge bg-success">Finalizado</span>
-                                    <?php else: ?>
-                                        <span class="badge bg-secondary"><?= htmlspecialchars($r['estado']) ?></span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="text-end">
-                                    <a href="editar.php?id=<?= $r['id'] ?>" class="btn btn-sm btn-outline-primary">
-                                        Ver / Editar
-                                    </a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="7" class="text-center text-muted">No tienes registros aún.</td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-
-        <?php if ($rows): ?>
-        <div class="text-end mt-3">
-            <button type="submit" class="btn btn-success">
-                📑 Combinar Seleccionados
-            </button>
-        </div>
-        <?php endif; ?>
-    </form>
-</div>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Fecha</th>
+            <th>Descripción</th>
+            <th>Operador</th>
+            <th>Digitador</th>
+        </tr>
+        <?php while ($row = $result->fetch_assoc()) { ?>
+            <tr>
+                <td><?= $row['id'] ?></td>
+                <td><?= $row['fecha'] ?></td>
+                <td><?= $row['descripcion'] ?></td>
+                <td><?= $row['operador'] ?></td>
+                <td><?= $row['digitador'] ?></td>
+            </tr>
+        <?php } ?>
+    </table>
 </body>
 </html>
