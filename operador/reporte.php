@@ -8,7 +8,10 @@ require_once __DIR__ . '/../lib/fpdf.php';
 // Recibir ID del reporte
 $id = $_GET['id'] ?? null;
 $stmt = $pdo->prepare("
-    SELECT r.*, m.titulo, m.fecha, c.nombre AS cliente, i.nombre AS inventario
+    SELECT r.*, 
+           m.titulo, m.fecha, 
+           c.nombre AS cliente, c.direccion, 
+           i.nombre AS equipo, i.marca, i.modelo, i.serie, i.gas, i.codigo, i.ubicacion
     FROM reportes r
     LEFT JOIN mantenimientos m ON r.mantenimiento_id = m.id
     LEFT JOIN clientes c ON m.cliente_id = c.id
@@ -18,11 +21,13 @@ $stmt = $pdo->prepare("
 $stmt->execute([$id]);
 $reporte = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$reporte) die("Reporte no encontrado");
+if (!$reporte) {
+    die("Reporte no encontrado");
+}
 
-// Helper para codificación y valores seguros
+// Helper para codificación
 function safeText($txt) {
-    return mb_convert_encoding((string)($txt ?? ''), 'ISO-8859-1', 'UTF-8');
+    return mb_convert_encoding((string)$txt, 'ISO-8859-1', 'UTF-8');
 }
 
 $pdf = new FPDF();
@@ -40,7 +45,7 @@ $pdf->Ln(5);
 $pdf->SetFont('Arial','B',10);
 $pdf->Cell(35,6,'N° Reporte:',1);
 $pdf->SetFont('Arial','',10);
-$pdf->Cell(50,6,safeText($reporte['id']),1);
+$pdf->Cell(50,6,$reporte['id'],1);
 $pdf->SetFont('Arial','B',10);
 $pdf->Cell(35,6,'Cliente:',1);
 $pdf->SetFont('Arial','',10);
@@ -49,45 +54,42 @@ $pdf->Cell(70,6,safeText($reporte['cliente']),1,1);
 $pdf->SetFont('Arial','B',10);
 $pdf->Cell(35,6,'Equipo:',1);
 $pdf->SetFont('Arial','',10);
-$pdf->Cell(50,6,safeText($reporte['inventario']),1);
+$pdf->Cell(50,6,safeText($reporte['equipo']),1);
 $pdf->SetFont('Arial','B',10);
 $pdf->Cell(35,6,'Fecha:',1);
 $pdf->SetFont('Arial','',10);
-$pdf->Cell(70,6,safeText($reporte['fecha']),1,1);
+$pdf->Cell(70,6,$reporte['fecha'],1,1);
 
 $pdf->SetFont('Arial','B',10);
-$pdf->Cell(35,6,'Coordinador:',1);
+$pdf->Cell(35,6,'Dirección:',1);
 $pdf->SetFont('Arial','',10);
-$pdf->Cell(50,6,safeText($_SESSION['usuario'] ?? ''),1);
+$pdf->Cell(155,6,safeText($reporte['direccion']),1,1);
+
 $pdf->SetFont('Arial','B',10);
-$pdf->Cell(35,6,'Local:',1);
+$pdf->Cell(35,6,'Ubicación:',1);
 $pdf->SetFont('Arial','',10);
-$pdf->Cell(70,6,'-',1,1);
+$pdf->Cell(155,6,safeText($reporte['ubicacion']),1,1);
 $pdf->Ln(6);
 
 // Tabla de identificación de equipos
 $pdf->SetFont('Arial','B',10);
 $pdf->Cell(0,6,'DATOS DE IDENTIFICACION DE LOS EQUIPOS A INTERVENIR',0,1);
 $pdf->SetFont('Arial','B',8);
-$headers = ['Tipo','Marca','Modelo','Ubicación/Serie','Gas','Código'];
-$widths  = [30,30,30,40,30,30];
-foreach ($headers as $i=>$h) $pdf->Cell($widths[$i],6,$h,1,0,'C');
+$headers = ['Marca','Modelo','Serie','Gas','Código'];
+$widths  = [40,40,40,35,35];
+foreach ($headers as $i=>$h) {
+    $pdf->Cell($widths[$i],6,$h,1,0,'C');
+}
 $pdf->Ln();
 $pdf->SetFont('Arial','',8);
+$pdf->Cell(40,6,safeText($reporte['marca']),1);
+$pdf->Cell(40,6,safeText($reporte['modelo']),1);
+$pdf->Cell(40,6,safeText($reporte['serie']),1);
+$pdf->Cell(35,6,safeText($reporte['gas']),1);
+$pdf->Cell(35,6,safeText($reporte['codigo']),1);
+$pdf->Ln(10);
 
-// Simulación de filas (rellenar según tu inventario real si tienes otra tabla)
-for ($i=0;$i<3;$i++) {
-    $pdf->Cell(30,6,'---',1);
-    $pdf->Cell(30,6,'---',1);
-    $pdf->Cell(30,6,'---',1);
-    $pdf->Cell(40,6,'---',1);
-    $pdf->Cell(30,6,'---',1);
-    $pdf->Cell(30,6,'---',1);
-    $pdf->Ln();
-}
-$pdf->Ln(6);
-
-// Parámetros de funcionamiento
+// Parámetros de funcionamiento (placeholder: puedes adaptar para traer de otra tabla si ya los guardas)
 $pdf->SetFont('Arial','B',10);
 $pdf->Cell(0,6,'PARAMETROS DE FUNCIONAMIENTO',0,1);
 $pdf->SetFont('Arial','B',8);
@@ -100,7 +102,7 @@ $pdf->Cell(35,6,'Despues',1,1,'C');
 $pdf->SetFont('Arial','',8);
 $parametros = ['Corriente electrica nominal (A)','Tension electrica nominal (V)','Presion de descarga (PSI)','Presion de succion (PSI)'];
 foreach ($parametros as $p) {
-    $pdf->Cell(50,6,safeText($p),1);
+    $pdf->Cell(50,6,$p,1);
     $pdf->Cell(35,6,'',1);
     $pdf->Cell(35,6,'',1);
     $pdf->Cell(35,6,'',1);
@@ -122,7 +124,7 @@ $pdf->SetFont('Arial','',9);
 $pdf->MultiCell(0,6,safeText($reporte['observaciones'] ?? ''));
 $pdf->Ln(10);
 
-// Fotos (simulación de espacio)
+// Fotos (espacios en blanco para luego implementar)
 $pdf->SetFont('Arial','B',10);
 $pdf->Cell(0,6,'FOTOS DEL/OS EQUIPOS',0,1);
 $pdf->Ln(20);
@@ -136,13 +138,29 @@ $pdf->Cell(60,6,'_________________________',0,0,'C');
 $pdf->Cell(60,6,'_________________________',0,0,'C');
 $pdf->Cell(60,6,'_________________________',0,1,'C');
 $pdf->Cell(60,6,'Firma del Cliente',0,0,'C');
-$pdf->Cell(60,6,'V°B° Supervisor R.F.S',0,0,'C');
+$pdf->Cell(60,6,'Firma del Supervisor',0,0,'C');
 $pdf->Cell(60,6,'Firma del Tecnico',0,1,'C');
 
-// Incluir firma si existe
-if (!empty($reporte['firma']) && file_exists(__DIR__ . '/../uploads/' . $reporte['firma'])) {
-    $pdf->Image(__DIR__ . '/../uploads/' . $reporte['firma'], 30, $pdf->GetY()-30, 40);
+// Incluir firmas si existen (guardadas como base64 o archivos)
+$y = $pdf->GetY()-25;
+if (!empty($reporte['firma_cliente'])) {
+    $data = str_replace('data:image/png;base64,', '', $reporte['firma_cliente']);
+    $img = __DIR__ . "/../uploads/firma_cliente_{$reporte['id']}.png";
+    file_put_contents($img, base64_decode($data));
+    $pdf->Image($img, 25, $y, 40);
+}
+if (!empty($reporte['firma_supervisor'])) {
+    $data = str_replace('data:image/png;base64,', '', $reporte['firma_supervisor']);
+    $img = __DIR__ . "/../uploads/firma_supervisor_{$reporte['id']}.png";
+    file_put_contents($img, base64_decode($data));
+    $pdf->Image($img, 85, $y, 40);
+}
+if (!empty($reporte['firma_tecnico'])) {
+    $data = str_replace('data:image/png;base64,', '', $reporte['firma_tecnico']);
+    $img = __DIR__ . "/../uploads/firma_tecnico_{$reporte['id']}.png";
+    file_put_contents($img, base64_decode($data));
+    $pdf->Image($img, 145, $y, 40);
 }
 
-$filename = "Reporte_" . ($reporte['id'] ?? '000') . ".pdf";
+$filename = "Reporte_" . $reporte['id'] . ".pdf";
 $pdf->Output('I', $filename);
