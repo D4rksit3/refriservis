@@ -5,7 +5,7 @@ if (!isset($_SESSION['usuario_id'])) {
     exit();
 }
 
-require_once "/../config/db.php";
+require_once __DIR__ . "/../config/db.php";
 
 // Consulta
 $query = "SELECT m.id, m.fecha, m.descripcion, o.nombre AS operador, d.nombre AS digitador
