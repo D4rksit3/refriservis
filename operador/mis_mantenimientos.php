@@ -9,7 +9,6 @@ if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
 require_once __DIR__.'/../config/db.php';
 require_once __DIR__.'/../includes/header.php';
 
-// Traer mantenimientos asignados al operador logueado
 $stmt = $pdo->prepare('
     SELECT m.id, m.titulo, m.fecha, m.estado, c.nombre AS cliente, i.nombre AS inventario
     FROM mantenimientos m
@@ -21,40 +20,28 @@ $stmt = $pdo->prepare('
 $stmt->execute([$_SESSION['usuario_id']]);
 $rows = $stmt->fetchAll();
 ?>
-<div class="card p-3">
-  <h5>Mis mantenimientos asignados</h5>
-  <div class="table-responsive">
-    <table class="table table-sm">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Título</th>
-          <th>Fecha</th>
-          <th>Cliente</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php if ($rows): ?>
-          <?php foreach($rows as $r): ?>
-            <tr>
-              <td><?= $r['id'] ?></td>
-              <td><?= htmlspecialchars($r['titulo']) ?></td>
-              <td><?= $r['fecha'] ?></td>
-              <td><?= htmlspecialchars($r['cliente']) ?></td>
-              <td><?= $r['estado'] ?></td>
-              <td class="text-end">
-                <a class="btn btn-sm btn-outline-primary" href="/mantenimientos/editar.php?id=<?= $r['id'] ?>">Actualizar</a>
-                <a class="btn btn-sm btn-outline-success" href="/operador/reporte.php?id=<?= $r['id'] ?>" target="_blank">Generar Reporte</a>
-              </td>
-            </tr>
-          <?php endforeach; ?>
-        <?php else: ?>
-          <tr><td colspan="6" class="text-center">No tienes mantenimientos asignados.</td></tr>
-        <?php endif; ?>
-      </tbody>
-    </table>
-  </div>
+
+<div class="container my-3">
+  <h5 class="mb-3">Mis mantenimientos asignados</h5>
+
+  <?php if ($rows): ?>
+    <?php foreach($rows as $r): ?>
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <h6 class="card-title"><?= htmlspecialchars($r['titulo']) ?></h6>
+          <p class="card-text mb-1"><b>Cliente:</b> <?= htmlspecialchars($r['cliente']) ?></p>
+          <p class="card-text mb-1"><b>Fecha:</b> <?= $r['fecha'] ?></p>
+          <p class="card-text mb-2"><b>Estado:</b> <?= $r['estado'] ?></p>
+          <div class="d-flex gap-2">
+            <a href="/mantenimientos/editar.php?id=<?= $r['id'] ?>" class="btn btn-primary btn-sm flex-fill">Actualizar</a>
+            <a href="/operador/form_reporte.php?id=<?= $r['id'] ?>" class="btn btn-success btn-sm flex-fill">Generar Reporte</a>
+          </div>
+        </div>
+      </div>
+    <?php endforeach; ?>
+  <?php else: ?>
+    <div class="alert alert-info">No tienes mantenimientos asignados.</div>
+  <?php endif; ?>
 </div>
+
 <?php require_once __DIR__.'/../includes/footer.php'; ?>
