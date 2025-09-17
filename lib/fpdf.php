@@ -1,5 +1,5 @@
 <?php
-session_start();
+
 if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
     header("Location: /index.php");
     exit;
