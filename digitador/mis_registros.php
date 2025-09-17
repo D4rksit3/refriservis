@@ -1,27 +1,26 @@
 <?php
-
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-
 session_start();
 if (!isset($_SESSION['usuario_id'])) {
     header("Location: login.php?error=sesion");
     exit();
 }
 
-// Conexión a la BD
 require_once __DIR__ . "/../config/db.php";
 
-// Consulta
-$query = "SELECT m.id, m.fecha, m.descripcion, o.nombre AS operador, d.nombre AS digitador
+// Consulta adaptada a la BD
+$query = "SELECT m.id, m.fecha, m.descripcion, 
+                 op.nombre AS operador, 
+                 dig.nombre AS digitador
           FROM mantenimientos m
-          LEFT JOIN operadores o ON m.operador_id = o.id
-          LEFT JOIN digitadores d ON m.digitador_id = d.id
+          LEFT JOIN usuarios op ON m.operador_id = op.id
+          LEFT JOIN usuarios dig ON m.digitador_id = dig.id
           ORDER BY m.fecha DESC";
 
+$stmt = $pdo->query($query);
+$result = $stmt->fetchAll();
+
 // Exportar Excel
-if (isset($_GET['action']) && $_GET['action'] === 'excel') {
+if (isset($_GET['action']) && $_GET['action'] == 'excel') {
     header("Content-Type: application/vnd.ms-excel; charset=utf-8");
     header("Content-Disposition: attachment; filename=reporte_mantenimientos.xls");
     header("Pragma: no-cache");
@@ -35,8 +34,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'excel') {
             <td>Operador</td>
             <td>Digitador</td>
           </tr>";
-
-    foreach ($pdo->query($query) as $fila) {
+    foreach ($result as $fila) {
         echo "<tr>
                 <td>{$fila['id']}</td>
                 <td>{$fila['fecha']}</td>
@@ -49,8 +47,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'excel') {
     exit();
 }
 
-// Exportar PDF
-if (isset($_GET['action']) && $_GET['action'] === 'pdf') {
+// Exportar PDF con FPDF
+if (isset($_GET['action']) && $_GET['action'] == 'pdf') {
     require("fpdf.php");
 
     $pdf = new FPDF('L', 'mm', 'A4');
@@ -66,7 +64,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'pdf') {
     $pdf->Cell(60, 8, "Digitador", 1, 1, 'C');
 
     $pdf->SetFont('Arial', '', 10);
-    foreach ($pdo->query($query) as $fila) {
+    foreach ($result as $fila) {
         $pdf->Cell(20, 8, $fila['id'], 1, 0, 'C');
         $pdf->Cell(30, 8, $fila['fecha'], 1, 0, 'C');
         $pdf->Cell(100, 8, $fila['descripcion'], 1, 0, 'L');
@@ -77,10 +75,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'pdf') {
     $pdf->Output("D", "reporte_mantenimientos.pdf");
     exit();
 }
-
-// Obtener resultados para mostrar en la tabla HTML
-$stmt = $pdo->query($query);
-$result = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -112,11 +106,11 @@ $result = $stmt->fetchAll();
         </tr>
         <?php foreach ($result as $row) { ?>
             <tr>
-                <td><?= htmlspecialchars($row['id']) ?></td>
-                <td><?= htmlspecialchars($row['fecha']) ?></td>
-                <td><?= htmlspecialchars($row['descripcion']) ?></td>
-                <td><?= htmlspecialchars($row['operador']) ?></td>
-                <td><?= htmlspecialchars($row['digitador']) ?></td>
+                <td><?= $row['id'] ?></td>
+                <td><?= $row['fecha'] ?></td>
+                <td><?= $row['descripcion'] ?></td>
+                <td><?= $row['operador'] ?></td>
+                <td><?= $row['digitador'] ?></td>
             </tr>
         <?php } ?>
     </table>
