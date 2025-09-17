@@ -8,19 +8,47 @@ require_once __DIR__.'/../config/db.php';
 
 $mantenimiento_id = $_GET['id'] ?? null;
 
-// Traer datos del mantenimiento + cliente + inventario
+if(!$mantenimiento_id){
+    die("ID de mantenimiento no proporcionado");
+}
+
+// Traer mantenimiento
 $stmt = $pdo->prepare("
-    SELECT m.id, m.titulo, m.fecha, c.nombre AS cliente, c.direccion, 
-           i.id AS equipo_id, i.nombre AS equipo, i.marca, i.modelo, i.serie, i.gas, i.codigo, i.ubicacion
+    SELECT m.id, m.titulo, m.fecha, c.nombre AS cliente, c.direccion
     FROM mantenimientos m
     LEFT JOIN clientes c ON m.cliente_id = c.id
-    LEFT JOIN inventario i ON m.inventario_id = i.id
     WHERE m.id = ?
 ");
 $stmt->execute([$mantenimiento_id]);
 $datos = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$datos) die("Mantenimiento no encontrado");
+if (!$datos) {
+    die("Mantenimiento no encontrado");
+}
+
+// Traer inventarios relacionados (hasta 7)
+$stmt2 = $pdo->prepare("
+    SELECT nombre, marca, modelo, serie, gas, codigo
+    FROM inventario
+    WHERE id IN (
+        SELECT inventario_id FROM mantenimientos_inventario WHERE mantenimiento_id = ?
+    )
+    LIMIT 7
+");
+$stmt2->execute([$mantenimiento_id]);
+$equipos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+
+// Si no hay equipos, crear 7 vacíos
+for($i=count($equipos); $i<7; $i++){
+    $equipos[] = ['nombre'=>'','marca'=>'','modelo'=>'','serie'=>'','gas'=>'','codigo'=>''];
+}
+
+$parametros = [
+    "Corriente eléctrica nominal (Amperios)" => ['L1','L2','L3'],
+    "Tensión eléctrica nominal (Voltios)" => ['V1','V2','V3'],
+    "Presión de descarga (PSI)" => ['P1','P2','P3'],
+    "Presión de succión (PSI)" => ['S1','S2','S3']
+];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -41,81 +69,74 @@ canvas { border:1px solid #ccc; width:100%; height:200px; }
 <form action="guardar_informe.php" method="post" enctype="multipart/form-data">
 <input type="hidden" name="mantenimiento_id" value="<?= $datos['id'] ?>">
 
-<!-- Datos generales -->
+<!-- Datos del cliente -->
 <div class="mb-3">
 <strong>Cliente:</strong> <?= htmlspecialchars($datos['cliente']) ?><br>
 <strong>Dirección:</strong> <?= htmlspecialchars($datos['direccion']) ?><br>
 <strong>Fecha:</strong> <?= $datos['fecha'] ?>
 </div>
 
-<!-- Datos de identificación de equipos -->
-<h5>DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS A INTERVENIR</h5>
+<!-- Equipos -->
+<h5>Datos de Identificación de los Equipos a Intervenir</h5>
 <div class="table-responsive">
-<table class="table table-bordered align-middle text-center">
+<table class="table table-bordered text-center">
 <thead class="table-light">
 <tr>
-<th>#</th>
-<th>Tipo de Equipo</th>
-<th>Marca</th>
-<th>Modelo</th>
-<th>Ubicación/Serie</th>
-<th>Tipo de Gas</th>
-<th>Código de Equipo</th>
+<th>#</th><th>Tipo de Equipo</th><th>Marca</th><th>Modelo</th><th>Ubicación/Serie</th><th>Tipo de Gas</th><th>Código</th>
 </tr>
 </thead>
 <tbody>
-<?php for($i=1;$i<=7;$i++): ?>
+<?php foreach($equipos as $k=>$eq): ?>
 <tr>
-<td><?= $i ?></td>
-<td><input type="text" name="tipo_equipo[]" class="form-control"></td>
-<td><input type="text" name="marca[]" class="form-control" value="<?= $i==1?htmlspecialchars($datos['marca']):'' ?>"></td>
-<td><input type="text" name="modelo[]" class="form-control" value="<?= $i==1?htmlspecialchars($datos['modelo']):'' ?>"></td>
-<td><input type="text" name="ubicacion[]" class="form-control" value="<?= $i==1?htmlspecialchars($datos['serie']):'' ?>"></td>
-<td><input type="text" name="gas[]" class="form-control" value="<?= $i==1?htmlspecialchars($datos['gas']):'' ?>"></td>
-<td><input type="text" name="codigo[]" class="form-control" value="<?= $i==1?htmlspecialchars($datos['codigo']):'' ?>"></td>
-</tr>
-<?php endfor; ?>
-</tbody>
-</table>
-</div>
-
-<!-- Parámetros de funcionamiento -->
-<h5>PARÁMETROS DE FUNCIONAMIENTO</h5>
-<div class="table-responsive">
-<table class="table table-bordered text-center align-middle">
-<thead class="table-light">
-<tr>
-<th>Medida</th>
-<?php for($i=1;$i<=7;$i++): ?>
-<th>Antes <?= $i ?></th><th>Después <?= $i ?></th>
-<?php endfor; ?>
-</tr>
-</thead>
-<tbody>
-<?php
-$parametros = ["Corriente eléctrica nominal (Amperios)","Tensión eléctrica nominal (V)","Presión de descarga (PSI)","Presión de succión (PSI)"];
-foreach($parametros as $p): ?>
-<tr>
-<td><?= $p ?><input type="hidden" name="medida[]" value="<?= $p ?>"></td>
-<?php for($i=1;$i<=7;$i++): ?>
-<td><input type="text" name="antes<?= $i ?>[]" class="form-control"></td>
-<td><input type="text" name="despues<?= $i ?>[]" class="form-control"></td>
-<?php endfor; ?>
+<td><?= $k+1 ?></td>
+<td><input type="text" name="eq_nombre[]" class="form-control" value="<?= htmlspecialchars($eq['nombre']) ?>"></td>
+<td><input type="text" name="eq_marca[]" class="form-control" value="<?= htmlspecialchars($eq['marca']) ?>"></td>
+<td><input type="text" name="eq_modelo[]" class="form-control" value="<?= htmlspecialchars($eq['modelo']) ?>"></td>
+<td><input type="text" name="eq_serie[]" class="form-control" value="<?= htmlspecialchars($eq['serie']) ?>"></td>
+<td><input type="text" name="eq_gas[]" class="form-control" value="<?= htmlspecialchars($eq['gas']) ?>"></td>
+<td><input type="text" name="eq_codigo[]" class="form-control" value="<?= htmlspecialchars($eq['codigo']) ?>"></td>
 </tr>
 <?php endforeach; ?>
 </tbody>
 </table>
 </div>
 
-<!-- Trabajos y observaciones -->
+<!-- Trabajos -->
 <div class="mb-3">
 <label class="form-label">Trabajos Realizados</label>
 <textarea name="trabajos" class="form-control" rows="3" required></textarea>
 </div>
 
+<!-- Observaciones -->
 <div class="mb-3">
 <label class="form-label">Observaciones</label>
 <textarea name="observaciones" class="form-control" rows="3"></textarea>
+</div>
+
+<!-- Parámetros de Funcionamiento -->
+<h5>Parámetros de Funcionamiento</h5>
+<div class="table-responsive">
+<table class="table table-bordered text-center">
+<thead class="table-light">
+<tr>
+<th>Medida</th>
+<th>Antes L1</th><th>Después L1</th>
+<th>Antes L2</th><th>Después L2</th>
+<th>Antes L3</th><th>Después L3</th>
+</tr>
+</thead>
+<tbody>
+<?php foreach($parametros as $nombre => $letras): ?>
+<tr>
+<td><?= $nombre ?></td>
+<?php foreach($letras as $letra): ?>
+<td><input type="text" name="antes_<?= $letra ?>[]" class="form-control"></td>
+<td><input type="text" name="despues_<?= $letra ?>[]" class="form-control"></td>
+<?php endforeach; ?>
+</tr>
+<?php endforeach; ?>
+</tbody>
+</table>
 </div>
 
 <!-- Fotos -->
@@ -127,46 +148,53 @@ foreach($parametros as $p): ?>
 <!-- Firmas -->
 <h5>Firmas</h5>
 <div class="row">
+<?php
+$firmaCampos = ['Cliente'=>'firmaCliente','Técnico'=>'firmaTecnico','Supervisor'=>'firmaSupervisor'];
+foreach($firmaCampos as $label=>$id):
+?>
 <div class="col-md-4 mb-3">
-<label class="form-label">Firma Cliente</label>
-<canvas id="firmaCliente"></canvas>
-<input type="hidden" name="firma_cliente" id="firmaClienteInput">
-<button type="button" class="btn btn-sm btn-secondary mt-1" onclick="limpiarFirma('firmaCliente')">Limpiar</button>
+<label class="form-label">Firma <?= $label ?></label>
+<canvas id="<?= $id ?>"></canvas>
+<input type="hidden" name="<?= strtolower($label) ?>_firma" id="<?= $id ?>Input">
+<button type="button" class="btn btn-sm btn-secondary mt-1" onclick="limpiarFirma('<?= $id ?>')">Limpiar</button>
 </div>
-<div class="col-md-4 mb-3">
-<label class="form-label">Firma Técnico</label>
-<canvas id="firmaTecnico"></canvas>
-<input type="hidden" name="firma_tecnico" id="firmaTecnicoInput">
-<button type="button" class="btn btn-sm btn-secondary mt-1" onclick="limpiarFirma('firmaTecnico')">Limpiar</button>
-</div>
-<div class="col-md-4 mb-3">
-<label class="form-label">Firma Supervisor</label>
-<canvas id="firmaSupervisor"></canvas>
-<input type="hidden" name="firma_supervisor" id="firmaSupervisorInput">
-<button type="button" class="btn btn-sm btn-secondary mt-1" onclick="limpiarFirma('firmaSupervisor')">Limpiar</button>
-</div>
+<?php endforeach; ?>
 </div>
 
 <button type="submit" class="btn btn-success w-100">Guardar Informe</button>
 </form>
-</div>
-</div>
-</div>
+</div></div></div>
 
 <script>
-function initFirma(canvasId,inputId){
-    const canvas=document.getElementById(canvasId);
-    const input=document.getElementById(inputId);
-    const ctx=canvas.getContext("2d");
-    let dibujando=false;
+function initFirma(canvasId, inputId) {
+    const canvas = document.getElementById(canvasId);
+    const input = document.getElementById(inputId);
+    const ctx = canvas.getContext("2d");
+    let dibujando = false;
     canvas.addEventListener("mousedown",()=>dibujando=true);
-    canvas.addEventListener("mouseup",()=>{dibujando=false; input.value=canvas.toDataURL("image/png"); ctx.beginPath();});
-    canvas.addEventListener("mousemove",(e)=>{if(!dibujando)return; ctx.lineWidth=2; ctx.lineCap="round"; ctx.strokeStyle="black"; ctx.lineTo(e.offsetX,e.offsetY); ctx.stroke(); ctx.beginPath(); ctx.moveTo(e.offsetX,e.offsetY);});
+    canvas.addEventListener("mouseup",()=>{
+        dibujando=false;
+        input.value=canvas.toDataURL("image/png");
+    });
+    canvas.addEventListener("mousemove",(e)=>{
+        if(!dibujando) return;
+        ctx.lineWidth=2;
+        ctx.lineCap="round";
+        ctx.strokeStyle="black";
+        ctx.lineTo(e.offsetX,e.offsetY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(e.offsetX,e.offsetY);
+    });
 }
-function limpiarFirma(canvasId){const canvas=document.getElementById(canvasId); const ctx=canvas.getContext("2d"); ctx.clearRect(0,0,canvas.width,canvas.height);}
-initFirma("firmaCliente","firmaClienteInput");
-initFirma("firmaTecnico","firmaTecnicoInput");
-initFirma("firmaSupervisor","firmaSupervisorInput");
+function limpiarFirma(canvasId){
+    const canvas=document.getElementById(canvasId);
+    const ctx=canvas.getContext("2d");
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+<?php foreach($firmaCampos as $label=>$id): ?>
+initFirma("<?= $id ?>","<?= $id ?>Input");
+<?php endforeach; ?>
 </script>
 </body>
 </html>
