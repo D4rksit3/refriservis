@@ -34,7 +34,9 @@ $rows = $stmt->fetchAll();
           <p class="card-text mb-2"><b>Estado:</b> <?= $r['estado'] ?></p>
           <div class="d-flex gap-2">
             <a href="/mantenimientos/editar.php?id=<?= $r['id'] ?>" class="btn btn-primary btn-sm flex-fill">Actualizar</a>
-            <a href="/operador/form_reporte.php?id=<?= $r['id'] ?>" class="btn btn-success btn-sm flex-fill">Generar Reporte</a>
+            <a class="btn btn-sm btn-outline-success" href="/operador/form_reporte.php?id=<?= $r['id'] ?>">Generar Reporte</a>
+  
+          
           </div>
         </div>
       </div>
