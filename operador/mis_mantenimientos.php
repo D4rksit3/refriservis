@@ -23,6 +23,9 @@ $rows = $stmt->fetchAll();
             <td><?=htmlspecialchars($r['cliente'])?></td>
             <td><?=$r['estado']?></td>
             <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="/mantenimientos/editar.php?id=<?=$r['id']?>">Actualizar</a></td>
+            <a class="btn btn-sm btn-outline-success" 
+   href="/operador/reporte.php?id=<?=$r['id']?>" target="_blank">Generar Reporte</a>
+
           </tr>
         <?php endforeach; ?>
       </tbody>
