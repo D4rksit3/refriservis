@@ -9,52 +9,71 @@ require_once __DIR__.'/../config/db.php';
 $mantenimiento_id = $_GET['id'] ?? null;
 
 if(!$mantenimiento_id){
-    die("ID de mantenimiento no proporcionado");
+    die("⚠️ ID de mantenimiento no proporcionado");
 }
 
-// Traer mantenimiento
+// Traer mantenimiento + cliente + inventario principal
 $stmt = $pdo->prepare("
-    SELECT m.id, m.titulo, m.fecha, c.nombre AS cliente, c.direccion
+    SELECT m.id, m.titulo, m.fecha,
+           c.nombre AS cliente, c.direccion,
+           i.nombre AS equipo, i.marca, i.modelo, i.serie, i.gas, i.codigo
     FROM mantenimientos m
     LEFT JOIN clientes c ON m.cliente_id = c.id
+    LEFT JOIN inventario i ON m.inventario_id = i.id
     WHERE m.id = ?
 ");
 $stmt->execute([$mantenimiento_id]);
 $datos = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$datos) {
-    die("Mantenimiento no encontrado");
+    die("❌ Mantenimiento con ID=$mantenimiento_id no encontrado en la base de datos.");
 }
 
-// Traer inventarios relacionados (hasta 7)
-$stmt2 = $pdo->prepare("
-    SELECT nombre, marca, modelo, serie, gas, codigo
-    FROM inventario
-    WHERE id IN (
-        SELECT inventario_id FROM mantenimientos_inventario WHERE mantenimiento_id = ?
-    )
-    LIMIT 7
-");
-$stmt2->execute([$mantenimiento_id]);
-$equipos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+// --- Equipos relacionados (si tienes tabla intermedia mantenimientos_inventario) ---
+$equipos = [];
+try {
+    $stmt2 = $pdo->prepare("
+        SELECT nombre, marca, modelo, serie, gas, codigo
+        FROM inventario
+        WHERE id IN (
+            SELECT inventario_id FROM mantenimientos_inventario WHERE mantenimiento_id = ?
+        )
+        LIMIT 7
+    ");
+    $stmt2->execute([$mantenimiento_id]);
+    $equipos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    // Si no existe la tabla intermedia, usamos solo el inventario principal
+    if ($datos['equipo']) {
+        $equipos[] = [
+            'nombre' => $datos['equipo'],
+            'marca' => $datos['marca'],
+            'modelo' => $datos['modelo'],
+            'serie' => $datos['serie'],
+            'gas' => $datos['gas'],
+            'codigo' => $datos['codigo']
+        ];
+    }
+}
 
-// Si no hay equipos, crear 7 vacíos
+// Completar hasta 7 filas vacías
 for($i=count($equipos); $i<7; $i++){
     $equipos[] = ['nombre'=>'','marca'=>'','modelo'=>'','serie'=>'','gas'=>'','codigo'=>''];
 }
 
+// Parámetros de funcionamiento
 $parametros = [
     "Corriente eléctrica nominal (Amperios)" => ['L1','L2','L3'],
-    "Tensión eléctrica nominal (Voltios)" => ['V1','V2','V3'],
-    "Presión de descarga (PSI)" => ['P1','P2','P3'],
-    "Presión de succión (PSI)" => ['S1','S2','S3']
+    "Tensión eléctrica nominal (Voltios)"    => ['V1','V2','V3'],
+    "Presión de descarga (PSI)"              => ['P1','P2','P3'],
+    "Presión de succión (PSI)"               => ['S1','S2','S3']
 ];
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Generar Reporte</title>
+<title>Reporte de Servicio Técnico</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
 canvas { border:1px solid #ccc; width:100%; height:200px; }
@@ -71,8 +90,8 @@ canvas { border:1px solid #ccc; width:100%; height:200px; }
 
 <!-- Datos del cliente -->
 <div class="mb-3">
-<strong>Cliente:</strong> <?= htmlspecialchars($datos['cliente']) ?><br>
-<strong>Dirección:</strong> <?= htmlspecialchars($datos['direccion']) ?><br>
+<strong>Cliente:</strong> <?= htmlspecialchars($datos['cliente'] ?? '') ?><br>
+<strong>Dirección:</strong> <?= htmlspecialchars($datos['direccion'] ?? '') ?><br>
 <strong>Fecha:</strong> <?= $datos['fecha'] ?>
 </div>
 
@@ -82,7 +101,8 @@ canvas { border:1px solid #ccc; width:100%; height:200px; }
 <table class="table table-bordered text-center">
 <thead class="table-light">
 <tr>
-<th>#</th><th>Tipo de Equipo</th><th>Marca</th><th>Modelo</th><th>Ubicación/Serie</th><th>Tipo de Gas</th><th>Código</th>
+<th>#</th><th>Tipo de Equipo</th><th>Marca</th><th>Modelo</th>
+<th>Ubicación/Serie</th><th>Tipo de Gas</th><th>Código</th>
 </tr>
 </thead>
 <tbody>
@@ -150,8 +170,7 @@ canvas { border:1px solid #ccc; width:100%; height:200px; }
 <div class="row">
 <?php
 $firmaCampos = ['Cliente'=>'firmaCliente','Técnico'=>'firmaTecnico','Supervisor'=>'firmaSupervisor'];
-foreach($firmaCampos as $label=>$id):
-?>
+foreach($firmaCampos as $label=>$id): ?>
 <div class="col-md-4 mb-3">
 <label class="form-label">Firma <?= $label ?></label>
 <canvas id="<?= $id ?>"></canvas>
