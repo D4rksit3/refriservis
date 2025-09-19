@@ -1,271 +1,295 @@
 <?php
-require_once __DIR__."/../config/db.php";
+// inventario_equipos.php
+session_start();
+require_once __DIR__ . '/../config/db.php';
 
-// Agregar
-if(isset($_POST['accion']) && $_POST['accion'] == 'agregar'){
+// --- AGREGAR ---
+if (isset($_POST['add'])) {
     $stmt = $pdo->prepare("INSERT INTO equipos 
-        (nombre, descripcion, identificador, colaborador, cliente, categoria, equipo_asociado, estatus, fecha_validacion)
-        VALUES (?,?,?,?,?,?,?,?,?)");
+        (nombre, descripcion, identificador, colaborador, cliente, categoria, equipo_asociado, estatus, planilla_especificaciones, fecha_validacion) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     $stmt->execute([
-        $_POST['nombre'], $_POST['descripcion'], $_POST['identificador'], 
-        $_POST['colaborador'], $_POST['cliente'], $_POST['categoria'], 
-        $_POST['equipo_asociado'], $_POST['estatus'], $_POST['fecha_validacion']
+        $_POST['nombre'], $_POST['descripcion'], $_POST['identificador'],
+        $_POST['colaborador'], $_POST['cliente'], $_POST['categoria'],
+        $_POST['equipo_asociado'], $_POST['estatus'], $_POST['planilla_especificaciones'],
+        $_POST['fecha_validacion']
     ]);
     header("Location: inventario_equipos.php");
     exit;
 }
 
-// Editar
-if(isset($_POST['accion']) && $_POST['accion'] == 'editar'){
+// --- EDITAR ---
+if (isset($_POST['edit'])) {
     $stmt = $pdo->prepare("UPDATE equipos SET 
         nombre=?, descripcion=?, identificador=?, colaborador=?, cliente=?, categoria=?, 
-        equipo_asociado=?, estatus=?, fecha_validacion=? WHERE id_equipo=?");
+        equipo_asociado=?, estatus=?, planilla_especificaciones=?, fecha_validacion=? 
+        WHERE equipo_id=?");
     $stmt->execute([
-        $_POST['nombre'], $_POST['descripcion'], $_POST['identificador'], 
-        $_POST['colaborador'], $_POST['cliente'], $_POST['categoria'], 
-        $_POST['equipo_asociado'], $_POST['estatus'], $_POST['fecha_validacion'], 
-        $_POST['id_equipo']
+        $_POST['nombre'], $_POST['descripcion'], $_POST['identificador'],
+        $_POST['colaborador'], $_POST['cliente'], $_POST['categoria'],
+        $_POST['equipo_asociado'], $_POST['estatus'], $_POST['planilla_especificaciones'],
+        $_POST['fecha_validacion'], $_POST['equipo_id']
     ]);
     header("Location: inventario_equipos.php");
     exit;
 }
 
-// Eliminar
-if(isset($_POST['accion']) && $_POST['accion'] == 'eliminar'){
-    $stmt = $pdo->prepare("DELETE FROM equipos WHERE id_equipo=?");
-    $stmt->execute([$_POST['id_equipo']]);
+// --- ELIMINAR ---
+if (isset($_POST['delete'])) {
+    $stmt = $pdo->prepare("DELETE FROM equipos WHERE equipo_id=?");
+    $stmt->execute([$_POST['equipo_id']]);
     header("Location: inventario_equipos.php");
     exit;
 }
 
-// Paginación
-$limite = 5;
-$pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
-$inicio = ($pagina - 1) * $limite;
+// --- PAGINACIÓN ---
+$limit = 10;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$start = ($page - 1) * $limit;
 
 $total = $pdo->query("SELECT COUNT(*) FROM equipos")->fetchColumn();
-$total_paginas = ceil($total / $limite);
+$pages = ceil($total / $limit);
 
-$stmt = $pdo->prepare("SELECT * FROM equipos ORDER BY id_equipo DESC LIMIT :inicio,:limite");
-$stmt->bindValue(':inicio', $inicio, PDO::PARAM_INT);
-$stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
+$stmt = $pdo->prepare("SELECT * FROM equipos ORDER BY equipo_id DESC LIMIT :start, :limit");
+$stmt->bindValue(':start', $start, PDO::PARAM_INT);
+$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
 $stmt->execute();
 $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
-<?php include("../includes/head.php"); ?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Inventario de Equipos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    
+<!-- HEADER -->
+<nav class="navbar navbar-dark bg-primary">
+  <div class="container-fluid">
+    <span class="navbar-brand mb-0 h1">📦 Inventario de Equipos</span>
+  </div>
+</nav>
 
 <div class="container py-4">
-    <h2 class="mb-4">📦 Inventario de Equipos</h2>
 
     <!-- Botón agregar -->
-    <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#modalAgregar">
-        ➕ Agregar Equipo
-    </button>
-
-    <!-- Tabla -->
-    <div class="card shadow">
-        <div class="card-body">
-            <table class="table table-bordered table-hover">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Descripción</th>
-                        <th>Identificador</th>
-                        <th>Colaborador</th>
-                        <th>Cliente</th>
-                        <th>Categoría</th>
-                        <th>Estatus</th>
-                        <th>Fecha Validación</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php foreach($equipos as $eq): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($eq['nombre']) ?></td>
-                        <td><?= htmlspecialchars($eq['descripcion']) ?></td>
-                        <td><?= htmlspecialchars($eq['identificador']) ?></td>
-                        <td><?= htmlspecialchars($eq['colaborador']) ?></td>
-                        <td><?= htmlspecialchars($eq['cliente']) ?></td>
-                        <td><?= htmlspecialchars($eq['categoria']) ?></td>
-                        <td><?= htmlspecialchars($eq['estatus']) ?></td>
-                        <td><?= htmlspecialchars($eq['fecha_validacion']) ?></td>
-                        <td>
-                            <button class="btn btn-primary btn-sm" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#modalEditar<?= $eq['id_equipo'] ?>">✏️</button>
-                            <button class="btn btn-danger btn-sm" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#modalEliminar<?= $eq['id_equipo'] ?>">🗑️</button>
-                        </td>
-                    </tr>
-
-                    <!-- Modal Editar -->
-                    <div class="modal fade" id="modalEditar<?= $eq['id_equipo'] ?>" tabindex="-1">
-                      <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                          <form method="POST">
-                            <div class="modal-header bg-primary text-white">
-                              <h5 class="modal-title">Editar Equipo</h5>
-                              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                              <input type="hidden" name="accion" value="editar">
-                              <input type="hidden" name="id_equipo" value="<?= $eq['id_equipo'] ?>">
-                              <div class="row g-2">
-                                <div class="col-md-6">
-                                  <label class="form-label">Nombre</label>
-                                  <input type="text" class="form-control" name="nombre" value="<?= $eq['nombre'] ?>" required>
-                                </div>
-                                <div class="col-md-6">
-                                  <label class="form-label">Identificador</label>
-                                  <input type="text" class="form-control" name="identificador" value="<?= $eq['identificador'] ?>">
-                                </div>
-                                <div class="col-12">
-                                  <label class="form-label">Descripción</label>
-                                  <textarea class="form-control" name="descripcion"><?= $eq['descripcion'] ?></textarea>
-                                </div>
-                                <div class="col-md-6">
-                                  <label class="form-label">Colaborador</label>
-                                  <input type="text" class="form-control" name="colaborador" value="<?= $eq['colaborador'] ?>">
-                                </div>
-                                <div class="col-md-6">
-                                  <label class="form-label">Cliente</label>
-                                  <input type="text" class="form-control" name="cliente" value="<?= $eq['cliente'] ?>">
-                                </div>
-                                <div class="col-md-6">
-                                  <label class="form-label">Categoría</label>
-                                  <input type="text" class="form-control" name="categoria" value="<?= $eq['categoria'] ?>">
-                                </div>
-                                <div class="col-md-6">
-                                  <label class="form-label">Equipo Asociado</label>
-                                  <input type="text" class="form-control" name="equipo_asociado" value="<?= $eq['equipo_asociado'] ?>">
-                                </div>
-                                <div class="col-md-6">
-                                  <label class="form-label">Estatus</label>
-                                  <select name="estatus" class="form-select">
-                                    <option <?= $eq['estatus']=="Activo"?"selected":"" ?>>Activo</option>
-                                    <option <?= $eq['estatus']=="Inactivo"?"selected":"" ?>>Inactivo</option>
-                                    <option <?= $eq['estatus']=="En Mantenimiento"?"selected":"" ?>>En Mantenimiento</option>
-                                  </select>
-                                </div>
-                                <div class="col-md-6">
-                                  <label class="form-label">Fecha Validación</label>
-                                  <input type="date" class="form-control" name="fecha_validacion" value="<?= $eq['fecha_validacion'] ?>">
-                                </div>
-                              </div>
-                            </div>
-                            <div class="modal-footer">
-                              <button type="submit" class="btn btn-primary">💾 Guardar</button>
-                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">❌ Cancelar</button>
-                            </div>
-                          </form>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Modal Eliminar -->
-                    <div class="modal fade" id="modalEliminar<?= $eq['id_equipo'] ?>" tabindex="-1">
-                      <div class="modal-dialog">
-                        <div class="modal-content">
-                          <form method="POST">
-                            <div class="modal-header bg-danger text-white">
-                              <h5 class="modal-title">Eliminar Equipo</h5>
-                              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                              ¿Seguro que deseas eliminar <b><?= $eq['nombre'] ?></b>?
-                              <input type="hidden" name="accion" value="eliminar">
-                              <input type="hidden" name="id_equipo" value="<?= $eq['id_equipo'] ?>">
-                            </div>
-                            <div class="modal-footer">
-                              <button type="submit" class="btn btn-danger">🗑️ Eliminar</button>
-                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">❌ Cancelar</button>
-                            </div>
-                          </form>
-                        </div>
-                      </div>
-                    </div>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+    <div class="d-flex justify-content-between mb-3">
+        <h2 class="fw-bold">Lista de Equipos</h2>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addModal">➕ Agregar</button>
     </div>
 
-    <!-- Paginación -->
+    <!-- Tabla -->
+    <div class="table-responsive shadow bg-white rounded">
+        <table class="table table-striped align-middle mb-0">
+            <thead class="table-primary">
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Identificador</th>
+                    <th>Colaborador</th>
+                    <th>Cliente</th>
+                    <th>Categoría</th>
+                    <th>Estatus</th>
+                    <th>Fecha Validación</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($equipos as $eq): ?>
+                <tr>
+                    <td><?= $eq['equipo_id'] ?></td>
+                    <td><?= htmlspecialchars($eq['nombre']) ?></td>
+                    <td><?= htmlspecialchars($eq['descripcion']) ?></td>
+                    <td><?= htmlspecialchars($eq['identificador']) ?></td>
+                    <td><?= htmlspecialchars($eq['colaborador']) ?></td>
+                    <td><?= htmlspecialchars($eq['cliente']) ?></td>
+                    <td><?= htmlspecialchars($eq['categoria']) ?></td>
+                    <td><span class="badge bg-<?= $eq['estatus']=='activo'?'success':'secondary' ?>"><?= $eq['estatus'] ?></span></td>
+                    <td><?= $eq['fecha_validacion'] ?></td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#editModal<?= $eq['equipo_id'] ?>">✏️</button>
+                        <button class="btn btn-sm btn-danger" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#deleteModal<?= $eq['equipo_id'] ?>">🗑️</button>
+                    </td>
+                </tr>
+
+                <!-- MODAL EDITAR -->
+                <div class="modal fade" id="editModal<?= $eq['equipo_id'] ?>" tabindex="-1">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="post">
+                                <div class="modal-header bg-warning">
+                                    <h5 class="modal-title">Editar Equipo</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body row g-3">
+                                    <input type="hidden" name="equipo_id" value="<?= $eq['equipo_id'] ?>">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Nombre</label>
+                                        <input type="text" name="nombre" class="form-control" value="<?= $eq['nombre'] ?>">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Descripción</label>
+                                        <input type="text" name="descripcion" class="form-control" value="<?= $eq['descripcion'] ?>">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Identificador</label>
+                                        <input type="text" name="identificador" class="form-control" value="<?= $eq['identificador'] ?>">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Colaborador</label>
+                                        <input type="text" name="colaborador" class="form-control" value="<?= $eq['colaborador'] ?>">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Cliente</label>
+                                        <input type="text" name="cliente" class="form-control" value="<?= $eq['cliente'] ?>">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Categoría</label>
+                                        <input type="text" name="categoria" class="form-control" value="<?= $eq['categoria'] ?>">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Equipo asociado</label>
+                                        <input type="text" name="equipo_asociado" class="form-control" value="<?= $eq['equipo_asociado'] ?>">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Estatus</label>
+                                        <select name="estatus" class="form-select">
+                                            <option value="activo" <?= $eq['estatus']=='activo'?'selected':'' ?>>Activo</option>
+                                            <option value="inactivo" <?= $eq['estatus']=='inactivo'?'selected':'' ?>>Inactivo</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Planilla Especificaciones</label>
+                                        <textarea name="planilla_especificaciones" class="form-control"><?= $eq['planilla_especificaciones'] ?></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Fecha de Validación</label>
+                                        <input type="date" name="fecha_validacion" class="form-control" value="<?= $eq['fecha_validacion'] ?>">
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" name="edit" class="btn btn-warning">Guardar Cambios</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL ELIMINAR -->
+                <div class="modal fade" id="deleteModal<?= $eq['equipo_id'] ?>" tabindex="-1">
+                    <div class="modal-dialog modal-sm modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="post">
+                                <input type="hidden" name="equipo_id" value="<?= $eq['equipo_id'] ?>">
+                                <div class="modal-header bg-danger text-white">
+                                    <h5 class="modal-title">Eliminar</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    ¿Seguro que deseas eliminar <strong><?= $eq['nombre'] ?></strong>?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" name="delete" class="btn btn-danger">Eliminar</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PAGINACIÓN -->
     <nav class="mt-3">
-      <ul class="pagination">
-        <?php for($i=1;$i<=$total_paginas;$i++): ?>
-          <li class="page-item <?= ($i==$pagina)?'active':'' ?>">
-            <a class="page-link" href="?pagina=<?= $i ?>"><?= $i ?></a>
-          </li>
-        <?php endfor; ?>
-      </ul>
+        <ul class="pagination justify-content-center">
+            <?php for($i=1; $i <= $pages; $i++): ?>
+                <li class="page-item <?= $i==$page?'active':'' ?>">
+                    <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                </li>
+            <?php endfor; ?>
+        </ul>
     </nav>
 </div>
 
-<!-- Modal Agregar -->
-<div class="modal fade" id="modalAgregar" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <form method="POST">
-        <div class="modal-header bg-success text-white">
-          <h5 class="modal-title">Agregar Equipo</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<!-- MODAL AGREGAR -->
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Agregar Equipo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" name="nombre" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Descripción</label>
+                        <input type="text" name="descripcion" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Identificador</label>
+                        <input type="text" name="identificador" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Colaborador</label>
+                        <input type="text" name="colaborador" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Cliente</label>
+                        <input type="text" name="cliente" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Categoría</label>
+                        <input type="text" name="categoria" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Equipo asociado</label>
+                        <input type="text" name="equipo_asociado" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Estatus</label>
+                        <select name="estatus" class="form-select">
+                            <option value="activo">Activo</option>
+                            <option value="inactivo">Inactivo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Planilla Especificaciones</label>
+                        <textarea name="planilla_especificaciones" class="form-control"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Fecha Validación</label>
+                        <input type="date" name="fecha_validacion" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" name="add" class="btn btn-success">Agregar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </form>
         </div>
-        <div class="modal-body">
-          <input type="hidden" name="accion" value="agregar">
-          <div class="row g-2">
-            <div class="col-md-6">
-              <label class="form-label">Nombre</label>
-              <input type="text" class="form-control" name="nombre" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Identificador</label>
-              <input type="text" class="form-control" name="identificador">
-            </div>
-            <div class="col-12">
-              <label class="form-label">Descripción</label>
-              <textarea class="form-control" name="descripcion"></textarea>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Colaborador</label>
-              <input type="text" class="form-control" name="colaborador">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Cliente</label>
-              <input type="text" class="form-control" name="cliente">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Categoría</label>
-              <input type="text" class="form-control" name="categoria">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Equipo Asociado</label>
-              <input type="text" class="form-control" name="equipo_asociado">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Estatus</label>
-              <select name="estatus" class="form-select">
-                <option>Activo</option>
-                <option>Inactivo</option>
-                <option>En Mantenimiento</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Fecha Validación</label>
-              <input type="date" class="form-control" name="fecha_validacion">
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-success">💾 Guardar</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">❌ Cancelar</button>
-        </div>
-      </form>
     </div>
-  </div>
 </div>
 
-<?php include("../includes/foot.php"); ?>
+<!-- FOOTER -->
+<footer class="bg-primary text-white text-center py-2 mt-4">
+    <small>&copy; <?= date("Y") ?> Refriservis - Inventario</small>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
