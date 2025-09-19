@@ -1,40 +1,36 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 require_once __DIR__."/../config/db.php";
 
-// Agregar equipo
+// Agregar
 if(isset($_POST['accion']) && $_POST['accion'] == 'agregar'){
     $stmt = $pdo->prepare("INSERT INTO equipos 
-        (nombre, descripcion, identificador, colaborador, cliente, categoria, equipo_asociado, estatus, planilla, fecha_validacion)
-        VALUES (?,?,?,?,?,?,?,?,?,?)");
+        (nombre, descripcion, identificador, colaborador, cliente, categoria, equipo_asociado, estatus, fecha_validacion)
+        VALUES (?,?,?,?,?,?,?,?,?)");
     $stmt->execute([
         $_POST['nombre'], $_POST['descripcion'], $_POST['identificador'], 
         $_POST['colaborador'], $_POST['cliente'], $_POST['categoria'], 
-        $_POST['equipo_asociado'], $_POST['estatus'], $_POST['planilla'], 
-        $_POST['fecha_validacion']
+        $_POST['equipo_asociado'], $_POST['estatus'], $_POST['fecha_validacion']
     ]);
     header("Location: inventario_equipos.php");
     exit;
 }
 
-// Editar equipo
+// Editar
 if(isset($_POST['accion']) && $_POST['accion'] == 'editar'){
     $stmt = $pdo->prepare("UPDATE equipos SET 
         nombre=?, descripcion=?, identificador=?, colaborador=?, cliente=?, categoria=?, 
-        equipo_asociado=?, estatus=?, planilla=?, fecha_validacion=? WHERE id_equipo=?");
+        equipo_asociado=?, estatus=?, fecha_validacion=? WHERE id_equipo=?");
     $stmt->execute([
         $_POST['nombre'], $_POST['descripcion'], $_POST['identificador'], 
         $_POST['colaborador'], $_POST['cliente'], $_POST['categoria'], 
-        $_POST['equipo_asociado'], $_POST['estatus'], $_POST['planilla'], 
-        $_POST['fecha_validacion'], $_POST['id_equipo']
+        $_POST['equipo_asociado'], $_POST['estatus'], $_POST['fecha_validacion'], 
+        $_POST['id_equipo']
     ]);
     header("Location: inventario_equipos.php");
     exit;
 }
 
-// Eliminar equipo
+// Eliminar
 if(isset($_POST['accion']) && $_POST['accion'] == 'eliminar'){
     $stmt = $pdo->prepare("DELETE FROM equipos WHERE id_equipo=?");
     $stmt->execute([$_POST['id_equipo']]);
@@ -47,11 +43,9 @@ $limite = 5;
 $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 $inicio = ($pagina - 1) * $limite;
 
-// Contar total
 $total = $pdo->query("SELECT COUNT(*) FROM equipos")->fetchColumn();
 $total_paginas = ceil($total / $limite);
 
-// Traer equipos
 $stmt = $pdo->prepare("SELECT * FROM equipos ORDER BY id_equipo DESC LIMIT :inicio,:limite");
 $stmt->bindValue(':inicio', $inicio, PDO::PARAM_INT);
 $stmt->bindValue(':limite', $limite, PDO::PARAM_INT);
@@ -59,14 +53,8 @@ $stmt->execute();
 $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Inventario de Equipos</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+<?php include("../includes/head.php"); ?>
+
 <div class="container py-4">
     <h2 class="mb-4">📦 Inventario de Equipos</h2>
 
@@ -88,6 +76,7 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <th>Cliente</th>
                         <th>Categoría</th>
                         <th>Estatus</th>
+                        <th>Fecha Validación</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -101,6 +90,7 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <td><?= htmlspecialchars($eq['cliente']) ?></td>
                         <td><?= htmlspecialchars($eq['categoria']) ?></td>
                         <td><?= htmlspecialchars($eq['estatus']) ?></td>
+                        <td><?= htmlspecialchars($eq['fecha_validacion']) ?></td>
                         <td>
                             <button class="btn btn-primary btn-sm" 
                                 data-bs-toggle="modal" 
@@ -149,16 +139,16 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                   <input type="text" class="form-control" name="categoria" value="<?= $eq['categoria'] ?>">
                                 </div>
                                 <div class="col-md-6">
+                                  <label class="form-label">Equipo Asociado</label>
+                                  <input type="text" class="form-control" name="equipo_asociado" value="<?= $eq['equipo_asociado'] ?>">
+                                </div>
+                                <div class="col-md-6">
                                   <label class="form-label">Estatus</label>
                                   <select name="estatus" class="form-select">
                                     <option <?= $eq['estatus']=="Activo"?"selected":"" ?>>Activo</option>
                                     <option <?= $eq['estatus']=="Inactivo"?"selected":"" ?>>Inactivo</option>
                                     <option <?= $eq['estatus']=="En Mantenimiento"?"selected":"" ?>>En Mantenimiento</option>
                                   </select>
-                                </div>
-                                <div class="col-md-6">
-                                  <label class="form-label">Planilla</label>
-                                  <input type="text" class="form-control" name="planilla" value="<?= $eq['planilla'] ?>">
                                 </div>
                                 <div class="col-md-6">
                                   <label class="form-label">Fecha Validación</label>
@@ -252,16 +242,16 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
               <input type="text" class="form-control" name="categoria">
             </div>
             <div class="col-md-6">
+              <label class="form-label">Equipo Asociado</label>
+              <input type="text" class="form-control" name="equipo_asociado">
+            </div>
+            <div class="col-md-6">
               <label class="form-label">Estatus</label>
               <select name="estatus" class="form-select">
                 <option>Activo</option>
                 <option>Inactivo</option>
                 <option>En Mantenimiento</option>
               </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Planilla</label>
-              <input type="text" class="form-control" name="planilla">
             </div>
             <div class="col-md-6">
               <label class="form-label">Fecha Validación</label>
@@ -278,6 +268,4 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<?php include("../includes/foot.php"); ?>
