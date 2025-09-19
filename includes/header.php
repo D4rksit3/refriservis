@@ -30,10 +30,42 @@ $rol = $_SESSION['rol'] ?? null;
         <?php if($usuario): ?>
           <?php if($rol==='admin'): ?>
             <li class="nav-item"><a class="nav-link" href="/admin/index.php">Dashboard</a></li>
-            <li class="nav-item"><a class="nav-link" href="/admin/usuarios.php">Usuarios</a></li>
-            <li class="nav-item"><a class="nav-link" href="/admin/clientes.php">Clientes</a></li>
-            <li class="nav-item"><a class="nav-link" href="/admin/inventario.php">Inventario</a></li>
-            <li class="nav-item"><a class="nav-link" href="/mantenimientos/listar.php">Mantenimientos</a></li>
+
+            <!-- 🔹 Nuevo apartado: REGISTROS -->
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navRegistros" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Registros
+              </a>
+              <div class="dropdown-menu p-4 shadow-lg border-0" aria-labelledby="navRegistros" style="min-width:700px;">
+                <div class="row">
+
+                  <!-- Clientes -->
+                  <div class="col-md-4">
+                    <h6 class="dropdown-header text-primary">👥 Clientes</h6>
+                    <a class="dropdown-item" href="/admin/clientes.php">Lista de Clientes</a>
+                  </div>
+
+                  <!-- Inventario -->
+                  <div class="col-md-4">
+                    <h6 class="dropdown-header text-primary">📦 Inventario</h6>
+                    <a class="dropdown-item" href="/admin/inventario_equipos.php">Equipos</a>
+                    <a class="dropdown-item" href="/admin/inventario_productos.php">Productos</a>
+                    <a class="dropdown-item" href="/admin/inventario_servicios.php">Servicios</a>
+                  </div>
+
+                  <!-- Usuarios -->
+                  <div class="col-md-4">
+                    <h6 class="dropdown-header text-primary">👤 Usuarios</h6>
+                    <a class="dropdown-item" href="/admin/usuarios.php">Gestión de Usuarios</a>
+                  </div>
+
+                </div>
+              </div>
+            </li>
+
+            <!-- Lo que ya tenías -->
+            <li class="nav-item"><a class="nav-link" href="/admin/mantenimientos.php">Mantenimientos</a></li>
+
           <?php elseif($rol==='digitador'): ?>
             <li class="nav-item"><a class="nav-link" href="/digitador/index.php">Mi Panel</a></li>
             <li class="nav-item"><a class="nav-link" href="/digitador/subir_mantenimiento.php">Subir Mantenimiento (CSV)</a></li>
