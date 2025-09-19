@@ -14,14 +14,7 @@ if ($action === 'download_format') {
   header('Content-Type: text/csv');
   header('Content-Disposition: attachment;filename=clientes_formato.csv');
   $campos = [
-    "Código","Código externo","Nombre","Número de identificación personal/empresarial",
-    "Dirección","Complemento de la dirección","Teléfono corporativo","Email corporativo",
-    "Hablar con","Usuario responsable","Grupos","Segmento","Observación",
-    "Latitud","Longitud","Estatus","Anotación","Grupo de colaboradores responsables",
-    "Última visita","Fecha de Registro","Usuario registro","Email de Cobranza",
-    "Código Postal de Cobranza","Dirección de Cobranza","Número de la dirección de cobranza",
-    "Complemento de la dirección de cobranza","Barrio de la dirección de cobranza",
-    "Ciudad de la dirección de Cobranza","Estado/Provincia/Departamento de Cobranza"
+    "Cliente","Dirección","Teléfono","Responsable","Email","Última visita","Estatus"
   ];
   $out = fopen("php://output","w");
   fputcsv($out, $campos);
@@ -34,10 +27,8 @@ if ($action === 'export_all') {
   header('Content-Type: text/csv');
   header('Content-Disposition: attachment;filename=clientes_export.csv');
   $out = fopen("php://output","w");
-  $stmt = $pdo->query("SELECT * FROM clientes");
-  $header = array_keys($stmt->fetch(PDO::FETCH_ASSOC));
-  fputcsv($out, $header);
-  $stmt = $pdo->query("SELECT * FROM clientes");
+  $stmt = $pdo->query("SELECT cliente,direccion,telefono,responsable,email,ultima_visita,estatus FROM clientes");
+  fputcsv($out, ["Cliente","Dirección","Teléfono","Responsable","Email","Última visita","Estatus"]);
   while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     fputcsv($out, $row);
   }
@@ -52,12 +43,8 @@ if ($action === 'import' && $_SERVER['REQUEST_METHOD']==='POST') {
     $header = fgetcsv($file); // omitir encabezado
 
     $stmt = $pdo->prepare("
-      INSERT INTO clientes 
-      (codigo,codigo_externo,nombre,identificacion,direccion,complemento_direccion,telefono_corporativo,email_corporativo,
-      hablar_con,usuario_responsable,grupos,segmento,observacion,latitud,longitud,estatus,anotacion,grupo_colaboradores,
-      ultima_visita,fecha_registro,usuario_registro,email_cobranza,codigo_postal_cobranza,direccion_cobranza,
-      numero_direccion_cobranza,complemento_direccion_cobranza,barrio_cobranza,ciudad_cobranza,estado_cobranza)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      INSERT INTO clientes (cliente,direccion,telefono,responsable,email,ultima_visita,estatus)
+      VALUES (?,?,?,?,?,?,?)
     ");
 
     while (($row = fgetcsv($file)) !== false) {
@@ -72,12 +59,12 @@ if ($action === 'import' && $_SERVER['REQUEST_METHOD']==='POST') {
 // === Agregar cliente individual ===
 if ($action === 'add' && $_SERVER['REQUEST_METHOD']==='POST') {
   $stmt = $pdo->prepare("
-    INSERT INTO clientes (codigo,codigo_externo,nombre,identificacion,direccion,telefono_corporativo,email_corporativo)
+    INSERT INTO clientes (cliente,direccion,telefono,responsable,email,ultima_visita,estatus)
     VALUES (?,?,?,?,?,?,?)
   ");
   $stmt->execute([
-    $_POST['codigo'], $_POST['codigo_externo'], $_POST['nombre'], $_POST['identificacion'],
-    $_POST['direccion'], $_POST['telefono_corporativo'], $_POST['email_corporativo']
+    $_POST['cliente'], $_POST['direccion'], $_POST['telefono'],
+    $_POST['responsable'], $_POST['email'], $_POST['ultima_visita'], $_POST['estatus']
   ]);
   header("Location: /admin/clientes.php?ok=1");
   exit;
@@ -86,40 +73,27 @@ if ($action === 'add' && $_SERVER['REQUEST_METHOD']==='POST') {
 // === Editar cliente ===
 if ($action === 'edit' && $_SERVER['REQUEST_METHOD']==='POST') {
   $stmt = $pdo->prepare("
-    UPDATE clientes SET codigo=?, codigo_externo=?, nombre=?, identificacion=?, direccion=?, telefono_corporativo=?, email_corporativo=?
+    UPDATE clientes 
+    SET cliente=?, direccion=?, telefono=?, responsable=?, email=?, ultima_visita=?, estatus=?
     WHERE id=?
   ");
   $stmt->execute([
-    $_POST['codigo'], $_POST['codigo_externo'], $_POST['nombre'], $_POST['identificacion'],
-    $_POST['direccion'], $_POST['telefono_corporativo'], $_POST['email_corporativo'], $_POST['id']
+    $_POST['cliente'], $_POST['direccion'], $_POST['telefono'],
+    $_POST['responsable'], $_POST['email'], $_POST['ultima_visita'], $_POST['estatus'], $_POST['id']
   ]);
   header("Location: /admin/clientes.php?ok=1");
   exit;
 }
 
 // === Eliminar cliente ===
-if ($action === 'delete' && $_SERVER['REQUEST_METHOD']==='POST') {
-  $pdo->prepare('DELETE FROM clientes WHERE id=?')->execute([(int)$_POST['id']]);
+if ($action === 'delete' && isset($_GET['id'])) {
+  $pdo->prepare('DELETE FROM clientes WHERE id=?')->execute([(int)$_GET['id']]);
   header('Location: /admin/clientes.php?ok=1'); exit;
 }
 
 // === Listado de clientes ===
 if ($action === 'list') {
-  // Filtro búsqueda y límite
-  $limit = $_GET['limit'] ?? 10;
-  if (!in_array($limit, ['10','20','100'])) $limit = 10;
-
-  $search = $_GET['search'] ?? '';
-  $sql = "SELECT * FROM clientes";
-  $params = [];
-  if ($search) {
-    $sql .= " WHERE nombre LIKE ? OR codigo LIKE ? OR telefono_corporativo LIKE ? OR email_corporativo LIKE ?";
-    $params = ["%$search%", "%$search%", "%$search%", "%$search%"];
-  }
-  $sql .= " ORDER BY id DESC LIMIT $limit";
-  $stmt = $pdo->prepare($sql);
-  $stmt->execute($params);
-  $lista = $stmt->fetchAll();
+  $lista = $pdo->query('SELECT * FROM clientes ORDER BY id DESC')->fetchAll();
   ?>
   <div class="card p-3">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
@@ -132,60 +106,86 @@ if ($action === 'list') {
       </div>
     </div>
 
-    <!-- Filtros -->
-    <form method="get" class="row g-2 mt-3">
-      <input type="hidden" name="action" value="list">
-      <div class="col-md-3">
-        <select name="limit" class="form-select" onchange="this.form.submit()">
-          <option value="10" <?=$limit==10?'selected':''?>>10 clientes</option>
-          <option value="20" <?=$limit==20?'selected':''?>>20 clientes</option>
-          <option value="100" <?=$limit==100?'selected':''?>>100 clientes</option>
-        </select>
-      </div>
-      <div class="col-md-6">
-        <input type="text" name="search" class="form-control" placeholder="Buscar cliente..." value="<?=htmlspecialchars($search)?>">
-      </div>
-      <div class="col-md-3">
-        <button class="btn btn-outline-secondary w-100">Buscar</button>
-      </div>
-    </form>
-
-    <!-- Tabla -->
     <div class="table-responsive mt-3">
-      <table class="table table-striped table-sm align-middle">
+      <table id="tablaClientes" class="table table-striped table-sm align-middle">
         <thead class="table-light">
           <tr>
-            <th>ID</th><th>Código</th><th>Nombre</th><th>Teléfono</th><th>Email</th><th></th>
+            <th>Cliente</th>
+            <th>Dirección</th>
+            <th>Teléfono</th>
+            <th>Responsable</th>
+            <th>Email</th>
+            <th>Última visita</th>
+            <th>Estatus</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           <?php foreach($lista as $c): ?>
             <tr>
-              <td><?=$c['id']?></td>
-              <td><?=htmlspecialchars($c['codigo'])?></td>
-              <td><?=htmlspecialchars($c['nombre'])?></td>
-              <td><?=htmlspecialchars($c['telefono_corporativo'])?></td>
-              <td><?=htmlspecialchars($c['email_corporativo'])?></td>
+              <td><?=htmlspecialchars($c['cliente'])?></td>
+              <td><?=htmlspecialchars($c['direccion'])?></td>
+              <td><?=htmlspecialchars($c['telefono'])?></td>
+              <td><?=htmlspecialchars($c['responsable'])?></td>
+              <td><?=htmlspecialchars($c['email'])?></td>
+              <td><?=htmlspecialchars($c['ultima_visita'])?></td>
+              <td><?=htmlspecialchars($c['estatus'])?></td>
               <td class="text-end">
-                <button class="btn btn-sm btn-outline-warning"
-                  data-bs-toggle="modal"
-                  data-bs-target="#modalEdit"
-                  data-id="<?=$c['id']?>"
-                  data-codigo="<?=$c['codigo']?>"
-                  data-codigo_externo="<?=$c['codigo_externo']?>"
-                  data-nombre="<?=$c['nombre']?>"
-                  data-identificacion="<?=$c['identificacion']?>"
-                  data-direccion="<?=$c['direccion']?>"
-                  data-telefono="<?=$c['telefono_corporativo']?>"
-                  data-email="<?=$c['email_corporativo']?>">Editar</button>
-
-                <button class="btn btn-sm btn-outline-danger"
-                  data-bs-toggle="modal"
-                  data-bs-target="#modalDelete"
-                  data-id="<?=$c['id']?>"
-                  data-nombre="<?=$c['nombre']?>">Eliminar</button>
+                <button class="btn btn-sm btn-outline-primary" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#modalEdit<?=$c['id']?>">Editar</button>
+                <button class="btn btn-sm btn-outline-danger" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#modalDelete<?=$c['id']?>">Eliminar</button>
               </td>
             </tr>
+
+            <!-- Modal Editar -->
+            <div class="modal fade" id="modalEdit<?=$c['id']?>" tabindex="-1">
+              <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                  <form method="post" action="/admin/clientes.php?action=edit">
+                    <div class="modal-header">
+                      <h5 class="modal-title">Editar Cliente</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body row g-2">
+                      <input type="hidden" name="id" value="<?=$c['id']?>">
+                      <div class="col-12"><label class="form-label">Cliente</label><input class="form-control" name="cliente" value="<?=$c['cliente']?>" required></div>
+                      <div class="col-12"><label class="form-label">Dirección</label><input class="form-control" name="direccion" value="<?=$c['direccion']?>"></div>
+                      <div class="col-6"><label class="form-label">Teléfono</label><input class="form-control" name="telefono" value="<?=$c['telefono']?>"></div>
+                      <div class="col-6"><label class="form-label">Responsable</label><input class="form-control" name="responsable" value="<?=$c['responsable']?>"></div>
+                      <div class="col-12"><label class="form-label">Email</label><input class="form-control" type="email" name="email" value="<?=$c['email']?>"></div>
+                      <div class="col-6"><label class="form-label">Última visita</label><input class="form-control" type="date" name="ultima_visita" value="<?=$c['ultima_visita']?>"></div>
+                      <div class="col-6"><label class="form-label">Estatus</label><input class="form-control" name="estatus" value="<?=$c['estatus']?>"></div>
+                    </div>
+                    <div class="modal-footer">
+                      <button class="btn btn-primary">Guardar cambios</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Modal Eliminar -->
+            <div class="modal fade" id="modalDelete<?=$c['id']?>" tabindex="-1">
+              <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Confirmar eliminación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    ¿Seguro que deseas eliminar al cliente <strong><?=htmlspecialchars($c['cliente'])?></strong>?
+                  </div>
+                  <div class="modal-footer">
+                    <a class="btn btn-danger" href="/admin/clientes.php?action=delete&id=<?=$c['id']?>">Eliminar</a>
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           <?php endforeach; ?>
         </tbody>
       </table>
@@ -202,13 +202,13 @@ if ($action === 'list') {
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body row g-2">
-            <div class="col-6"><label class="form-label">Código</label><input class="form-control" name="codigo"></div>
-            <div class="col-6"><label class="form-label">Código Externo</label><input class="form-control" name="codigo_externo"></div>
-            <div class="col-12"><label class="form-label">Nombre</label><input class="form-control" name="nombre" required></div>
-            <div class="col-12"><label class="form-label">Identificación</label><input class="form-control" name="identificacion"></div>
+            <div class="col-12"><label class="form-label">Cliente</label><input class="form-control" name="cliente" required></div>
             <div class="col-12"><label class="form-label">Dirección</label><input class="form-control" name="direccion"></div>
-            <div class="col-6"><label class="form-label">Teléfono</label><input class="form-control" name="telefono_corporativo"></div>
-            <div class="col-6"><label class="form-label">Email</label><input class="form-control" type="email" name="email_corporativo"></div>
+            <div class="col-6"><label class="form-label">Teléfono</label><input class="form-control" name="telefono"></div>
+            <div class="col-6"><label class="form-label">Responsable</label><input class="form-control" name="responsable"></div>
+            <div class="col-12"><label class="form-label">Email</label><input class="form-control" type="email" name="email"></div>
+            <div class="col-6"><label class="form-label">Última visita</label><input class="form-control" type="date" name="ultima_visita"></div>
+            <div class="col-6"><label class="form-label">Estatus</label><input class="form-control" name="estatus"></div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-primary">Guardar</button>
@@ -239,78 +239,22 @@ if ($action === 'list') {
     </div>
   </div>
 
-  <!-- Modal Editar Cliente -->
-  <div class="modal fade" id="modalEdit" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <form method="post" action="/admin/clientes.php?action=edit">
-          <div class="modal-header">
-            <h5 class="modal-title">Editar Cliente</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body row g-2">
-            <input type="hidden" name="id" id="edit-id">
-            <div class="col-6"><label class="form-label">Código</label><input class="form-control" name="codigo" id="edit-codigo"></div>
-            <div class="col-6"><label class="form-label">Código Externo</label><input class="form-control" name="codigo_externo" id="edit-codigo_externo"></div>
-            <div class="col-12"><label class="form-label">Nombre</label><input class="form-control" name="nombre" id="edit-nombre" required></div>
-            <div class="col-12"><label class="form-label">Identificación</label><input class="form-control" name="identificacion" id="edit-identificacion"></div>
-            <div class="col-12"><label class="form-label">Dirección</label><input class="form-control" name="direccion" id="edit-direccion"></div>
-            <div class="col-6"><label class="form-label">Teléfono</label><input class="form-control" name="telefono_corporativo" id="edit-telefono"></div>
-            <div class="col-6"><label class="form-label">Email</label><input class="form-control" type="email" name="email_corporativo" id="edit-email"></div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-warning">Actualizar</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Eliminar Cliente -->
-  <div class="modal fade" id="modalDelete" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <form method="post" action="/admin/clientes.php?action=delete">
-          <div class="modal-header">
-            <h5 class="modal-title text-danger">Eliminar Cliente</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <input type="hidden" name="id" id="delete-id">
-            <p>¿Seguro que deseas eliminar al cliente <strong id="delete-nombre"></strong>?</p>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button class="btn btn-danger">Eliminar</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
+  <!-- DataTables -->
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+  <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
   <script>
-  // Pasar datos al modal Editar
-  let modalEdit = document.getElementById('modalEdit');
-  modalEdit.addEventListener('show.bs.modal', function (event) {
-    let button = event.relatedTarget;
-    document.getElementById('edit-id').value = button.dataset.id;
-    document.getElementById('edit-codigo').value = button.dataset.codigo;
-    document.getElementById('edit-codigo_externo').value = button.dataset.codigo_externo;
-    document.getElementById('edit-nombre').value = button.dataset.nombre;
-    document.getElementById('edit-identificacion').value = button.dataset.identificacion;
-    document.getElementById('edit-direccion').value = button.dataset.direccion;
-    document.getElementById('edit-telefono').value = button.dataset.telefono;
-    document.getElementById('edit-email').value = button.dataset.email;
-  });
-
-  // Pasar datos al modal Eliminar
-  let modalDelete = document.getElementById('modalDelete');
-  modalDelete.addEventListener('show.bs.modal', function (event) {
-    let button = event.relatedTarget;
-    document.getElementById('delete-id').value = button.dataset.id;
-    document.getElementById('delete-nombre').innerText = button.dataset.nombre;
-  });
+    $(document).ready(function(){
+      $('#tablaClientes').DataTable({
+        "pageLength": 10,
+        "lengthMenu": [10, 20, 100],
+        "language": {
+          "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        }
+      });
+    });
   </script>
+
   <?php
 }
 
