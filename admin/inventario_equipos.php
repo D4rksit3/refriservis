@@ -2,12 +2,9 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+
 // Conexion a la BD
 require_once __DIR__ . '/../config/db.php';
-
-// Listar equipos
-$stmt = $pdo->query("SELECT * FROM equipos ORDER BY id_equipo DESC");
-$equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Procesar formulario (Agregar, Editar, Eliminar)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -15,8 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $accion = $_POST['accion'];
 
         if ($accion === 'agregar') {
-            $sql = "INSERT INTO equipos (nombre, descripcion, identificador, colaborador, cliente, categoria, equipo_asociado, estatus, planilla_especificaciones, fecha_validacion) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO equipos 
+                (nombre, descripcion, identificador, colaborador, cliente, categoria, equipo_asociado, estatus, planilla_especificaciones, fecha_validacion) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 $_POST['nombre'],
@@ -33,7 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($accion === 'editar') {
-            $sql = "UPDATE equipos SET nombre=?, descripcion=?, identificador=?, colaborador=?, cliente=?, categoria=?, equipo_asociado=?, estatus=?, planilla_especificaciones=?, fecha_validacion=? WHERE id_equipo=?";
+            $sql = "UPDATE equipos 
+                SET nombre=?, descripcion=?, identificador=?, colaborador=?, cliente=?, categoria=?, equipo_asociado=?, estatus=?, planilla_especificaciones=?, fecha_validacion=? 
+                WHERE id_equipo=?";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 $_POST['nombre'],
@@ -60,6 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 }
+
+// Listar equipos
+$stmt = $pdo->query("SELECT * FROM equipos ORDER BY id_equipo DESC");
+$equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -159,7 +163,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Estatus</label>
-                  <input type="text" name="estatus" value="<?= $e['estatus'] ?>" class="form-control">
+                  <select name="estatus" class="form-select">
+                    <option value="Activo" <?= $e['estatus']=='Activo'?'selected':'' ?>>Activo</option>
+                    <option value="Inactivo" <?= $e['estatus']=='Inactivo'?'selected':'' ?>>Inactivo</option>
+                    <option value="Mantenimiento" <?= $e['estatus']=='Mantenimiento'?'selected':'' ?>>Mantenimiento</option>
+                  </select>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Fecha validación</label>
@@ -245,7 +253,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
           <div class="col-md-6">
             <label class="form-label">Estatus</label>
-            <input type="text" name="estatus" class="form-control">
+            <select name="estatus" class="form-select">
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+              <option value="Mantenimiento">Mantenimiento</option>
+            </select>
           </div>
           <div class="col-md-6">
             <label class="form-label">Fecha validación</label>
@@ -266,7 +278,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script>
