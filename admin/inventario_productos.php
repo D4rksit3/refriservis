@@ -4,31 +4,35 @@ include __DIR__.'/../includes/header.php';
 
 // ---- CREAR ----
 if (isset($_POST['crear'])) {
-  $sql = "INSERT INTO productos (nombre, descripcion, categoria, equipo, estatus, stock_actual, stock_minimo, valor_unitario, entrada_stock, planilla_especificaciones, costo_unitario) 
-          VALUES (:nombre,:descripcion,:categoria,:equipo,:estatus,:stock_actual,:stock_minimo,:valor_unitario,:entrada_stock,:planilla_especificaciones,:costo_unitario)";
-  $stmt = $pdo->prepare($sql);
-  $stmt->execute($_POST);
-  header("Location: productos.php");
-  exit;
+    $sql = "INSERT INTO productos 
+        (nombre, descripcion, categoria, equipo, estatus, stock_actual, stock_minimo, valor_unitario, entrada_stock, planilla_especificaciones, costo_unitario) 
+        VALUES 
+        (:nombre,:descripcion,:categoria,:equipo,:estatus,:stock_actual,:stock_minimo,:valor_unitario,:entrada_stock,:planilla_especificaciones,:costo_unitario)";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($_POST);
+    header("Location: productos.php");
+    exit;
 }
 
 // ---- EDITAR ----
 if (isset($_POST['editar'])) {
-  $sql = "UPDATE productos SET nombre=:nombre, descripcion=:descripcion, categoria=:categoria, equipo=:equipo, estatus=:estatus, 
-          stock_actual=:stock_actual, stock_minimo=:stock_minimo, valor_unitario=:valor_unitario, entrada_stock=:entrada_stock, 
-          planilla_especificaciones=:planilla_especificaciones, costo_unitario=:costo_unitario WHERE id=:id";
-  $stmt = $pdo->prepare($sql);
-  $stmt->execute($_POST);
-  header("Location: productos.php");
-  exit;
+    $sql = "UPDATE productos SET 
+        nombre=:nombre, descripcion=:descripcion, categoria=:categoria, equipo=:equipo, estatus=:estatus, 
+        stock_actual=:stock_actual, stock_minimo=:stock_minimo, valor_unitario=:valor_unitario, entrada_stock=:entrada_stock, 
+        planilla_especificaciones=:planilla_especificaciones, costo_unitario=:costo_unitario 
+        WHERE id_producto=:id_producto";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($_POST);
+    header("Location: productos.php");
+    exit;
 }
 
 // ---- ELIMINAR ----
 if (isset($_GET['eliminar'])) {
-  $stmt = $pdo->prepare("DELETE FROM productos WHERE id=?");
-  $stmt->execute([$_GET['eliminar']]);
-  header("Location: productos.php");
-  exit;
+    $stmt = $pdo->prepare("DELETE FROM productos WHERE id_producto=?");
+    $stmt->execute([$_GET['eliminar']]);
+    header("Location: productos.php");
+    exit;
 }
 
 // ---- LISTAR ----
@@ -44,7 +48,7 @@ if ($busqueda) $stmt_count->execute([':busqueda'=>"%$busqueda%"]); else $stmt_co
 $total = $stmt_count->fetchColumn();
 $total_paginas = ceil($total/$por_pagina);
 
-$sql = "SELECT * FROM productos $where ORDER BY id DESC LIMIT :offset,:pp";
+$sql = "SELECT * FROM productos $where ORDER BY id_producto DESC LIMIT :offset,:pp";
 $stmt = $pdo->prepare($sql);
 if ($busqueda) $stmt->bindValue(':busqueda',"%$busqueda%",PDO::PARAM_STR);
 $stmt->bindValue(':offset',$offset,PDO::PARAM_INT);
@@ -65,7 +69,7 @@ $productos=$stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
   </div>
   <div class="card-body table-responsive">
-    <table class="table table-hover table-striped align-middle">
+    <table id="tablaProductos" class="table table-hover table-striped align-middle">
       <thead class="table-dark">
         <tr>
           <th>Nombre</th>
@@ -98,13 +102,13 @@ $productos=$stmt->fetchAll(PDO::FETCH_ASSOC);
           <td><?=$p['costo_unitario']?></td>
           <td>
             <button class="btn btn-primary btn-sm" 
-              data-bs-toggle="modal" data-bs-target="#modalEditar<?=$p['id']?>">✏️</button>
-            <a href="?eliminar=<?=$p['id']?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Eliminar producto?')">🗑️</a>
+              data-bs-toggle="modal" data-bs-target="#modalEditar<?=$p['id_producto']?>">✏️</button>
+            <a href="?eliminar=<?=$p['id_producto']?>" class="btn btn-danger btn-sm" onclick="return confirm('¿Eliminar producto?')">🗑️</a>
           </td>
         </tr>
 
         <!-- Modal Editar -->
-        <div class="modal fade" id="modalEditar<?=$p['id']?>" tabindex="-1">
+        <div class="modal fade" id="modalEditar<?=$p['id_producto']?>" tabindex="-1">
           <div class="modal-dialog modal-lg">
             <div class="modal-content">
               <form method="post">
@@ -113,9 +117,9 @@ $productos=$stmt->fetchAll(PDO::FETCH_ASSOC);
                   <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body row g-3">
-                  <input type="hidden" name="id" value="<?=$p['id']?>">
+                  <input type="hidden" name="id_producto" value="<?=$p['id_producto']?>">
                   <input type="hidden" name="editar" value="1">
-                  <?php foreach($p as $campo=>$valor): if($campo!='id'): ?>
+                  <?php foreach($p as $campo=>$valor): if($campo!='id_producto'): ?>
                     <div class="col-md-6">
                       <label class="form-label"><?=ucfirst(str_replace("_"," ",$campo))?></label>
                       <input type="text" name="<?=$campo?>" value="<?=htmlspecialchars($valor)?>" class="form-control">
@@ -163,7 +167,17 @@ $productos=$stmt->fetchAll(PDO::FETCH_ASSOC);
           foreach($campos as $c): ?>
             <div class="col-md-6">
               <label class="form-label"><?=ucfirst(str_replace("_"," ",$c))?></label>
-              <input type="text" name="<?=$c?>" class="form-control" required>
+              <?php if($c=='estatus'): ?>
+                <select name="estatus" class="form-select">
+                  <option value="Disponible">Disponible</option>
+                  <option value="Agotado">Agotado</option>
+                  <option value="Mantenimiento">Mantenimiento</option>
+                </select>
+              <?php elseif(in_array($c,['entrada_stock'])): ?>
+                <input type="date" name="<?=$c?>" class="form-control">
+              <?php else: ?>
+                <input type="text" name="<?=$c?>" class="form-control" required>
+              <?php endif; ?>
             </div>
           <?php endforeach; ?>
         </div>
@@ -175,20 +189,18 @@ $productos=$stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
   </div>
 </div>
+
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
 <script>
   $(document).ready(function() {
-    // Inicializar DataTables con español y 10 filas por página
-    $('table').DataTable({
+    $('#tablaProductos').DataTable({
       pageLength: 10,
       lengthChange: false,
-      language: {
-        url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-      }
+      language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" }
     });
   });
 </script>
+
 <?php include __DIR__.'/../includes/footer.php'; ?>
