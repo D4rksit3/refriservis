@@ -189,31 +189,72 @@ function initFirma(canvasId, inputId) {
     const canvas = document.getElementById(canvasId);
     const input = document.getElementById(inputId);
     const ctx = canvas.getContext("2d");
+
+    // Escalar canvas para pantallas móviles/retina
+    function resizeCanvas() {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        ctx.scale(ratio, ratio);
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
     let dibujando = false;
-    canvas.addEventListener("mousedown",()=>dibujando=true);
-    canvas.addEventListener("mouseup",()=>{
-        dibujando=false;
-        input.value=canvas.toDataURL("image/png");
-    });
-    canvas.addEventListener("mousemove",(e)=>{
-        if(!dibujando) return;
-        ctx.lineWidth=2;
-        ctx.lineCap="round";
-        ctx.strokeStyle="black";
-        ctx.lineTo(e.offsetX,e.offsetY);
+
+    function startDraw(x, y) {
+        dibujando = true;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+    function draw(x, y) {
+        if (!dibujando) return;
+        ctx.lineWidth = 2;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "black";
+        ctx.lineTo(x, y);
         ctx.stroke();
         ctx.beginPath();
-        ctx.moveTo(e.offsetX,e.offsetY);
+        ctx.moveTo(x, y);
+    }
+    function endDraw() {
+        if (dibujando) {
+            dibujando = false;
+            input.value = canvas.toDataURL("image/png");
+        }
+    }
+
+    // Eventos para mouse
+    canvas.addEventListener("mousedown", e => startDraw(e.offsetX, e.offsetY));
+    canvas.addEventListener("mousemove", e => draw(e.offsetX, e.offsetY));
+    canvas.addEventListener("mouseup", endDraw);
+    canvas.addEventListener("mouseout", endDraw);
+
+    // Eventos para touch
+    canvas.addEventListener("touchstart", e => {
+        const rect = canvas.getBoundingClientRect();
+        const t = e.touches[0];
+        startDraw(t.clientX - rect.left, t.clientY - rect.top);
     });
+    canvas.addEventListener("touchmove", e => {
+        const rect = canvas.getBoundingClientRect();
+        const t = e.touches[0];
+        draw(t.clientX - rect.left, t.clientY - rect.top);
+        e.preventDefault();
+    });
+    canvas.addEventListener("touchend", endDraw);
 }
-function limpiarFirma(canvasId){
-    const canvas=document.getElementById(canvasId);
-    const ctx=canvas.getContext("2d");
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+function limpiarFirma(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
+
 <?php foreach($firmaCampos as $label=>$id): ?>
 initFirma("<?= $id ?>","<?= $id ?>Input");
 <?php endforeach; ?>
 </script>
+
 </body>
 </html>
