@@ -1,215 +1,317 @@
 <?php
 // admin/clientes.php
 session_start();
-if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'admin') {
-  header('Location: /index.php');
-  exit;
+if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'admin') { 
+  header('Location: /index.php'); exit; 
 }
 require_once __DIR__.'/../config/db.php';
 require_once __DIR__.'/../includes/header.php';
 
-// Consultar clientes
-$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
-if (!in_array($limit, [10, 20, 100])) $limit = 10;
+$action = $_GET['action'] ?? 'list';
 
-$search = $_GET['search'] ?? '';
-$sql = "SELECT * FROM clientes";
-$params = [];
-
-if ($search) {
-    $sql .= " WHERE cliente LIKE ? OR direccion LIKE ? OR telefono LIKE ? OR responsable LIKE ? OR email LIKE ?";
-    $params = ["%$search%", "%$search%", "%$search%", "%$search%", "%$search%"];
+// === Exportar formato vacío ===
+if ($action === 'download_format') {
+  header('Content-Type: text/csv');
+  header('Content-Disposition: attachment;filename=clientes_formato.csv');
+  $campos = [
+    "Código","Código externo","Nombre","Número de identificación personal/empresarial",
+    "Dirección","Complemento de la dirección","Teléfono corporativo","Email corporativo",
+    "Hablar con","Usuario responsable","Grupos","Segmento","Observación",
+    "Latitud","Longitud","Estatus","Anotación","Grupo de colaboradores responsables",
+    "Última visita","Fecha de Registro","Usuario registro","Email de Cobranza",
+    "Código Postal de Cobranza","Dirección de Cobranza","Número de la dirección de cobranza",
+    "Complemento de la dirección de cobranza","Barrio de la dirección de cobranza",
+    "Ciudad de la dirección de Cobranza","Estado/Provincia/Departamento de Cobranza"
+  ];
+  $out = fopen("php://output","w");
+  fputcsv($out, $campos);
+  fclose($out);
+  exit;
 }
-$sql .= " ORDER BY ultima_visita DESC LIMIT ?";
-$params[] = $limit;
 
-$stmt = $pdo->prepare($sql);
-$stmt->execute($params);
-$clientes = $stmt->fetchAll(PDO::FETCH_ASSOC);
-?>
+// === Exportar todos los clientes ===
+if ($action === 'export_all') {
+  header('Content-Type: text/csv');
+  header('Content-Disposition: attachment;filename=clientes_export.csv');
+  $out = fopen("php://output","w");
+  $stmt = $pdo->query("SELECT * FROM clientes");
+  $header = array_keys($stmt->fetch(PDO::FETCH_ASSOC));
+  fputcsv($out, $header);
+  $stmt = $pdo->query("SELECT * FROM clientes");
+  while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    fputcsv($out, $row);
+  }
+  fclose($out);
+  exit;
+}
 
-<div class="container my-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="fw-bold">Gestión de Clientes</h2>
-    <div>
-      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregar">➕ Nuevo Cliente</button>
-      <a href="exportar_clientes.php" class="btn btn-success">📤 Exportar</a>
-    </div>
-  </div>
+// === Importar CSV masivo ===
+if ($action === 'import' && $_SERVER['REQUEST_METHOD']==='POST') {
+  if (is_uploaded_file($_FILES['archivo']['tmp_name'])) {
+    $file = fopen($_FILES['archivo']['tmp_name'], 'r');
+    $header = fgetcsv($file); // omitir encabezado
 
-  <!-- Filtro y búsqueda -->
-  <form method="get" class="row g-2 mb-3">
-    <div class="col-md-3">
-      <select name="limit" class="form-select" onchange="this.form.submit()">
-        <option value="10" <?= $limit==10?'selected':'' ?>>Últimos 10</option>
-        <option value="20" <?= $limit==20?'selected':'' ?>>Últimos 20</option>
-        <option value="100" <?= $limit==100?'selected':'' ?>>Últimos 100</option>
-      </select>
-    </div>
-    <div class="col-md-6">
-      <input type="text" name="search" value="<?=htmlspecialchars($search)?>" class="form-control" placeholder="Buscar cliente, dirección, teléfono...">
-    </div>
-    <div class="col-md-3">
-      <button class="btn btn-outline-secondary w-100">Buscar</button>
-    </div>
-  </form>
+    $stmt = $pdo->prepare("
+      INSERT INTO clientes 
+      (codigo,codigo_externo,nombre,identificacion,direccion,complemento_direccion,telefono_corporativo,email_corporativo,
+      hablar_con,usuario_responsable,grupos,segmento,observacion,latitud,longitud,estatus,anotacion,grupo_colaboradores,
+      ultima_visita,fecha_registro,usuario_registro,email_cobranza,codigo_postal_cobranza,direccion_cobranza,
+      numero_direccion_cobranza,complemento_direccion_cobranza,barrio_cobranza,ciudad_cobranza,estado_cobranza)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    ");
 
-  <!-- Tabla -->
-  <div class="table-responsive shadow rounded">
-    <table class="table table-hover align-middle">
-      <thead class="table-dark">
-        <tr>
-          <th>Cliente</th>
-          <th>Dirección</th>
-          <th>Teléfono</th>
-          <th>Responsable</th>
-          <th>Email</th>
-          <th>Última Visita</th>
-          <th>Estatus</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php if ($clientes): ?>
-          <?php foreach ($clientes as $c): ?>
+    while (($row = fgetcsv($file)) !== false) {
+      $stmt->execute($row);
+    }
+    fclose($file);
+    header("Location: /admin/clientes.php?ok=1");
+    exit;
+  }
+}
+
+// === Agregar cliente individual ===
+if ($action === 'add' && $_SERVER['REQUEST_METHOD']==='POST') {
+  $stmt = $pdo->prepare("
+    INSERT INTO clientes (codigo,codigo_externo,nombre,identificacion,direccion,telefono_corporativo,email_corporativo)
+    VALUES (?,?,?,?,?,?,?)
+  ");
+  $stmt->execute([
+    $_POST['codigo'], $_POST['codigo_externo'], $_POST['nombre'], $_POST['identificacion'],
+    $_POST['direccion'], $_POST['telefono_corporativo'], $_POST['email_corporativo']
+  ]);
+  header("Location: /admin/clientes.php?ok=1");
+  exit;
+}
+
+// === Editar cliente ===
+if ($action === 'edit' && $_SERVER['REQUEST_METHOD']==='POST') {
+  $stmt = $pdo->prepare("
+    UPDATE clientes SET codigo=?, codigo_externo=?, nombre=?, identificacion=?, direccion=?, telefono_corporativo=?, email_corporativo=?
+    WHERE id=?
+  ");
+  $stmt->execute([
+    $_POST['codigo'], $_POST['codigo_externo'], $_POST['nombre'], $_POST['identificacion'],
+    $_POST['direccion'], $_POST['telefono_corporativo'], $_POST['email_corporativo'], $_POST['id']
+  ]);
+  header("Location: /admin/clientes.php?ok=1");
+  exit;
+}
+
+// === Eliminar cliente ===
+if ($action === 'delete' && $_SERVER['REQUEST_METHOD']==='POST') {
+  $pdo->prepare('DELETE FROM clientes WHERE id=?')->execute([(int)$_POST['id']]);
+  header('Location: /admin/clientes.php?ok=1'); exit;
+}
+
+// === Listado de clientes ===
+if ($action === 'list') {
+  // Filtro búsqueda y límite
+  $limit = $_GET['limit'] ?? 10;
+  if (!in_array($limit, ['10','20','100'])) $limit = 10;
+
+  $search = $_GET['search'] ?? '';
+  $sql = "SELECT * FROM clientes";
+  $params = [];
+  if ($search) {
+    $sql .= " WHERE nombre LIKE ? OR codigo LIKE ? OR telefono_corporativo LIKE ? OR email_corporativo LIKE ?";
+    $params = ["%$search%", "%$search%", "%$search%", "%$search%"];
+  }
+  $sql .= " ORDER BY id DESC LIMIT $limit";
+  $stmt = $pdo->prepare($sql);
+  $stmt->execute($params);
+  $lista = $stmt->fetchAll();
+  ?>
+  <div class="card p-3">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+      <h5>Clientes</h5>
+      <div class="btn-group mt-2 mt-md-0">
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAdd">+ Nuevo Cliente</button>
+        <a class="btn btn-success btn-sm" href="/admin/clientes.php?action=download_format">Formato CSV</a>
+        <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#modalUpload">Subir Masivo</button>
+        <a class="btn btn-outline-dark btn-sm" href="/admin/clientes.php?action=export_all">Exportar Todos</a>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <form method="get" class="row g-2 mt-3">
+      <input type="hidden" name="action" value="list">
+      <div class="col-md-3">
+        <select name="limit" class="form-select" onchange="this.form.submit()">
+          <option value="10" <?=$limit==10?'selected':''?>>10 clientes</option>
+          <option value="20" <?=$limit==20?'selected':''?>>20 clientes</option>
+          <option value="100" <?=$limit==100?'selected':''?>>100 clientes</option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <input type="text" name="search" class="form-control" placeholder="Buscar cliente..." value="<?=htmlspecialchars($search)?>">
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-outline-secondary w-100">Buscar</button>
+      </div>
+    </form>
+
+    <!-- Tabla -->
+    <div class="table-responsive mt-3">
+      <table class="table table-striped table-sm align-middle">
+        <thead class="table-light">
           <tr>
-            <td><?= htmlspecialchars($c['cliente']) ?></td>
-            <td><?= htmlspecialchars($c['direccion']) ?></td>
-            <td><?= htmlspecialchars($c['telefono']) ?></td>
-            <td><?= htmlspecialchars($c['responsable']) ?></td>
-            <td><?= htmlspecialchars($c['email']) ?></td>
-            <td><?= htmlspecialchars($c['ultima_visita']) ?></td>
-            <td>
-              <span class="badge <?= $c['estatus']=='Activo'?'bg-success':'bg-danger' ?>">
-                <?= htmlspecialchars($c['estatus']) ?>
-              </span>
-            </td>
-            <td>
-              <button class="btn btn-warning btn-sm" 
-                      data-bs-toggle="modal" 
-                      data-bs-target="#modalEditar"
-                      data-id="<?=$c['id']?>"
-                      data-cliente="<?=$c['cliente']?>"
-                      data-direccion="<?=$c['direccion']?>"
-                      data-telefono="<?=$c['telefono']?>"
-                      data-responsable="<?=$c['responsable']?>"
-                      data-email="<?=$c['email']?>"
-                      data-estatus="<?=$c['estatus']?>">✏️ Editar</button>
-
-              <button class="btn btn-danger btn-sm" 
-                      data-bs-toggle="modal" 
-                      data-bs-target="#modalEliminar"
-                      data-id="<?=$c['id']?>"
-                      data-cliente="<?=$c['cliente']?>">🗑️ Eliminar</button>
-            </td>
+            <th>ID</th><th>Código</th><th>Nombre</th><th>Teléfono</th><th>Email</th><th></th>
           </tr>
+        </thead>
+        <tbody>
+          <?php foreach($lista as $c): ?>
+            <tr>
+              <td><?=$c['id']?></td>
+              <td><?=htmlspecialchars($c['codigo'])?></td>
+              <td><?=htmlspecialchars($c['nombre'])?></td>
+              <td><?=htmlspecialchars($c['telefono_corporativo'])?></td>
+              <td><?=htmlspecialchars($c['email_corporativo'])?></td>
+              <td class="text-end">
+                <button class="btn btn-sm btn-outline-warning"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modalEdit"
+                  data-id="<?=$c['id']?>"
+                  data-codigo="<?=$c['codigo']?>"
+                  data-codigo_externo="<?=$c['codigo_externo']?>"
+                  data-nombre="<?=$c['nombre']?>"
+                  data-identificacion="<?=$c['identificacion']?>"
+                  data-direccion="<?=$c['direccion']?>"
+                  data-telefono="<?=$c['telefono_corporativo']?>"
+                  data-email="<?=$c['email_corporativo']?>">Editar</button>
+
+                <button class="btn btn-sm btn-outline-danger"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modalDelete"
+                  data-id="<?=$c['id']?>"
+                  data-nombre="<?=$c['nombre']?>">Eliminar</button>
+              </td>
+            </tr>
           <?php endforeach; ?>
-        <?php else: ?>
-          <tr><td colspan="8" class="text-center text-muted">No hay resultados</td></tr>
-        <?php endif; ?>
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   </div>
-</div>
 
-<!-- Modal Agregar -->
-<div class="modal fade" id="modalAgregar" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <form method="post" action="procesar_cliente.php?action=agregar" class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title">Agregar Cliente</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  <!-- Modal Nuevo Cliente -->
+  <div class="modal fade" id="modalAdd" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form method="post" action="/admin/clientes.php?action=add">
+          <div class="modal-header">
+            <h5 class="modal-title">Nuevo Cliente</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body row g-2">
+            <div class="col-6"><label class="form-label">Código</label><input class="form-control" name="codigo"></div>
+            <div class="col-6"><label class="form-label">Código Externo</label><input class="form-control" name="codigo_externo"></div>
+            <div class="col-12"><label class="form-label">Nombre</label><input class="form-control" name="nombre" required></div>
+            <div class="col-12"><label class="form-label">Identificación</label><input class="form-control" name="identificacion"></div>
+            <div class="col-12"><label class="form-label">Dirección</label><input class="form-control" name="direccion"></div>
+            <div class="col-6"><label class="form-label">Teléfono</label><input class="form-control" name="telefono_corporativo"></div>
+            <div class="col-6"><label class="form-label">Email</label><input class="form-control" type="email" name="email_corporativo"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary">Guardar</button>
+          </div>
+        </form>
       </div>
-      <div class="modal-body row g-3">
-        <div class="col-md-6"><input name="cliente" class="form-control" placeholder="Cliente" required></div>
-        <div class="col-md-6"><input name="direccion" class="form-control" placeholder="Dirección"></div>
-        <div class="col-md-6"><input name="telefono" class="form-control" placeholder="Teléfono"></div>
-        <div class="col-md-6"><input name="responsable" class="form-control" placeholder="Responsable"></div>
-        <div class="col-md-6"><input type="email" name="email" class="form-control" placeholder="Email"></div>
-        <div class="col-md-6">
-          <select name="estatus" class="form-select">
-            <option value="Activo">Activo</option>
-            <option value="Inactivo">Inactivo</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button class="btn btn-primary">Guardar</button>
-      </div>
-    </form>
+    </div>
   </div>
-</div>
 
-<!-- Modal Editar -->
-<div class="modal fade" id="modalEditar" tabindex="-1">
-  <div class="modal-dialog modal-lg">
-    <form method="post" action="procesar_cliente.php?action=editar" class="modal-content">
-      <div class="modal-header bg-warning">
-        <h5 class="modal-title">Editar Cliente</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  <!-- Modal Subir Masivo -->
+  <div class="modal fade" id="modalUpload" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form method="post" enctype="multipart/form-data" action="/admin/clientes.php?action=import">
+          <div class="modal-header">
+            <h5 class="modal-title">Subida Masiva</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p>Selecciona el archivo CSV con el formato correcto.</p>
+            <input type="file" name="archivo" class="form-control" accept=".csv" required>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary">Importar</button>
+          </div>
+        </form>
       </div>
-      <div class="modal-body row g-3">
-        <input type="hidden" name="id" id="edit-id">
-        <div class="col-md-6"><input name="cliente" id="edit-cliente" class="form-control" required></div>
-        <div class="col-md-6"><input name="direccion" id="edit-direccion" class="form-control"></div>
-        <div class="col-md-6"><input name="telefono" id="edit-telefono" class="form-control"></div>
-        <div class="col-md-6"><input name="responsable" id="edit-responsable" class="form-control"></div>
-        <div class="col-md-6"><input type="email" name="email" id="edit-email" class="form-control"></div>
-        <div class="col-md-6">
-          <select name="estatus" id="edit-estatus" class="form-select">
-            <option value="Activo">Activo</option>
-            <option value="Inactivo">Inactivo</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button class="btn btn-warning">Actualizar</button>
-      </div>
-    </form>
+    </div>
   </div>
-</div>
 
-<!-- Modal Eliminar -->
-<div class="modal fade" id="modalEliminar" tabindex="-1">
-  <div class="modal-dialog">
-    <form method="post" action="procesar_cliente.php?action=eliminar" class="modal-content">
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title">Confirmar Eliminación</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  <!-- Modal Editar Cliente -->
+  <div class="modal fade" id="modalEdit" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form method="post" action="/admin/clientes.php?action=edit">
+          <div class="modal-header">
+            <h5 class="modal-title">Editar Cliente</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body row g-2">
+            <input type="hidden" name="id" id="edit-id">
+            <div class="col-6"><label class="form-label">Código</label><input class="form-control" name="codigo" id="edit-codigo"></div>
+            <div class="col-6"><label class="form-label">Código Externo</label><input class="form-control" name="codigo_externo" id="edit-codigo_externo"></div>
+            <div class="col-12"><label class="form-label">Nombre</label><input class="form-control" name="nombre" id="edit-nombre" required></div>
+            <div class="col-12"><label class="form-label">Identificación</label><input class="form-control" name="identificacion" id="edit-identificacion"></div>
+            <div class="col-12"><label class="form-label">Dirección</label><input class="form-control" name="direccion" id="edit-direccion"></div>
+            <div class="col-6"><label class="form-label">Teléfono</label><input class="form-control" name="telefono_corporativo" id="edit-telefono"></div>
+            <div class="col-6"><label class="form-label">Email</label><input class="form-control" type="email" name="email_corporativo" id="edit-email"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-warning">Actualizar</button>
+          </div>
+        </form>
       </div>
-      <div class="modal-body">
-        <p>¿Seguro que deseas eliminar al cliente <strong id="del-cliente"></strong>?</p>
-        <input type="hidden" name="id" id="del-id">
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button class="btn btn-danger">Eliminar</button>
-      </div>
-    </form>
+    </div>
   </div>
-</div>
 
-<script>
-const modalEditar = document.getElementById('modalEditar');
-modalEditar.addEventListener('show.bs.modal', e => {
-  let btn = e.relatedTarget;
-  document.getElementById('edit-id').value = btn.dataset.id;
-  document.getElementById('edit-cliente').value = btn.dataset.cliente;
-  document.getElementById('edit-direccion').value = btn.dataset.direccion;
-  document.getElementById('edit-telefono').value = btn.dataset.telefono;
-  document.getElementById('edit-responsable').value = btn.dataset.responsable;
-  document.getElementById('edit-email').value = btn.dataset.email;
-  document.getElementById('edit-estatus').value = btn.dataset.estatus;
-});
+  <!-- Modal Eliminar Cliente -->
+  <div class="modal fade" id="modalDelete" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <form method="post" action="/admin/clientes.php?action=delete">
+          <div class="modal-header">
+            <h5 class="modal-title text-danger">Eliminar Cliente</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" name="id" id="delete-id">
+            <p>¿Seguro que deseas eliminar al cliente <strong id="delete-nombre"></strong>?</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button class="btn btn-danger">Eliminar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
-const modalEliminar = document.getElementById('modalEliminar');
-modalEliminar.addEventListener('show.bs.modal', e => {
-  let btn = e.relatedTarget;
-  document.getElementById('del-id').value = btn.dataset.id;
-  document.getElementById('del-cliente').textContent = btn.dataset.cliente;
-});
-</script>
+  <script>
+  // Pasar datos al modal Editar
+  let modalEdit = document.getElementById('modalEdit');
+  modalEdit.addEventListener('show.bs.modal', function (event) {
+    let button = event.relatedTarget;
+    document.getElementById('edit-id').value = button.dataset.id;
+    document.getElementById('edit-codigo').value = button.dataset.codigo;
+    document.getElementById('edit-codigo_externo').value = button.dataset.codigo_externo;
+    document.getElementById('edit-nombre').value = button.dataset.nombre;
+    document.getElementById('edit-identificacion').value = button.dataset.identificacion;
+    document.getElementById('edit-direccion').value = button.dataset.direccion;
+    document.getElementById('edit-telefono').value = button.dataset.telefono;
+    document.getElementById('edit-email').value = button.dataset.email;
+  });
 
-<?php require_once __DIR__.'/../includes/footer.php'; ?>
+  // Pasar datos al modal Eliminar
+  let modalDelete = document.getElementById('modalDelete');
+  modalDelete.addEventListener('show.bs.modal', function (event) {
+    let button = event.relatedTarget;
+    document.getElementById('delete-id').value = button.dataset.id;
+    document.getElementById('delete-nombre').innerText = button.dataset.nombre;
+  });
+  </script>
+  <?php
+}
+
+require_once __DIR__.'/../includes/footer.php';
