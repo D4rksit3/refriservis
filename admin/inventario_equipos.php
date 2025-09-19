@@ -1,39 +1,56 @@
-<?php
-require_once __DIR__ . '/../config/db.php';
-
-$stmt = $pdo->query("SELECT id, nombre, modelo, serie FROM inventario_equipos ORDER BY id DESC");
+// Consultar equipos
+$stmt = $pdo->query("SELECT * FROM equipos ORDER BY id_equipo DESC");
 $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-include __DIR__ . '/../includes/header.php';
 ?>
-
-<div class="card shadow-sm">
-  <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-    <h5 class="mb-0">💻 Inventario - Equipos</h5>
-    <a href="inventario_equipos_nuevo.php" class="btn btn-light btn-sm">➕ Nuevo Equipo</a>
-  </div>
-  <div class="card-body">
-    <table class="table table-bordered table-striped align-middle">
-      <thead class="table-success">
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Modelo</th>
-          <th>Serie</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php foreach($equipos as $e): ?>
-          <tr>
-            <td><?=$e['id']?></td>
-            <td><?=htmlspecialchars($e['nombre'])?></td>
-            <td><?=htmlspecialchars($e['modelo'])?></td>
-            <td><?=htmlspecialchars($e['serie'])?></td>
-          </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-  </div>
+<h2 class="mb-4">📌 Equipos</h2>
+<div class="table-responsive">
+<table id="tablaEquipos" class="table table-striped table-hover">
+  <thead class="table-dark">
+    <tr>
+      <th>Nombre</th>
+      <th>Descripción</th>
+      <th>Identificador</th>
+      <th>Colaborador</th>
+      <th>Cliente</th>
+      <th>Categoría</th>
+      <th>Equipo asociado</th>
+      <th>Estatus</th>
+      <th>Planilla de especificaciones</th>
+      <th>Fecha de validación</th>
+    </tr>
+  </thead>
+  <tbody>
+    <?php foreach($equipos as $eq): ?>
+    <tr>
+      <td><?=htmlspecialchars($eq['nombre'])?></td>
+      <td><?=htmlspecialchars($eq['descripcion'])?></td>
+      <td><?=htmlspecialchars($eq['identificador'])?></td>
+      <td><?=htmlspecialchars($eq['colaborador'])?></td>
+      <td><?=htmlspecialchars($eq['cliente'])?></td>
+      <td><?=htmlspecialchars($eq['categoria'])?></td>
+      <td><?=htmlspecialchars($eq['equipo_asociado'])?></td>
+      <td><?=htmlspecialchars($eq['estatus'])?></td>
+      <td><?=htmlspecialchars($eq['planilla_especificaciones'])?></td>
+      <td><?=htmlspecialchars($eq['fecha_validacion'])?></td>
+    </tr>
+    <?php endforeach; ?>
+  </tbody>
+</table>
 </div>
 
-<?php include __DIR__ . '/../includes/footer.php'; ?>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+  $(document).ready(function() {
+    // Inicializar DataTables con español y 10 filas por página
+    $('table').DataTable({
+      pageLength: 10,
+      lengthChange: false,
+      language: {
+        url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+      }
+    });
+  });
+</script>
