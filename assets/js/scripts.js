@@ -1,4 +1,4 @@
-<script>
+
 $(document).ready(function () {
   // Inicializar DataTable con AJAX
   var tabla = $('#tablaEquipos').DataTable({
@@ -40,4 +40,3 @@ $(document).ready(function () {
     $('#modalEliminar').modal('show');
   });
 });
-</script>
