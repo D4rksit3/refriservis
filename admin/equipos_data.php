@@ -18,7 +18,7 @@ $stmt = $pdo->query("
         e.Fecha_validad
     FROM equipos e
     LEFT JOIN clientes c ON e.id_cliente = c.id_cliente
-    LEFT JOIN categorias cat ON e.id_categoria = cat.id_categoria
+    LEFT JOIN categoria cat ON e.id_categoria = cat.id_categoria
 ");
 
 $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
