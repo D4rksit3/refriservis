@@ -160,32 +160,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 <?php include __DIR__ . '/../includes/footer.php'; ?>
 
 <script>
-$('#tablaEquipos').DataTable({
+const tabla = new DataTable('#tablaEquipos', {
     processing: true,
     serverSide: true,
     ajax: "inventario_equipos.php?ajax=1",
     pageLength: 10,
     columns: [
         { data: "id_equipo" },
-        { data: "nombre" },
-        { data: "descripcion" },
-        { data: "cliente" },
-        { data: "categoria" },
-        { data: "estatus" },
-        { data: "fecha_validad" },
-        {
-            data: null,
-            render: function (data) {
-                return `
-                <form method="post" style="display:inline-block">
-                    <input type="hidden" name="accion" value="eliminar">
-                    <input type="hidden" name="id_equipo" value="${data.id_equipo}">
-                    <button type="submit" class="btn btn-danger btn-sm">🗑️</button>
-                </form>`;
-            }
-        }
+        { data: "Nombre" },
+        { data: "Descripcion" },
+        { data: "Cliente" },
+        { data: "Categoria" },
+        { data: "Estatus" },
+        { data: "Fecha_validad" },
+        { data: null, render: function (data) {
+            return `
+            <form method="post" style="display:inline-block">
+                <input type="hidden" name="accion" value="eliminar">
+                <input type="hidden" name="id_equipo" value="${data.id_equipo}">
+                <button type="submit" class="btn btn-danger btn-sm">🗑️</button>
+            </form>`;
+        }}
     ],
     language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" }
 });
-
 </script>
