@@ -8,147 +8,46 @@ error_reporting(E_ALL);
 
 require_once __DIR__ . '/../config/db.php';
 include __DIR__ . '/../includes/header.php';
-
-// =====================================
-// MODO AJAX -> Respuesta para DataTables
-// =====================================
-if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
-    $draw = $_GET['draw'] ?? 1;
-    $start = $_GET['start'] ?? 0;
-    $length = $_GET['length'] ?? 10;
-    $search = $_GET['search']['value'] ?? '';
-    $orderCol = $_GET['order'][0]['column'] ?? 0;
-    $orderDir = $_GET['order'][0]['dir'] ?? 'asc';
-
-    $columns = ['id_equipo','Nombre','Descripcion','Cliente','Categoria','Estatus','Fecha_validad'];
-    $orderBy = $columns[$orderCol] ?? 'id_equipo';
-
-    // Total registros
-    $totalQuery = $pdo->query("SELECT COUNT(*) FROM equipos");
-    $totalRecords = $totalQuery->fetchColumn();
-
-    // Filtrado
-    $where = '';
-    $params = [];
-    if (!empty($search)) {
-        $where = "WHERE Nombre LIKE ? OR Descripcion LIKE ? OR Cliente LIKE ? OR Categoria LIKE ? OR Estatus LIKE ?";
-        $params = array_fill(0, 5, "%$search%");
-    }
-
-    // Total filtrado
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM equipos $where");
-    $stmt->execute($params);
-    $filteredRecords = $stmt->fetchColumn();
-
-    // Datos con límite
-    $sql = "SELECT * FROM equipos $where ORDER BY $orderBy $orderDir LIMIT ?, ?";
-    $stmt = $pdo->prepare($sql);
-    foreach ($params as $i => $val) {
-        $stmt->bindValue($i+1, $val, PDO::PARAM_STR);
-    }
-    $stmt->bindValue(count($params)+1, (int)$start, PDO::PARAM_INT);
-    $stmt->bindValue(count($params)+2, (int)$length, PDO::PARAM_INT);
-    $stmt->execute();
-    $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Agregar botones de acción
-    foreach ($data as &$row) {
-        $row['acciones'] = '
-          <button class="btn btn-warning btn-sm btnEditar" 
-            data-id="'.$row['id_equipo'].'"
-            data-nombre="'.htmlspecialchars($row['Nombre']).'"
-            data-descripcion="'.htmlspecialchars($row['Descripcion']).'"
-            data-cliente="'.htmlspecialchars($row['Cliente']).'"
-            data-categoria="'.htmlspecialchars($row['Categoria']).'"
-            data-estatus="'.htmlspecialchars($row['Estatus']).'"
-            data-fecha="'.$row['Fecha_validad'].'">
-            ✏️ Editar
-          </button>
-          <button class="btn btn-danger btn-sm btnEliminar" 
-            data-id="'.$row['id_equipo'].'">
-            🗑️ Eliminar
-          </button>';
-    }
-
-    echo json_encode([
-        "draw" => intval($draw),
-        "recordsTotal" => $totalRecords,
-        "recordsFiltered" => $filteredRecords,
-        "data" => $data
-    ]);
-    exit;
-}
-
-// =====================================
-// CRUD (agregar, editar, eliminar)
-// =====================================
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
-    $accion = $_POST['accion'];
-
-    if ($accion === 'agregar') {
-        $sql = "INSERT INTO equipos (Nombre, Descripcion, Cliente, Categoria, Estatus, Fecha_validad) 
-                VALUES (?, ?, ?, ?, ?, ?)";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            $_POST['Nombre'],
-            $_POST['Descripcion'],
-            $_POST['Cliente'],
-            $_POST['Categoria'],
-            $_POST['Estatus'],
-            $_POST['Fecha_validad']
-        ]);
-    }
-
-    if ($accion === 'editar') {
-        $sql = "UPDATE equipos SET 
-                Nombre=?, Descripcion=?, Cliente=?, Categoria=?, Estatus=?, Fecha_validad=? 
-                WHERE id_equipo=?";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            $_POST['Nombre'],
-            $_POST['Descripcion'],
-            $_POST['Cliente'],
-            $_POST['Categoria'],
-            $_POST['Estatus'],
-            $_POST['Fecha_validad'],
-            $_POST['id_equipo']
-        ]);
-    }
-
-    if ($accion === 'eliminar') {
-        $sql = "DELETE FROM equipos WHERE id_equipo=?";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$_POST['id_equipo']]);
-    }
-}
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2 class="h4">📋 Inventario de Equipos</h2>
-  <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalAgregar">➕ Nuevo</button>
+<div class="container my-4">
+
+  <!-- Título y botón -->
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+    <h2 class="h4 mb-2">📋 Inventario de Equipos</h2>
+    <button class="btn btn-success btn-sm mb-2" data-bs-toggle="modal" data-bs-target="#modalAgregar">
+      ➕ Nuevo
+    </button>
+  </div>
+
+  <!-- Tabla responsive -->
+  <div class="table-responsive shadow-sm rounded">
+    <table id="tablaEquipos" class="table table-striped table-bordered align-middle">
+      <thead class="table-primary">
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Descripcion</th>
+          <th>Cliente</th>
+          <th>Categoria</th>
+          <th>Estatus</th>
+          <th>Fecha Validación</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
 </div>
 
-<div class="table-responsive shadow-sm">
-  <table id="tablaEquipos" class="table table-striped align-middle">
-    <thead class="table-primary">
-      <tr>
-        <th>ID</th>
-        <th>Nombre</th>
-        <th>Descripcion</th>
-        <th>Cliente</th>
-        <th>Categoria</th>
-        <th>Estatus</th>
-        <th>Fecha Validación</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+<!-- ========================== -->
+<!-- MODALES AGREGAR / EDITAR / ELIMINAR -->
+<!-- ========================== -->
 
 <!-- Modal Agregar -->
 <div class="modal fade" id="modalAgregar" tabindex="-1">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <form method="post">
         <div class="modal-header bg-success text-white">
@@ -180,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
 <!-- Modal Editar -->
 <div class="modal fade" id="modalEditar" tabindex="-1">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <form method="post">
         <div class="modal-header bg-warning">
@@ -212,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
 <!-- Modal Eliminar -->
 <div class="modal fade" id="modalEliminar" tabindex="-1">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <form method="post">
         <div class="modal-header bg-danger text-white">
@@ -233,54 +132,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
   </div>
 </div>
 
-<!-- Scripts -->
+<!-- ========================== -->
+<!-- SCRIPTS -->
+<!-- ========================== -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script>
-$(document).ready(function () {
-  var tabla = $('#tablaEquipos').DataTable({
-    processing: true,
-    serverSide: true,
-    ajax: {
-        url: 'equipos_data.php?ajax=1', // 👈 mismo archivo con ajax=1
-        type: 'GET'
-    },
-    pageLength: 10,
-    lengthMenu: [10, 25, 50, 100],
-    columns: [
-        { data: 'id_equipo' },
-        { data: 'Nombre' },
-        { data: 'Descripcion' },
-        { data: 'Cliente' },
-        { data: 'Categoria' },
-        { data: 'Estatus' },
-        { data: 'Fecha_validad' },
-        { data: 'acciones', orderable: false, searchable: false }
-    ],
-    language: {
-        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
-    }
-  });
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-  // Editar
-  $(document).on('click', '.btnEditar', function () {
-    $('#editId').val($(this).data('id'));
-    $('#editNombre').val($(this).data('nombre'));
-    $('#editDescripcion').val($(this).data('descripcion'));
-    $('#editCliente').val($(this).data('cliente'));
-    $('#editCategoria').val($(this).data('categoria'));
-    $('#editEstatus').val($(this).data('estatus'));
-    $('#editFecha').val($(this).data('fecha'));
-    $('#modalEditar').modal('show');
-  });
 
-  // Eliminar
-  $(document).on('click', '.btnEliminar', function () {
-    $('#deleteId').val($(this).data('id'));
-    $('#modalEliminar').modal('show');
-  });
-});
-</script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>
