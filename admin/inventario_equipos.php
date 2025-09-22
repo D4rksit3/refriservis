@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
               <option>Inactivo</option>
             </select>
           </div>
-          <div class="mb-2"><label>Fecha Validación</label><input type="date" class="form-control" name="fecha_validad"></div>
+          <div class="mb-2"><label>Fecha Validación</label><input type="date" class="form-control" name="Fecha_validad"></div>
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-success">Agregar</button>
