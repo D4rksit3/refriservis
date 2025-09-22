@@ -8,6 +8,8 @@ $(document).ready(function () {
         url: 'inventario_equipos.php?ajax=1',
         type: 'GET'
     },
+    pageLength: 10,
+    lengthMenu: [10, 25, 50, 100],
     columns: [
         { data: 'id_equipo' },
         { data: 'Nombre' },
@@ -17,8 +19,12 @@ $(document).ready(function () {
         { data: 'Estatus' },
         { data: 'Fecha_validad' },
         { data: 'acciones', orderable: false, searchable: false }
-    ]
+    ],
+    language: {
+        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+    }
 });
+
 
   // Editar
   $(document).on('click', '.btnEditar', function () {
