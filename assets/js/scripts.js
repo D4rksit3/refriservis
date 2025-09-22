@@ -58,7 +58,7 @@ $(document).ready(function () {
 
   
 
-######products
+
 
 $(document).ready(function () {
     var tabla = $('#tablaProductos').DataTable({
