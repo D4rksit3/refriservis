@@ -4,29 +4,28 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require_once __DIR__ . '/../config/db.php';
+include __DIR__ . '/../includes/header.php';
 
 // =====================================
-// MODO AJAX -> SOLO JSON PARA DATATABLES
+// MODO AJAX -> Respuesta para DataTables
 // =====================================
 if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
-    header('Content-Type: application/json; charset=utf-8');
-
-    $draw     = $_GET['draw']   ?? 1;
-    $start    = $_GET['start']  ?? 0;
-    $length   = $_GET['length'] ?? 10;
-    $search   = $_GET['search']['value'] ?? '';
+    $draw = $_GET['draw'] ?? 1;
+    $start = $_GET['start'] ?? 0;
+    $length = $_GET['length'] ?? 10;
+    $search = $_GET['search']['value'] ?? '';
     $orderCol = $_GET['order'][0]['column'] ?? 0;
-    $orderDir = $_GET['order'][0]['dir']    ?? 'asc';
+    $orderDir = $_GET['order'][0]['dir'] ?? 'asc';
 
-    $columns  = ['id_equipo','Nombre','Descripcion','Cliente','Categoria','Estatus','Fecha_validad'];
-    $orderBy  = $columns[$orderCol] ?? 'id_equipo';
+    $columns = ['id_equipo','Nombre','Descripcion','Cliente','Categoria','Estatus','Fecha_validad'];
+    $orderBy = $columns[$orderCol] ?? 'id_equipo';
 
     // Total registros
-    $totalQuery    = $pdo->query("SELECT COUNT(*) FROM equipos");
-    $totalRecords  = $totalQuery->fetchColumn();
+    $totalQuery = $pdo->query("SELECT COUNT(*) FROM equipos");
+    $totalRecords = $totalQuery->fetchColumn();
 
     // Filtrado
-    $where  = '';
+    $where = '';
     $params = [];
     if (!empty($search)) {
         $where = "WHERE Nombre LIKE ? OR Descripcion LIKE ? OR Cliente LIKE ? OR Categoria LIKE ? OR Estatus LIKE ?";
@@ -49,12 +48,31 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     $stmt->execute();
     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // JSON limpio
+    // Agregar botones
+    foreach ($data as &$row) {
+        $row['acciones'] = '
+          <button class="btn btn-warning btn-sm btnEditar" 
+            data-id="'.$row['id_equipo'].'"
+            data-nombre="'.$row['Nombre'].'"
+            data-descripcion="'.$row['Descripcion'].'"
+            data-cliente="'.$row['Cliente'].'"
+            data-categoria="'.$row['Categoria'].'"
+            data-estatus="'.$row['Estatus'].'"
+            data-fecha="'.$row['Fecha_validad'].'">
+            ✏️ Editar
+          </button>
+          <button class="btn btn-danger btn-sm btnEliminar" 
+            data-id="'.$row['id_equipo'].'">
+            🗑️ Eliminar
+          </button>';
+    }
+
+    // Respuesta JSON
     echo json_encode([
-        "draw"            => intval($draw),
-        "recordsTotal"    => $totalRecords,
+        "draw" => intval($draw),
+        "recordsTotal" => $totalRecords,
         "recordsFiltered" => $filteredRecords,
-        "data"            => $data
+        "data" => $data
     ]);
     exit;
 }
@@ -101,11 +119,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         $stmt->execute([$_POST['id_equipo']]);
     }
 }
-
-// =====================================
-// HTML NORMAL
-// =====================================
-include __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -163,11 +176,62 @@ include __DIR__ . '/../includes/header.php';
   </div>
 </div>
 
-<!-- jQuery + DataTables -->
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post">
+        <div class="modal-header bg-warning">
+          <h5 class="modal-title">✏️ Editar Equipo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="accion" value="editar">
+          <input type="hidden" name="id_equipo" id="editId">
+          <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" id="editNombre" name="Nombre" required></div>
+          <div class="mb-2"><label>Descripcion</label><textarea class="form-control" id="editDescripcion" name="Descripcion"></textarea></div>
+          <div class="mb-2"><label>Cliente</label><input type="text" class="form-control" id="editCliente" name="Cliente"></div>
+          <div class="mb-2"><label>Categoria</label><input type="text" class="form-control" id="editCategoria" name="Categoria"></div>
+          <div class="mb-2"><label>Estatus</label>
+            <select class="form-select" id="editEstatus" name="Estatus">
+              <option>Activo</option>
+              <option>Inactivo</option>
+            </select>
+          </div>
+          <div class="mb-2"><label>Fecha Validación</label><input type="date" class="form-control" id="editFecha" name="Fecha_validad"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-warning">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Eliminar -->
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">🗑️ Eliminar Equipo</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="accion" value="eliminar">
+          <input type="hidden" name="id_equipo" id="deleteId">
+          <p>¿Estás seguro de que deseas eliminar este equipo?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
 <?php include __DIR__ . '/../includes/footer.php'; ?>
-
-<!-- Scripts propios -->
 <script src="/../assets/js/scripts.js"></script>

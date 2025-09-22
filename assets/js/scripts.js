@@ -1,14 +1,9 @@
-document.addEventListener('DOMContentLoaded', function () {
-    const tabla = document.getElementById('tablaEquipos');
-    if (!tabla) {
-        console.warn("⚠️ No existe la tabla #tablaEquipos en el DOM");
-        return;
-    }
-
-    $('#tablaEquipos').DataTable({
+document.addEventListener("DOMContentLoaded", function(){
+    let tabla = new DataTable('#tablaEquipos', {
         processing: true,
-        serverSide: false,
+        serverSide: true,
         ajax: "inventario_equipos.php?ajax=1",
+        pageLength: 10,
         columns: [
             { data: "id_equipo" },
             { data: "Nombre" },
@@ -17,18 +12,26 @@ document.addEventListener('DOMContentLoaded', function () {
             { data: "Categoria" },
             { data: "Estatus" },
             { data: "Fecha_validad" },
-            {
-                data: null,
-                render: function (data) {
-                    return `
-                        <form method="post" style="display:inline-block">
-                            <input type="hidden" name="accion" value="eliminar">
-                            <input type="hidden" name="id_equipo" value="${data.id_equipo}">
-                            <button type="submit" class="btn btn-danger btn-sm">🗑️</button>
-                        </form>`;
-                }
-            }
+            { data: "acciones" }
         ],
         language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" }
+    });
+
+    // Editar
+    $(document).on("click", ".btnEditar", function(){
+        $("#editId").val($(this).data("id"));
+        $("#editNombre").val($(this).data("nombre"));
+        $("#editDescripcion").val($(this).data("descripcion"));
+        $("#editCliente").val($(this).data("cliente"));
+        $("#editCategoria").val($(this).data("categoria"));
+        $("#editEstatus").val($(this).data("estatus"));
+        $("#editFecha").val($(this).data("fecha"));
+        $("#modalEditar").modal("show");
+    });
+
+    // Eliminar
+    $(document).on("click", ".btnEliminar", function(){
+        $("#deleteId").val($(this).data("id"));
+        $("#modalEliminar").modal("show");
     });
 });
