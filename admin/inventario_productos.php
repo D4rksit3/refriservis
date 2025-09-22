@@ -47,29 +47,26 @@ require_once __DIR__.'/../includes/header.php';
 <div class="modal fade" id="modalAgregar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form method="post" id="formAgregar">
+      <form id="formAgregar" method="post">
         <div class="modal-header bg-success text-white">
           <h5 class="modal-title">➕ Nuevo Producto</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <form id="formAgregar" method="post">
-            <input type="hidden" name="accion" value="agregar">
-            <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" name="Nombre" required></div>
-            <div class="mb-2"><label>Categoria</label><input type="text" class="form-control" name="Categoria"></div>
-            <div class="mb-2"><label>Estatus</label>
-                <select class="form-select" name="Estatus">
-                    <option>Activo</option>
-                    <option>Inactivo</option>
-                </select>
-            </div>
-            <div class="mb-2"><label>Valor Unitario</label><input type="number" class="form-control" name="Valor_unitario"></div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-success">Agregar</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            </div>
-        </form>
-
+          <input type="hidden" name="accion" value="agregar">
+          <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" name="Nombre" required></div>
+          <div class="mb-2"><label>Categoria</label><input type="text" class="form-control" name="Categoria"></div>
+          <div class="mb-2"><label>Estatus</label>
+            <select class="form-select" name="Estatus">
+              <option>Activo</option>
+              <option>Inactivo</option>
+            </select>
+          </div>
+          <div class="mb-2"><label>Valor Unitario</label><input type="number" class="form-control" name="Valor_unitario"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Agregar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         </div>
       </form>
     </div>
@@ -80,7 +77,7 @@ require_once __DIR__.'/../includes/header.php';
 <div class="modal fade" id="modalEditar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form method="post" id="formEditar">
+      <form id="formEditar" method="post">
         <div class="modal-header bg-warning">
           <h5 class="modal-title">✏️ Editar Producto</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -96,7 +93,7 @@ require_once __DIR__.'/../includes/header.php';
               <option>Inactivo</option>
             </select>
           </div>
-          <div class="mb-2"><label>Valor Unitario</label><input type="number" class="form-control" id="editValor" name="Valor_unitario" step="0.01" required></div>
+          <div class="mb-2"><label>Valor Unitario</label><input type="number" class="form-control" id="editValor" name="Valor_unitario"></div>
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-warning">Guardar Cambios</button>
@@ -110,7 +107,7 @@ require_once __DIR__.'/../includes/header.php';
 <div class="modal fade" id="modalEliminar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form method="post" id="formEliminar">
+      <form id="formEliminar" method="post">
         <div class="modal-header bg-danger text-white">
           <h5 class="modal-title">🗑️ Eliminar Producto</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -136,7 +133,71 @@ require_once __DIR__.'/../includes/header.php';
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+<script>
+$(document).ready(function () {
+    var tabla = $('#tablaProductos').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: 'productos_data.php?ajax=1',
+            type: 'GET'
+        },
+        pageLength: 10,
+        lengthMenu: [10,25,50,100],
+        columns: [
+            { data: 'productos_id' },
+            { data: 'Nombre' },
+            { data: 'Categoria' },
+            { data: 'Estatus' },
+            { data: 'Valor_unitario' },
+            { data: 'acciones', orderable:false, searchable:false }
+        ],
+        language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
+    });
 
-<?php include __DIR__ . '/../includes/footer.php'; ?>
+    // AGREGAR
+    $('#formAgregar').submit(function(e){
+        e.preventDefault();
+        $.post('productos_data.php', $(this).serialize(), function(){
+            $('#modalAgregar').modal('hide');
+            tabla.ajax.reload(null,false);
+            $('#formAgregar')[0].reset();
+        });
+    });
+
+    // EDITAR
+    $(document).on('click','.btnEditar', function(){
+        $('#editId').val($(this).data('id'));
+        $('#editNombre').val($(this).data('nombre'));
+        $('#editCategoria').val($(this).data('categoria'));
+        $('#editEstatus').val($(this).data('estatus'));
+        $('#editValor').val($(this).data('valor'));
+        $('#modalEditar').modal('show');
+    });
+
+    $('#formEditar').submit(function(e){
+        e.preventDefault();
+        $.post('productos_data.php', $(this).serialize(), function(){
+            $('#modalEditar').modal('hide');
+            tabla.ajax.reload(null,false);
+        });
+    });
+
+    // ELIMINAR
+    $(document).on('click','.btnEliminar', function(){
+        $('#deleteId').val($(this).data('id'));
+        $('#modalEliminar').modal('show');
+    });
+
+    $('#formEliminar').submit(function(e){
+        e.preventDefault();
+        $.post('productos_data.php', $(this).serialize(), function(){
+            $('#modalEliminar').modal('hide');
+            tabla.ajax.reload(null,false);
+        });
+    });
+});
+</script>
+
+<?php include __DIR__.'/../includes/footer.php'; ?>
