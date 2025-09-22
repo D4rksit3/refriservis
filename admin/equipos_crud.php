@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("DELETE FROM equipos WHERE id_equipo=?");
         $stmt->execute([$id]);
 
-        header("Location: index.php");
+        header("Location: inventario_equipos.php");
         exit;
     }
 }
