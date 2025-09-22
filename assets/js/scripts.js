@@ -57,47 +57,99 @@ $(document).ready(function () {
     });
 
     $(document).ready(function () {
-  // Inicializar DataTable
-  var tabla = $('#tablaProductos').DataTable({
-    processing: true,
-    serverSide: true,
-    ajax: {
-        url: 'productos_data.php?ajax=1',
-        type: 'GET'
-    },
-    pageLength: 10,
-    lengthMenu: [10, 25, 50, 100],
-    columns: [
-        { data: 'productos_id' },
-        { data: 'Nombre' },
-        { data: 'Categoria' },
-        { data: 'Estatus' },
-        { data: 'Valor_unitario' },
-        { data: 'acciones', orderable: false, searchable: false }
-    ],
-    language: {
-        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
-    },
-    responsive: true
-  });
 
-  // Editar
-  $(document).on('click', '.btnEditar', function () {
-    $('#editId').val($(this).data('id'));
-    $('#editNombre').val($(this).data('nombre'));
-    $('#editCategoria').val($(this).data('categoria'));
-    $('#editEstatus').val($(this).data('estatus'));
-    $('#editValor').val($(this).data('valor'));
-    $('#modalEditar').modal('show');
-  });
 
-  // Eliminar
-  $(document).on('click', '.btnEliminar', function () {
-    $('#deleteId').val($(this).data('id'));
-    $('#modalEliminar').modal('show');
-  });
+        $(document).ready(function () {
+    // Inicializar DataTable
+    var tabla = $('#tablaProductos').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url: 'productos_data.php?ajax=1',
+            type: 'GET'
+        },
+        pageLength: 10,
+        lengthMenu: [10,25,50,100],
+        columns: [
+            { data: 'productos_id' },
+            { data: 'Nombre' },
+            { data: 'Categoria' },
+            { data: 'Estatus' },
+            { data: 'Valor_unitario' },
+            { data: 'acciones', orderable: false, searchable: false }
+        ],
+        language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
+    });
+
+    // ---------------------------
+    // AGREGAR registro vía AJAX
+    // ---------------------------
+    $('#formAgregar').submit(function(e) {
+        e.preventDefault(); // evita recargar la página
+        $.ajax({
+            url: 'productos_data.php',
+            type: 'POST',
+            data: $(this).serialize(),
+            success: function(response) {
+                $('#modalAgregar').modal('hide'); // cerrar modal
+                tabla.ajax.reload(null, false); // recargar DataTable sin perder página
+                $('#formAgregar')[0].reset(); // limpiar formulario
+            },
+            error: function(err) {
+                alert('Error al agregar el producto.');
+                console.log(err);
+            }
+        });
+    });
+
+    // ---------------------------
+    // EDITAR
+    // ---------------------------
+    $(document).on('click', '.btnEditar', function () {
+        $('#editId').val($(this).data('id'));
+        $('#editNombre').val($(this).data('nombre'));
+        $('#editCategoria').val($(this).data('categoria'));
+        $('#editEstatus').val($(this).data('estatus'));
+        $('#editValor').val($(this).data('valor'));
+        $('#modalEditar').modal('show');
+    });
+
+    $('#formEditar').submit(function(e){
+        e.preventDefault();
+        $.ajax({
+            url: 'productos_data.php',
+            type: 'POST',
+            data: $(this).serialize(),
+            success: function() {
+                $('#modalEditar').modal('hide');
+                tabla.ajax.reload(null, false);
+            },
+            error: function() { alert('Error al editar'); }
+        });
+    });
+
+    // ---------------------------
+    // ELIMINAR
+    // ---------------------------
+    $(document).on('click', '.btnEliminar', function () {
+        $('#deleteId').val($(this).data('id'));
+        $('#modalEliminar').modal('show');
+    });
+
+    $('#formEliminar').submit(function(e){
+        e.preventDefault();
+        $.ajax({
+            url: 'productos_data.php',
+            type: 'POST',
+            data: $(this).serialize(),
+            success: function() {
+                $('#modalEliminar').modal('hide');
+                tabla.ajax.reload(null, false);
+            },
+            error: function() { alert('Error al eliminar'); }
+        });
+    });
 });
-
 
 
 });
