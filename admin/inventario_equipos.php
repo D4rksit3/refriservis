@@ -158,4 +158,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 </div>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>
-<script src="assets/js/scripts.js"></script>
+<script src="/../assets/js/scripts.js"></script>
