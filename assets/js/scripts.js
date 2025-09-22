@@ -1,9 +1,11 @@
 $(document).ready(function () {
 
-    // Inicializar DataTable solo una vez y guardar la instancia
-    var tabla = null;
+    // ===============================
+    // Tabla Equipos
+    // ===============================
+    var tablaEquipos = null;
     if (!$.fn.DataTable.isDataTable('#tablaEquipos')) {
-        tabla = $('#tablaEquipos').DataTable({
+        tablaEquipos = $('#tablaEquipos').DataTable({
             processing: true,
             serverSide: true,
             ajax: {
@@ -27,14 +29,13 @@ $(document).ready(function () {
             }
         });
     } else {
-        tabla = $('#tablaEquipos').DataTable();
+        tablaEquipos = $('#tablaEquipos').DataTable();
     }
 
-    // Delegated event para Editar
-    $(document).on('click', '.editar', function () {
-        var row = $(this).closest('tr');
-        var data = tabla.row(row).data();
-        if (!data) return; // prevenir errores si fila no existe
+    // Delegated events Equipos
+    $(document).on('click', '#tablaEquipos .editar', function () {
+        var data = tablaEquipos.row($(this).closest('tr')).data();
+        if (!data) return;
 
         $('#editId').val(data.id_equipo);
         $('#editNombre').val(data.Nombre);
@@ -46,83 +47,59 @@ $(document).ready(function () {
         $('#modalEditar').modal('show');
     });
 
-    // Delegated event para Eliminar
-    $(document).on('click', '.eliminar', function () {
-        var row = $(this).closest('tr');
-        var data = tabla.row(row).data();
+    $(document).on('click', '#tablaEquipos .eliminar', function () {
+        var data = tablaEquipos.row($(this).closest('tr')).data();
         if (!data) return;
-
         $('#deleteId').val(data.id_equipo);
         $('#modalEliminar').modal('show');
     });
 
-  
-
-
-
-
-
-
-    var table = $('#tablaProductos').DataTable({
-        "ajax": "productos_data.php",
-        "columns": [
-            { "data": "productos_id" },
-            { "data": "Nombre" },
-            { "data": "Categoria" },
-            { "data": "Estatus" },
-            { "data": "Valor_unitario" },
-            { "data": "acciones", "orderable": false, "searchable": false }
-        ]
-    });
-
-    // Editar modal
-    $('#tablaProductos').on('click', '.editar', function() {
-        var id = $(this).data('id');
-        $.getJSON('productos_data.php', function(data) {
-            var producto = data.data.find(p => p.productos_id == id);
-            if (producto) {
-                $('#editId').val(producto.productos_id);
-                $('#editNombre').val(producto.Nombre);
-                $('#editCategoria').val(producto.Categoria);
-                $('#editEstatus').val(producto.Estatus);
-                $('#editValor').val(producto.Valor_unitario);
-                $('#modalEditar').modal('show');
-            }
+    // ===============================
+    // Tabla Productos
+    // ===============================
+    var tablaProductos = null;
+    if (!$.fn.DataTable.isDataTable('#tablaProductos')) {
+        tablaProductos = $('#tablaProductos').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: 'productos_data.php',
+                type: 'GET'
+            },
+            pageLength: 10,
+            lengthMenu: [10, 25, 50, 100],
+            columns: [
+                { data: 'productos_id' },
+                { data: 'Nombre' },
+                { data: 'Categoria' },
+                { data: 'Estatus' },
+                { data: 'Valor_unitario' },
+                { data: 'acciones', orderable: false, searchable: false }
+            ]
         });
+    } else {
+        tablaProductos = $('#tablaProductos').DataTable();
+    }
+
+    // Delegated events Productos
+    $(document).on('click', '#tablaProductos .editar', function() {
+        var data = tablaProductos.row($(this).closest('tr')).data();
+        if (!data) return;
+
+        $('#editId').val(data.productos_id);
+        $('#editNombre').val(data.Nombre);
+        $('#editCategoria').val(data.Categoria);
+        $('#editEstatus').val(data.Estatus);
+        $('#editValor').val(data.Valor_unitario);
+        $('#modalEditar').modal('show');
     });
 
-    // Eliminar modal
-    $('#tablaProductos').on('click', '.eliminar', function() {
-        var id = $(this).data('id');
-        $('#deleteId').val(id);
+    $(document).on('click', '#tablaProductos .eliminar', function() {
+        var data = tablaProductos.row($(this).closest('tr')).data();
+        if (!data) return;
+
+        $('#deleteId').val(data.productos_id);
         $('#modalEliminar').modal('show');
     });
-
-    
-
-
-
-
-    
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 });
