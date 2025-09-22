@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     $accion = $_POST['accion'];
 
     if ($accion === 'agregar') {
-        $sql = "INSERT INTO equipos (nombre, descripcion, cliente, categoria, estatus, fecha_validacion) 
+        $sql = "INSERT INTO equipos (nombre, descripcion, cliente, categoria, estatus, Fecha_validad) 
                 VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
@@ -19,13 +19,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             $_POST['Cliente'],
             $_POST['Categoria'],
             $_POST['Estatus'],
-            $_POST['Fecha_validacion']
+            $_POST['Fecha_validad']
         ]);
     }
 
     if ($accion === 'editar') {
         $sql = "UPDATE equipos SET 
-                nombre=?, descripcion=?, cliente=?, categoria=?, estatus=?, fecha_validacion=? 
+                nombre=?, descripcion=?, cliente=?, categoria=?, estatus=?, Fecha_validad=? 
                 WHERE id_equipo=?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             $_POST['Cliente'],
             $_POST['Categoria'],
             $_POST['Estatus'],
-            $_POST['Fecha_validacion'],
+            $_POST['Fecha_validad'],
             $_POST['id_equipo']
         ]);
     }
@@ -81,7 +81,7 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
               <?=htmlspecialchars($eq['Estatus'])?>
             </span>
           </td>
-          <td><?=htmlspecialchars($eq['Fecha_validacion'])?></td>
+          <td><?=htmlspecialchars($eq['Fecha_validad'])?></td>
           <td class="text-center">
             <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditar<?=$eq['id_equipo']?>">✏️</button>
             <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalEliminar<?=$eq['id_equipo']?>">🗑️</button>
@@ -110,7 +110,7 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                       <option <?=$eq['Estatus']==='Inactivo'?'selected':''?>>Inactivo</option>
                     </select>
                   </div>
-                  <div class="mb-2"><label>Fecha Validación</label><input type="date" class="form-control" name="fecha_validacion" value="<?=$eq['Fecha_validacion']?>"></div>
+                  <div class="mb-2"><label>Fecha Validación</label><input type="date" class="form-control" name="Fecha_validad" value="<?=$eq['Fecha_validad']?>"></div>
                 </div>
                 <div class="modal-footer">
                   <button type="submit" class="btn btn-warning">Guardar Cambios</button>
@@ -170,7 +170,7 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
               <option>Inactivo</option>
             </select>
           </div>
-          <div class="mb-2"><label>Fecha Validación</label><input type="date" class="form-control" name="fecha_validacion"></div>
+          <div class="mb-2"><label>Fecha Validación</label><input type="date" class="form-control" name="Fecha_validad"></div>
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-success">Agregar</button>
