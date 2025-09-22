@@ -53,11 +53,11 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
         $row['acciones'] = '
           <button class="btn btn-warning btn-sm btnEditar" 
             data-id="'.$row['id_equipo'].'"
-            data-nombre="'.$row['Nombre'].'"
-            data-descripcion="'.$row['Descripcion'].'"
-            data-cliente="'.$row['Cliente'].'"
-            data-categoria="'.$row['Categoria'].'"
-            data-estatus="'.$row['Estatus'].'"
+            data-nombre="'.htmlspecialchars($row['Nombre']).'"
+            data-descripcion="'.htmlspecialchars($row['Descripcion']).'"
+            data-cliente="'.htmlspecialchars($row['Cliente']).'"
+            data-categoria="'.htmlspecialchars($row['Categoria']).'"
+            data-estatus="'.htmlspecialchars($row['Estatus']).'"
             data-fecha="'.$row['Fecha_validad'].'">
             ✏️ Editar
           </button>
@@ -67,7 +67,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
           </button>';
     }
 
-    // Respuesta JSON
     echo json_encode([
         "draw" => intval($draw),
         "recordsTotal" => $totalRecords,
@@ -231,7 +230,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
   </div>
 </div>
 
+<!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+$(document).ready(function () {
+  // Inicializar DataTable con AJAX
+  var tabla = $('#tablaEquipos').DataTable({
+    processing: true,
+    serverSide: true,
+    ajax: 'equipos.php?ajax=1',
+    columns: [
+      { data: 'id_equipo' },
+      { data: 'Nombre' },
+      { data: 'Descripcion' },
+      { data: 'Cliente' },
+      { data: 'Categoria' },
+      { data: 'Estatus' },
+      { data: 'Fecha_validad' },
+      { data: 'acciones', orderable: false, searchable: false }
+    ],
+    pageLength: 10,
+    lengthMenu: [10, 25, 50, 100],
+    language: {
+      url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+    }
+  });
+
+  // Editar
+  $(document).on('click', '.btnEditar', function () {
+    $('#editId').val($(this).data('id'));
+    $('#editNombre').val($(this).data('nombre'));
+    $('#editDescripcion').val($(this).data('descripcion'));
+    $('#editCliente').val($(this).data('cliente'));
+    $('#editCategoria').val($(this).data('categoria'));
+    $('#editEstatus').val($(this).data('estatus'));
+    $('#editFecha').val($(this).data('fecha'));
+    $('#modalEditar').modal('show');
+  });
+
+  // Eliminar
+  $(document).on('click', '.btnEliminar', function () {
+    $('#deleteId').val($(this).data('id'));
+    $('#modalEliminar').modal('show');
+  });
+});
+</script>
+
 <?php include __DIR__ . '/../includes/footer.php'; ?>
-<script src="/../assets/js/scripts.js"></script>
