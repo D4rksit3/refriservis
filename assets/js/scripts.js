@@ -1,8 +1,8 @@
 $(document).ready(function () {
+    // Inicializar DataTable solo UNA vez
     var tabla = $('#tablaEquipos').DataTable({
         processing: true,
         serverSide: true,
-        destroy: true,  // <--- Esto evita el error de reinitialise
         ajax: {
             url: 'equipos_data.php',
             type: 'GET'
@@ -24,10 +24,9 @@ $(document).ready(function () {
         }
     });
 
-    // Editar
+    // Delegación de eventos para botones dentro de DataTable
     $('#tablaEquipos tbody').on('click', '.editar', function () {
-        var tr = $(this).closest('tr');
-        var rowData = tabla.row(tr).data();
+        var rowData = tabla.row($(this).parents('tr')).data();
 
         $('#editId').val(rowData.id_equipo);
         $('#editNombre').val(rowData.Nombre);
@@ -40,10 +39,8 @@ $(document).ready(function () {
         $('#modalEditar').modal('show');
     });
 
-    // Eliminar
     $('#tablaEquipos tbody').on('click', '.eliminar', function () {
-        var tr = $(this).closest('tr');
-        var rowData = tabla.row(tr).data();
+        var rowData = tabla.row($(this).parents('tr')).data();
 
         $('#deleteId').val(rowData.id_equipo);
         $('#modalEliminar').modal('show');
