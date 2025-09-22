@@ -17,7 +17,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     $orderCol = $_GET['order'][0]['column'] ?? 0;
     $orderDir = $_GET['order'][0]['dir'] ?? 'asc';
 
-    $columns = ['id_equipo','Nombre','Descripción','Cliente','Categoría','Estatus','Fecha_validad'];
+    $columns = ['id_equipo','Nombre','Descripcion','Cliente','Categoria','Estatus','Fecha_validad'];
     $orderBy = $columns[$orderCol] ?? 'id_equipo';
 
     // Total registros
@@ -80,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
     if ($accion === 'editar') {
         $sql = "UPDATE equipos SET 
-                Nombre=?, Descripción=?, Cliente=?, Categoría=?, Estatus=?, Fecha_validad=? 
+                Nombre=?, Descripcion=?, Cliente=?, Categoria=?, Estatus=?, Fecha_validad=? 
                 WHERE id_equipo=?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
@@ -113,9 +113,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
       <tr>
         <th>ID</th>
         <th>Nombre</th>
-        <th>Descripción</th>
+        <th>Descripcion</th>
         <th>Cliente</th>
-        <th>Categoría</th>
+        <th>Categoria</th>
         <th>Estatus</th>
         <th>Fecha Validación</th>
         <th>Acciones</th>
@@ -137,9 +137,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         <div class="modal-body">
           <input type="hidden" name="accion" value="agregar">
           <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" name="nombre" required></div>
-          <div class="mb-2"><label>Descripción</label><textarea class="form-control" name="descripcion"></textarea></div>
+          <div class="mb-2"><label>Descripcion</label><textarea class="form-control" name="descripcion"></textarea></div>
           <div class="mb-2"><label>Cliente</label><input type="text" class="form-control" name="cliente"></div>
-          <div class="mb-2"><label>Categoría</label><input type="text" class="form-control" name="categoria"></div>
+          <div class="mb-2"><label>Categoria</label><input type="text" class="form-control" name="categoria"></div>
           <div class="mb-2"><label>Estatus</label>
             <select class="form-select" name="estatus">
               <option>Activo</option>
@@ -168,9 +168,9 @@ const tabla = new DataTable('#tablaEquipos', {
     columns: [
         { data: "id_equipo" },
         { data: "Nombre" },
-        { data: "Descripción" },
+        { data: "Descripcion" },
         { data: "Cliente" },
-        { data: "Categoría" },
+        { data: "Categoria" },
         { data: "Estatus" },
         { data: "Fecha_validad" },
         { data: null, render: function (data) {
