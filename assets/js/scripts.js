@@ -5,7 +5,7 @@ $(document).ready(function () {
     processing: true,
     serverSide: true,
     ajax: {
-        url: 'inventario_equipos.php?ajax=1',
+        url: 'equipos_data.php',
         type: 'GET'
     },
     pageLength: 10,
