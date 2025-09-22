@@ -34,15 +34,11 @@ require_once __DIR__.'/../includes/header.php';
 
 </div>
 
-<!-- ========================== -->
-<!-- MODALES AGREGAR / EDITAR / ELIMINAR -->
-<!-- ========================== -->
-
-<!-- Modal Agregar -->
+<!-- MODAL AGREGAR -->
 <div class="modal fade" id="modalAgregar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form method="post" action="productos_crud.php">
+      <form id="formAgregar">
         <div class="modal-header bg-success text-white">
           <h5 class="modal-title">➕ Nuevo Producto</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -68,11 +64,11 @@ require_once __DIR__.'/../includes/header.php';
   </div>
 </div>
 
-<!-- Modal Editar -->
+<!-- MODAL EDITAR -->
 <div class="modal fade" id="modalEditar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form method="post" action="productos_crud.php">
+      <form id="formEditar">
         <div class="modal-header bg-warning">
           <h5 class="modal-title">✏️ Editar Producto</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -98,11 +94,11 @@ require_once __DIR__.'/../includes/header.php';
   </div>
 </div>
 
-<!-- Modal Eliminar -->
+<!-- MODAL ELIMINAR -->
 <div class="modal fade" id="modalEliminar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form method="post" action="productos_crud.php">
+      <form id="formEliminar">
         <div class="modal-header bg-danger text-white">
           <h5 class="modal-title">🗑️ Eliminar Producto</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -121,14 +117,11 @@ require_once __DIR__.'/../includes/header.php';
   </div>
 </div>
 
-<!-- ========================== -->
 <!-- SCRIPTS -->
-<!-- ========================== -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-
+<script src="scripts_productos.js"></script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

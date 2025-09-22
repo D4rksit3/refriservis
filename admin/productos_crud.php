@@ -5,6 +5,8 @@ error_reporting(E_ALL);
 
 require_once __DIR__.'/../config/db.php';
 
+header('Content-Type: application/json; charset=utf-8');
+
 if($_SERVER['REQUEST_METHOD'] === 'POST'){
     $accion = $_POST['accion'] ?? '';
 
@@ -16,7 +18,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
 
         $stmt = $pdo->prepare("INSERT INTO productos (Nombre, Categoria, Estatus, Valor_unitario) VALUES (?, ?, ?, ?)");
         $stmt->execute([$nombre, $categoria, $estatus, $valor]);
-        header("Location: index.php");
+        echo json_encode(['success'=>true]);
         exit;
     }
 
@@ -29,7 +31,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
 
         $stmt = $pdo->prepare("UPDATE productos SET Nombre=?, Categoria=?, Estatus=?, Valor_unitario=? WHERE productos_id=?");
         $stmt->execute([$nombre, $categoria, $estatus, $valor, $id]);
-        header("Location: index.php");
+        echo json_encode(['success'=>true]);
         exit;
     }
 
@@ -37,7 +39,9 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
         $id = $_POST['productos_id'];
         $stmt = $pdo->prepare("DELETE FROM productos WHERE productos_id=?");
         $stmt->execute([$id]);
-        header("Location: index.php");
+        echo json_encode(['success'=>true]);
         exit;
     }
 }
+
+echo json_encode(['success'=>false]);
