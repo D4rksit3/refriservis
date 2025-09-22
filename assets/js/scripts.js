@@ -56,21 +56,7 @@ $(document).ready(function () {
         $('#modalEliminar').modal('show');
     });
 
-  
 
-
-
-
-
-
-    
-
-    
-
-
-
-
-    
 });
 
 
