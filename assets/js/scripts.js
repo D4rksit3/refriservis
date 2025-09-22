@@ -2,6 +2,7 @@ $(document).ready(function () {
     var tabla = $('#tablaEquipos').DataTable({
         processing: true,
         serverSide: true,
+        destroy: true,  // <--- Esto evita el error de reinitialise
         ajax: {
             url: 'equipos_data.php',
             type: 'GET'
@@ -23,7 +24,7 @@ $(document).ready(function () {
         }
     });
 
-    // EDITAR - delegación para botones creados dinámicamente
+    // Editar
     $('#tablaEquipos tbody').on('click', '.editar', function () {
         var tr = $(this).closest('tr');
         var rowData = tabla.row(tr).data();
@@ -39,7 +40,7 @@ $(document).ready(function () {
         $('#modalEditar').modal('show');
     });
 
-    // ELIMINAR - delegación para botones creados dinámicamente
+    // Eliminar
     $('#tablaEquipos tbody').on('click', '.eliminar', function () {
         var tr = $(this).closest('tr');
         var rowData = tabla.row(tr).data();
