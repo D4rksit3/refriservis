@@ -55,4 +55,49 @@ $(document).ready(function () {
         $('#deleteId').val(data.id_equipo);
         $('#modalEliminar').modal('show');
     });
+
+    $(document).ready(function () {
+  // Inicializar DataTable
+  var tabla = $('#tablaProductos').DataTable({
+    processing: true,
+    serverSide: true,
+    ajax: {
+        url: 'productos_data.php?ajax=1',
+        type: 'GET'
+    },
+    pageLength: 10,
+    lengthMenu: [10, 25, 50, 100],
+    columns: [
+        { data: 'productos_id' },
+        { data: 'Nombre' },
+        { data: 'Categoria' },
+        { data: 'Estatus' },
+        { data: 'Valor_unitario' },
+        { data: 'acciones', orderable: false, searchable: false }
+    ],
+    language: {
+        url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+    },
+    responsive: true
+  });
+
+  // Editar
+  $(document).on('click', '.btnEditar', function () {
+    $('#editId').val($(this).data('id'));
+    $('#editNombre').val($(this).data('nombre'));
+    $('#editCategoria').val($(this).data('categoria'));
+    $('#editEstatus').val($(this).data('estatus'));
+    $('#editValor').val($(this).data('valor'));
+    $('#modalEditar').modal('show');
+  });
+
+  // Eliminar
+  $(document).on('click', '.btnEliminar', function () {
+    $('#deleteId').val($(this).data('id'));
+    $('#modalEliminar').modal('show');
+  });
+});
+
+
+
 });
