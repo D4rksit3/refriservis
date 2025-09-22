@@ -4,23 +4,21 @@ $(document).ready(function () {
   var tabla = $('#tablaEquipos').DataTable({
     processing: true,
     serverSide: true,
-    ajax: 'equipos.php?ajax=1',
+    ajax: {
+        url: 'inventario_equipos.php?ajax=1',
+        type: 'GET'
+    },
     columns: [
-      { data: 'id_equipo' },
-      { data: 'Nombre' },
-      { data: 'Descripcion' },
-      { data: 'Cliente' },
-      { data: 'Categoria' },
-      { data: 'Estatus' },
-      { data: 'Fecha_validad' },
-      { data: 'acciones', orderable: false, searchable: false }
-    ],
-    pageLength: 10,
-    lengthMenu: [10, 25, 50, 100],
-    language: {
-      url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-    }
-  });
+        { data: 'id_equipo' },
+        { data: 'Nombre' },
+        { data: 'Descripcion' },
+        { data: 'Cliente' },
+        { data: 'Categoria' },
+        { data: 'Estatus' },
+        { data: 'Fecha_validad' },
+        { data: 'acciones', orderable: false, searchable: false }
+    ]
+});
 
   // Editar
   $(document).on('click', '.btnEditar', function () {
