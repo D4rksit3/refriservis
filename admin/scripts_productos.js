@@ -1,5 +1,6 @@
 $(document).ready(function(){
 
+    // Inicializar DataTable
     var tabla = $('#tablaProductos').DataTable({
         processing:true,
         serverSide:true,
@@ -18,8 +19,8 @@ $(document).ready(function(){
     // AGREGAR
     $('#formAgregar').submit(function(e){
         e.preventDefault();
-        $.post('productos_crud.php', $(this).serialize(), function(resp){
-            tabla.ajax.reload();
+        $.post('productos_crud.php', $(this).serialize(), function(){
+            tabla.ajax.reload(null,false);
             $('#modalAgregar').modal('hide');
             $('#formAgregar')[0].reset();
         });
@@ -36,7 +37,8 @@ $(document).ready(function(){
                 $('#editCategoria').val(producto.Categoria);
                 $('#editEstatus').val(producto.Estatus);
                 $('#editValor').val(producto.Valor_unitario);
-                $('#modalEditar').modal('show');
+                var modal = new bootstrap.Modal(document.getElementById('modalEditar'));
+                modal.show();
             }
         });
     });
@@ -44,9 +46,10 @@ $(document).ready(function(){
     // EDITAR - enviar
     $('#formEditar').submit(function(e){
         e.preventDefault();
-        $.post('productos_crud.php', $(this).serialize(), function(resp){
-            tabla.ajax.reload();
-            $('#modalEditar').modal('hide');
+        $.post('productos_crud.php', $(this).serialize(), function(){
+            tabla.ajax.reload(null,false);
+            var modal = bootstrap.Modal.getInstance(document.getElementById('modalEditar'));
+            modal.hide();
         });
     });
 
@@ -54,15 +57,17 @@ $(document).ready(function(){
     $('#tablaProductos').on('click', '.eliminar', function(){
         var id = $(this).data('id');
         $('#deleteId').val(id);
-        $('#modalEliminar').modal('show');
+        var modal = new bootstrap.Modal(document.getElementById('modalEliminar'));
+        modal.show();
     });
 
     // ELIMINAR - enviar
     $('#formEliminar').submit(function(e){
         e.preventDefault();
-        $.post('productos_crud.php', $(this).serialize(), function(resp){
-            tabla.ajax.reload();
-            $('#modalEliminar').modal('hide');
+        $.post('productos_crud.php', $(this).serialize(), function(){
+            tabla.ajax.reload(null,false);
+            var modal = bootstrap.Modal.getInstance(document.getElementById('modalEliminar'));
+            modal.hide();
         });
     });
 

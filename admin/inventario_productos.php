@@ -34,7 +34,7 @@ require_once __DIR__.'/../includes/header.php';
 
 </div>
 
-<!-- MODALES CORREGIDOS -->
+<!-- MODALES -->
 
 <!-- Modal Agregar -->
 <div class="modal fade" id="modalAgregar" tabindex="-1">
@@ -90,6 +90,7 @@ require_once __DIR__.'/../includes/header.php';
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-warning">Guardar Cambios</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         </div>
       </form>
     </div>
