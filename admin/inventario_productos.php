@@ -34,7 +34,9 @@ require_once __DIR__.'/../includes/header.php';
 
 </div>
 
-<!-- MODAL AGREGAR -->
+<!-- MODALES CORREGIDOS -->
+
+<!-- Modal Agregar -->
 <div class="modal fade" id="modalAgregar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -64,7 +66,7 @@ require_once __DIR__.'/../includes/header.php';
   </div>
 </div>
 
-<!-- MODAL EDITAR -->
+<!-- Modal Editar -->
 <div class="modal fade" id="modalEditar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -94,7 +96,7 @@ require_once __DIR__.'/../includes/header.php';
   </div>
 </div>
 
-<!-- MODAL ELIMINAR -->
+<!-- Modal Eliminar -->
 <div class="modal fade" id="modalEliminar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -117,7 +119,6 @@ require_once __DIR__.'/../includes/header.php';
   </div>
 </div>
 
-<!-- SCRIPTS -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
