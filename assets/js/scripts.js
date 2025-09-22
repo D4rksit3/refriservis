@@ -58,8 +58,6 @@ $(document).ready(function () {
 
     $(document).ready(function () {
 
-
-        $(document).ready(function () {
     // Inicializar DataTable
     var tabla = $('#tablaProductos').DataTable({
         processing: true,
