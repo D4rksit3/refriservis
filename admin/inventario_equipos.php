@@ -2,15 +2,70 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+
 require_once __DIR__ . '/../config/db.php';
 include __DIR__ . '/../includes/header.php';
 
-// Procesar formulario (Agregar, Editar, Eliminar)
+// =====================================
+// MODO AJAX -> Respuesta para DataTables
+// =====================================
+if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+    $draw = $_GET['draw'] ?? 1;
+    $start = $_GET['start'] ?? 0;
+    $length = $_GET['length'] ?? 10;
+    $search = $_GET['search']['value'] ?? '';
+    $orderCol = $_GET['order'][0]['column'] ?? 0;
+    $orderDir = $_GET['order'][0]['dir'] ?? 'asc';
+
+    $columns = ['id_equipo','Nombre','Descripción','Cliente','Categoría','Estatus','Fecha_validad'];
+    $orderBy = $columns[$orderCol] ?? 'id_equipo';
+
+    // Total registros
+    $totalQuery = $pdo->query("SELECT COUNT(*) FROM equipos");
+    $totalRecords = $totalQuery->fetchColumn();
+
+    // Filtrado
+    $where = '';
+    $params = [];
+    if (!empty($search)) {
+        $where = "WHERE Nombre LIKE ? OR Descripcion LIKE ? OR Cliente LIKE ? OR Categoria LIKE ? OR Estatus LIKE ?";
+        $params = array_fill(0, 5, "%$search%");
+    }
+
+    // Total filtrado
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM equipos $where");
+    $stmt->execute($params);
+    $filteredRecords = $stmt->fetchColumn();
+
+    // Datos
+    $sql = "SELECT * FROM equipos $where ORDER BY $orderBy $orderDir LIMIT ?, ?";
+    $stmt = $pdo->prepare($sql);
+    foreach ($params as $i => $val) {
+        $stmt->bindValue($i+1, $val, PDO::PARAM_STR);
+    }
+    $stmt->bindValue(count($params)+1, (int)$start, PDO::PARAM_INT);
+    $stmt->bindValue(count($params)+2, (int)$length, PDO::PARAM_INT);
+    $stmt->execute();
+    $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Respuesta JSON
+    echo json_encode([
+        "draw" => intval($draw),
+        "recordsTotal" => $totalRecords,
+        "recordsFiltered" => $filteredRecords,
+        "data" => $data
+    ]);
+    exit;
+}
+
+// =====================================
+// CRUD (agregar, editar, eliminar)
+// =====================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     $accion = $_POST['accion'];
 
     if ($accion === 'agregar') {
-        $sql = "INSERT INTO equipos (nombre, descripcion, cliente, categoria, estatus, Fecha_validad) 
+        $sql = "INSERT INTO equipos (Nombre, Descripcion, Cliente, Categoria, Estatus, Fecha_validad) 
                 VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
@@ -25,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
     if ($accion === 'editar') {
         $sql = "UPDATE equipos SET 
-                nombre=?, descripcion=?, cliente=?, categoria=?, estatus=?, Fecha_validad=? 
+                Nombre=?, Descripción=?, Cliente=?, Categoría=?, Estatus=?, Fecha_validad=? 
                 WHERE id_equipo=?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
@@ -45,14 +100,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         $stmt->execute([$_POST['id_equipo']]);
     }
 }
-
-// Traer equipos
-$stmt = $pdo->query("SELECT * FROM equipos ORDER BY id_equipo DESC");
-$equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h2 class="h4">📋 Inventario</h2>
+  <h2 class="h4">📋 Inventario de Equipos</h2>
   <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalAgregar">➕ Nuevo</button>
 </div>
 
@@ -60,92 +111,17 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <table id="tablaEquipos" class="table table-striped align-middle">
     <thead class="table-primary">
       <tr>
+        <th>ID</th>
         <th>Nombre</th>
         <th>Descripción</th>
         <th>Cliente</th>
         <th>Categoría</th>
         <th>Estatus</th>
         <th>Fecha Validación</th>
-        <th class="text-center">Acciones</th>
+        <th>Acciones</th>
       </tr>
     </thead>
-    <tbody>
-      <?php foreach ($equipos as $eq): ?>
-        <tr>
-          <td><?=htmlspecialchars($eq['Nombre'])?></td>
-          <td><?=htmlspecialchars($eq['Descripcion'])?></td>
-          <td><?=htmlspecialchars($eq['Cliente'])?></td>
-          <td><?=htmlspecialchars($eq['Categoria'])?></td>
-          <td>
-            <span class="badge bg-<?=($eq['Estatus']==='Activo'?'success':'danger')?>">
-              <?=htmlspecialchars($eq['Estatus'])?>
-            </span>
-          </td>
-          <td><?=htmlspecialchars($eq['Fecha_validad'])?></td>
-          <td class="text-center">
-            <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditar<?=$eq['id_equipo']?>">✏️</button>
-            <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalEliminar<?=$eq['id_equipo']?>">🗑️</button>
-          </td>
-        </tr>
-
-        <!-- Modal Editar -->
-        <div class="modal fade" id="modalEditar<?=$eq['id_equipo']?>" tabindex="-1">
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <form method="post">
-                <div class="modal-header bg-warning">
-                  <h5 class="modal-title">✏️ Editar</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                  <input type="hidden" name="accion" value="editar">
-                  <input type="hidden" name="id_equipo" value="<?=$eq['id_equipo']?>">
-                  <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" name="nombre" value="<?=$eq['Nombre']?>" required></div>
-                  <div class="mb-2"><label>Descripción</label><textarea class="form-control" name="descripcion"><?=$eq['Descripcion']?></textarea></div>
-                  <div class="mb-2"><label>Cliente</label><input type="text" class="form-control" name="cliente" value="<?=$eq['Cliente']?>"></div>
-                  <div class="mb-2"><label>Categoría</label><input type="text" class="form-control" name="categoria" value="<?=$eq['Categoria']?>"></div>
-                  <div class="mb-2"><label>Estatus</label>
-                    <select class="form-select" name="estatus">
-                      <option <?=$eq['Estatus']==='Activo'?'selected':''?>>Activo</option>
-                      <option <?=$eq['Estatus']==='Inactivo'?'selected':''?>>Inactivo</option>
-                    </select>
-                  </div>
-                  <div class="mb-2"><label>Fecha Validación</label><input type="date" class="form-control" name="Fecha_validad" value="<?=$eq['Fecha_validad']?>"></div>
-                </div>
-                <div class="modal-footer">
-                  <button type="submit" class="btn btn-warning">Guardar Cambios</button>
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <!-- Modal Eliminar -->
-        <div class="modal fade" id="modalEliminar<?=$eq['id_equipo']?>" tabindex="-1">
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <form method="post">
-                <div class="modal-header bg-danger text-white">
-                  <h5 class="modal-title">⚠️ Eliminar</h5>
-                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                  <input type="hidden" name="accion" value="eliminar">
-                  <input type="hidden" name="id_equipo" value="<?=$eq['id_equipo']?>">
-                  ¿Seguro que deseas eliminar <strong><?=$eq['Nombre']?></strong>?
-                </div>
-                <div class="modal-footer">
-                  <button type="submit" class="btn btn-danger">Eliminar</button>
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-
-      <?php endforeach; ?>
-    </tbody>
+    <tbody></tbody>
   </table>
 </div>
 
@@ -155,7 +131,7 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="modal-content">
       <form method="post">
         <div class="modal-header bg-success text-white">
-          <h5 class="modal-title">➕ Nuevo</h5>
+          <h5 class="modal-title">➕ Nuevo Equipo</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
@@ -170,7 +146,7 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
               <option>Inactivo</option>
             </select>
           </div>
-          <div class="mb-2"><label>Fecha Validación</label><input type="date" class="form-control" name="Fecha_validad"></div>
+          <div class="mb-2"><label>Fecha Validación</label><input type="date" class="form-control" name="fecha_validad"></div>
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-success">Agregar</button>
@@ -184,8 +160,28 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <?php include __DIR__ . '/../includes/footer.php'; ?>
 
 <script>
-  const tabla = new DataTable('#tablaEquipos', {
+const tabla = new DataTable('#tablaEquipos', {
+    processing: true,
+    serverSide: true,
+    ajax: "inventario_equipos.php?ajax=1",
     pageLength: 10,
+    columns: [
+        { data: "id_equipo" },
+        { data: "Nombre" },
+        { data: "Descripción" },
+        { data: "Cliente" },
+        { data: "Categoría" },
+        { data: "Estatus" },
+        { data: "Fecha_validad" },
+        { data: null, render: function (data) {
+            return `
+              <form method="post" style="display:inline-block">
+                <input type="hidden" name="accion" value="eliminar">
+                <input type="hidden" name="id_equipo" value="${data.id_equipo}">
+                <button type="submit" class="btn btn-danger btn-sm">🗑️</button>
+              </form>`;
+        }}
+    ],
     language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" }
-  });
+});
 </script>
