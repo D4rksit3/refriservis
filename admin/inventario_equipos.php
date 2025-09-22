@@ -1,7 +1,4 @@
 <?php
-// ==========================
-// CONFIGURACIÓN Y CONEXIÓN
-// ==========================
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -12,7 +9,6 @@ require_once __DIR__.'/../includes/header.php';
 
 <div class="container my-4">
 
-  <!-- Título y botón -->
   <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
     <h2 class="h4 mb-2">📋 Inventario de Equipos</h2>
     <button class="btn btn-success btn-sm mb-2" data-bs-toggle="modal" data-bs-target="#modalAgregar">
@@ -20,7 +16,6 @@ require_once __DIR__.'/../includes/header.php';
     </button>
   </div>
 
-  <!-- Tabla responsive -->
   <div class="table-responsive shadow-sm rounded">
     <table id="tablaEquipos" class="table table-striped table-bordered align-middle">
       <thead class="table-primary">
@@ -41,15 +36,11 @@ require_once __DIR__.'/../includes/header.php';
 
 </div>
 
-<!-- ========================== -->
-<!-- MODALES AGREGAR / EDITAR / ELIMINAR -->
-<!-- ========================== -->
-
-<!-- Modal Agregar -->
+<!-- MODAL AGREGAR -->
 <div class="modal fade" id="modalAgregar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form method="post" action="equipos_crud.php">
+      <form id="formAgregarEquipo">
         <div class="modal-header bg-success text-white">
           <h5 class="modal-title">➕ Nuevo Equipo</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -77,11 +68,11 @@ require_once __DIR__.'/../includes/header.php';
   </div>
 </div>
 
-<!-- Modal Editar -->
+<!-- MODAL EDITAR -->
 <div class="modal fade" id="modalEditar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form method="post" form="equipos_crud.php">
+      <form id="formEditarEquipo">
         <div class="modal-header bg-warning">
           <h5 class="modal-title">✏️ Editar Equipo</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -109,18 +100,14 @@ require_once __DIR__.'/../includes/header.php';
   </div>
 </div>
 
-<!-- Modal Eliminar -->
+<!-- MODAL ELIMINAR -->
 <div class="modal fade" id="modalEliminar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form method="post">
-        <div class="modal-header bg-danger text-white">
-          <h5 class="modal-title">🗑️ Eliminar Equipo</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
+      <form id="formEliminarEquipo">
+        <input type="hidden" name="accion" value="eliminar">
+        <input type="hidden" name="id_equipo" id="deleteId">
         <div class="modal-body">
-          <input type="hidden" name="accion" value="eliminar">
-          <input type="hidden" name="id_equipo" id="deleteId">
           <p>¿Estás seguro de que deseas eliminar este equipo?</p>
         </div>
         <div class="modal-footer">
@@ -132,15 +119,11 @@ require_once __DIR__.'/../includes/header.php';
   </div>
 </div>
 
-<!-- ========================== -->
 <!-- SCRIPTS -->
-<!-- ========================== -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-
+<script src="scripts.js"></script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>
