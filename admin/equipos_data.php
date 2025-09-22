@@ -9,16 +9,8 @@ require_once __DIR__.'/../config/db.php';
 // Traer todos los equipos (puedes hacer filtros después si quieres)
 $stmt = $pdo->query("
     SELECT 
-        e.id_equipo,
-        e.Nombre,
-        e.Descripcion,
-        c.Nombre AS Cliente,
-        cat.Nombre AS Categoria,
-        e.Estatus,
-        e.Fecha_validad
-    FROM equipos e
-    LEFT JOIN clientes c ON e.id_cliente = c.id_cliente
-    LEFT JOIN categoria cat ON e.id_categoria = cat.id_categoria
+        *
+    FROM equipos
 ");
 
 $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
