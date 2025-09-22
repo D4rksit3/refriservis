@@ -1,9 +1,9 @@
 $(document).ready(function () {
-  var tabla = $('#tablaEquipos').DataTable({
+  $('#tablaEquipos').DataTable({
     processing: true,
     serverSide: true,
     ajax: {
-        url: 'equipos_data.php?ajax=1', // 👈 O el nombre real de tu archivo
+        url: 'equipos_data.php',
         type: 'GET'
     },
     pageLength: 10,
@@ -22,6 +22,8 @@ $(document).ready(function () {
         url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
     }
   });
+});
+
 
   // Editar
   $(document).on('click', '.btnEditar', function () {
