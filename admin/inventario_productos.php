@@ -8,31 +8,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
     if ($accion === 'agregar') {
         $sql = "INSERT INTO productos 
-        (nombre, descripcion, precio, stock, categoria, estatus) 
-        VALUES (?, ?, ?, ?, ?, ?)";
+        (nombre, descripcion, categoria, equipo, estatus, stock_actual, stock_minimo, valor_unitario, entrada_stock, planilla_especificaciones, costo_unitario) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             $_POST['nombre'],
             $_POST['descripcion'],
-            $_POST['precio'],
-            $_POST['stock'],
             $_POST['categoria'],
-            $_POST['estatus']
+            $_POST['equipo'],
+            $_POST['estatus'],
+            $_POST['stock_actual'],
+            $_POST['stock_minimo'],
+            $_POST['valor_unitario'],
+            $_POST['entrada_stock'],
+            $_POST['planilla_especificaciones'],
+            $_POST['costo_unitario']
         ]);
     }
 
     if ($accion === 'editar') {
         $sql = "UPDATE productos SET 
-        nombre=?, descripcion=?, precio=?, stock=?, categoria=?, estatus=? 
+        nombre=?, descripcion=?, categoria=?, equipo=?, estatus=?, stock_actual=?, stock_minimo=?, valor_unitario=?, entrada_stock=?, planilla_especificaciones=?, costo_unitario=? 
         WHERE id_producto=?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             $_POST['nombre'],
             $_POST['descripcion'],
-            $_POST['precio'],
-            $_POST['stock'],
             $_POST['categoria'],
+            $_POST['equipo'],
             $_POST['estatus'],
+            $_POST['stock_actual'],
+            $_POST['stock_minimo'],
+            $_POST['valor_unitario'],
+            $_POST['entrada_stock'],
+            $_POST['planilla_especificaciones'],
+            $_POST['costo_unitario'],
             $_POST['id_producto']
         ]);
     }
@@ -50,7 +60,7 @@ $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-  <h2 class="h4">📦 Inventario de Productos</h2>
+  <h2 class="h4">📦 Gestión de Productos</h2>
   <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalAgregar">➕ Nuevo Producto</button>
 </div>
 
@@ -59,11 +69,15 @@ $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <thead class="table-primary">
       <tr>
         <th>Nombre</th>
-        <th>Descripción</th>
-        <th>Precio</th>
-        <th>Stock</th>
         <th>Categoría</th>
+        <th>Equipo</th>
         <th>Estatus</th>
+        <th>Stock Actual</th>
+        <th>Stock Mínimo</th>
+        <th>Valor Unitario</th>
+        <th>Costo Unitario</th>
+        <th>Entrada Stock</th>
+        <th>Planilla</th>
         <th class="text-center">Acciones</th>
       </tr>
     </thead>
@@ -71,15 +85,22 @@ $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
       <?php foreach ($productos as $p): ?>
         <tr>
           <td><?=htmlspecialchars($p['nombre'])?></td>
-          <td><?=htmlspecialchars($p['descripcion'])?></td>
-          <td>S/ <?=number_format($p['precio'],2)?></td>
-          <td><?=htmlspecialchars($p['stock'])?></td>
           <td><?=htmlspecialchars($p['categoria'])?></td>
+          <td><?=htmlspecialchars($p['equipo'])?></td>
           <td>
-            <span class="badge bg-<?=($p['estatus']==='Activo'?'success':'danger')?>">
+            <span class="badge bg-<?=
+                $p['estatus']==='Disponible' ? 'success' : 
+                ($p['estatus']==='Agotado' ? 'danger' : 'warning')
+            ?>">
               <?=htmlspecialchars($p['estatus'])?>
             </span>
           </td>
+          <td><?=htmlspecialchars($p['stock_actual'])?></td>
+          <td><?=htmlspecialchars($p['stock_minimo'])?></td>
+          <td>S/ <?=number_format($p['valor_unitario'],2)?></td>
+          <td>S/ <?=number_format($p['costo_unitario'],2)?></td>
+          <td><?=htmlspecialchars($p['entrada_stock'])?></td>
+          <td><?=htmlspecialchars($p['planilla_especificaciones'])?></td>
           <td class="text-center">
             <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditar<?=$p['id_producto']?>">✏️</button>
             <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalEliminar<?=$p['id_producto']?>">🗑️</button>
@@ -100,16 +121,21 @@ $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                   <input type="hidden" name="id_producto" value="<?=$p['id_producto']?>">
                   <div class="row g-2">
                     <div class="col-md-6"><label>Nombre</label><input type="text" class="form-control" name="nombre" value="<?=$p['nombre']?>" required></div>
-                    <div class="col-md-6"><label>Precio</label><input type="number" step="0.01" class="form-control" name="precio" value="<?=$p['precio']?>" required></div>
-                    <div class="col-12"><label>Descripción</label><textarea class="form-control" name="descripcion"><?=$p['descripcion']?></textarea></div>
-                    <div class="col-md-6"><label>Stock</label><input type="number" class="form-control" name="stock" value="<?=$p['stock']?>"></div>
                     <div class="col-md-6"><label>Categoría</label><input type="text" class="form-control" name="categoria" value="<?=$p['categoria']?>"></div>
+                    <div class="col-md-6"><label>Equipo</label><input type="text" class="form-control" name="equipo" value="<?=$p['equipo']?>"></div>
                     <div class="col-md-6"><label>Estatus</label>
                       <select class="form-select" name="estatus">
-                        <option <?=$p['estatus']==='Activo'?'selected':''?>>Activo</option>
-                        <option <?=$p['estatus']==='Inactivo'?'selected':''?>>Inactivo</option>
+                        <option <?=$p['estatus']==='Disponible'?'selected':''?>>Disponible</option>
+                        <option <?=$p['estatus']==='Agotado'?'selected':''?>>Agotado</option>
+                        <option <?=$p['estatus']==='Mantenimiento'?'selected':''?>>Mantenimiento</option>
                       </select>
                     </div>
+                    <div class="col-md-6"><label>Stock Actual</label><input type="number" class="form-control" name="stock_actual" value="<?=$p['stock_actual']?>"></div>
+                    <div class="col-md-6"><label>Stock Mínimo</label><input type="number" class="form-control" name="stock_minimo" value="<?=$p['stock_minimo']?>"></div>
+                    <div class="col-md-6"><label>Valor Unitario (S/)</label><input type="number" step="0.01" class="form-control" name="valor_unitario" value="<?=$p['valor_unitario']?>"></div>
+                    <div class="col-md-6"><label>Costo Unitario (S/)</label><input type="number" step="0.01" class="form-control" name="costo_unitario" value="<?=$p['costo_unitario']?>"></div>
+                    <div class="col-md-6"><label>Entrada Stock</label><input type="date" class="form-control" name="entrada_stock" value="<?=$p['entrada_stock']?>"></div>
+                    <div class="col-12"><label>Planilla</label><textarea class="form-control" name="planilla_especificaciones"><?=$p['planilla_especificaciones']?></textarea></div>
                   </div>
                 </div>
                 <div class="modal-footer">
@@ -162,16 +188,21 @@ $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
           <input type="hidden" name="accion" value="agregar">
           <div class="row g-2">
             <div class="col-md-6"><label>Nombre</label><input type="text" class="form-control" name="nombre" required></div>
-            <div class="col-md-6"><label>Precio</label><input type="number" step="0.01" class="form-control" name="precio" required></div>
-            <div class="col-12"><label>Descripción</label><textarea class="form-control" name="descripcion"></textarea></div>
-            <div class="col-md-6"><label>Stock</label><input type="number" class="form-control" name="stock"></div>
             <div class="col-md-6"><label>Categoría</label><input type="text" class="form-control" name="categoria"></div>
+            <div class="col-md-6"><label>Equipo</label><input type="text" class="form-control" name="equipo"></div>
             <div class="col-md-6"><label>Estatus</label>
               <select class="form-select" name="estatus">
-                <option>Activo</option>
-                <option>Inactivo</option>
+                <option>Disponible</option>
+                <option>Agotado</option>
+                <option>Mantenimiento</option>
               </select>
             </div>
+            <div class="col-md-6"><label>Stock Actual</label><input type="number" class="form-control" name="stock_actual" value="0"></div>
+            <div class="col-md-6"><label>Stock Mínimo</label><input type="number" class="form-control" name="stock_minimo" value="0"></div>
+            <div class="col-md-6"><label>Valor Unitario (S/)</label><input type="number" step="0.01" class="form-control" name="valor_unitario" value="0.00"></div>
+            <div class="col-md-6"><label>Costo Unitario (S/)</label><input type="number" step="0.01" class="form-control" name="costo_unitario" value="0.00"></div>
+            <div class="col-md-6"><label>Entrada Stock</label><input type="date" class="form-control" name="entrada_stock"></div>
+            <div class="col-12"><label>Planilla</label><textarea class="form-control" name="planilla_especificaciones"></textarea></div>
           </div>
         </div>
         <div class="modal-footer">
