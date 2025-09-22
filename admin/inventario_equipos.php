@@ -136,12 +136,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         </div>
         <div class="modal-body">
           <input type="hidden" name="accion" value="agregar">
-          <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" name="nombre" required></div>
-          <div class="mb-2"><label>Descripcion</label><textarea class="form-control" name="descripcion"></textarea></div>
-          <div class="mb-2"><label>Cliente</label><input type="text" class="form-control" name="cliente"></div>
-          <div class="mb-2"><label>Categoria</label><input type="text" class="form-control" name="categoria"></div>
+          <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" name="Nombre" required></div>
+          <div class="mb-2"><label>Descripcion</label><textarea class="form-control" name="Descripcion"></textarea></div>
+          <div class="mb-2"><label>Cliente</label><input type="text" class="form-control" name="Cliente"></div>
+          <div class="mb-2"><label>Categoria</label><input type="text" class="form-control" name="Categoria"></div>
           <div class="mb-2"><label>Estatus</label>
-            <select class="form-select" name="estatus">
+            <select class="form-select" name="Estatus">
               <option>Activo</option>
               <option>Inactivo</option>
             </select>
