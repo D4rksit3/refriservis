@@ -15,7 +15,7 @@ $(document).ready(function(){
         columnDefs:[{
             targets:5,
             render:function(data,type,row){
-                return data; // renderizar HTML de botones
+                return data; // renderizar HTML
             }
         }],
         language:{ url:'//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
@@ -25,13 +25,13 @@ $(document).ready(function(){
     $('#formAgregar').submit(function(e){
         e.preventDefault();
         $.post('productos_crud.php', $(this).serialize(), function(){
-            tabla.ajax.reload(null,false);
             $('#modalAgregar').modal('hide');
+            tabla.ajax.reload(null,false);
             $('#formAgregar')[0].reset();
         });
     });
 
-    // EDITAR - abrir modal
+    // EDITAR - abrir modal con eventos delegados
     $('#tablaProductos').on('click', '.editar', function(){
         var id = $(this).data('id');
         $.getJSON('productos_data.php', function(resp){
@@ -57,7 +57,7 @@ $(document).ready(function(){
         });
     });
 
-    // ELIMINAR - abrir modal
+    // ELIMINAR
     $('#tablaProductos').on('click', '.eliminar', function(){
         var id = $(this).data('id');
         $('#deleteId').val(id);

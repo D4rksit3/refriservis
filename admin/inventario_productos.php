@@ -11,7 +11,7 @@ require_once __DIR__.'/../includes/header.php';
 
   <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
     <h2 class="h4 mb-2">📋 Inventario de Productos</h2>
-    <button class="btn btn-success btn-sm mb-2" data-bs-toggle="modal" data-bs-target="#modalAgregar">
+    <button class="btn btn-success btn-sm mb-2" id="btnAgregar">
       ➕ Nuevo
     </button>
   </div>
