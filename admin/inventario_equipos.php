@@ -167,12 +167,12 @@ $('#tablaEquipos').DataTable({
     pageLength: 10,
     columns: [
         { data: "id_equipo" },
-        { data: "Nombre" },
-        { data: "Descripcion" },
-        { data: "Cliente" },
-        { data: "Categoria" },
-        { data: "Estatus" },
-        { data: "Fecha_validad" },
+        { data: "nombre" },
+        { data: "descripcion" },
+        { data: "cliente" },
+        { data: "categoria" },
+        { data: "estatus" },
+        { data: "fecha_validad" },
         {
             data: null,
             render: function (data) {
