@@ -4,28 +4,29 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 require_once __DIR__ . '/../config/db.php';
-include __DIR__ . '/../includes/header.php';
 
 // =====================================
-// MODO AJAX -> Respuesta para DataTables
+// MODO AJAX -> SOLO JSON PARA DATATABLES
 // =====================================
 if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
-    $draw = $_GET['draw'] ?? 1;
-    $start = $_GET['start'] ?? 0;
-    $length = $_GET['length'] ?? 10;
-    $search = $_GET['search']['value'] ?? '';
-    $orderCol = $_GET['order'][0]['column'] ?? 0;
-    $orderDir = $_GET['order'][0]['dir'] ?? 'asc';
+    header('Content-Type: application/json; charset=utf-8');
 
-    $columns = ['id_equipo','Nombre','Descripcion','Cliente','Categoria','Estatus','Fecha_validad'];
-    $orderBy = $columns[$orderCol] ?? 'id_equipo';
+    $draw     = $_GET['draw']   ?? 1;
+    $start    = $_GET['start']  ?? 0;
+    $length   = $_GET['length'] ?? 10;
+    $search   = $_GET['search']['value'] ?? '';
+    $orderCol = $_GET['order'][0]['column'] ?? 0;
+    $orderDir = $_GET['order'][0]['dir']    ?? 'asc';
+
+    $columns  = ['id_equipo','Nombre','Descripcion','Cliente','Categoria','Estatus','Fecha_validad'];
+    $orderBy  = $columns[$orderCol] ?? 'id_equipo';
 
     // Total registros
-    $totalQuery = $pdo->query("SELECT COUNT(*) FROM equipos");
-    $totalRecords = $totalQuery->fetchColumn();
+    $totalQuery    = $pdo->query("SELECT COUNT(*) FROM equipos");
+    $totalRecords  = $totalQuery->fetchColumn();
 
     // Filtrado
-    $where = '';
+    $where  = '';
     $params = [];
     if (!empty($search)) {
         $where = "WHERE Nombre LIKE ? OR Descripcion LIKE ? OR Cliente LIKE ? OR Categoria LIKE ? OR Estatus LIKE ?";
@@ -48,12 +49,12 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     $stmt->execute();
     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Respuesta JSON
+    // JSON limpio
     echo json_encode([
-        "draw" => intval($draw),
-        "recordsTotal" => $totalRecords,
+        "draw"            => intval($draw),
+        "recordsTotal"    => $totalRecords,
         "recordsFiltered" => $filteredRecords,
-        "data" => $data
+        "data"            => $data
     ]);
     exit;
 }
@@ -100,6 +101,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         $stmt->execute([$_POST['id_equipo']]);
     }
 }
+
+// =====================================
+// HTML NORMAL
+// =====================================
+include __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -156,8 +162,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     </div>
   </div>
 </div>
+
+<!-- jQuery + DataTables -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>
+
+<!-- Scripts propios -->
 <script src="/../assets/js/scripts.js"></script>
