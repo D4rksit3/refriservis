@@ -14,12 +14,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
-            $_POST['nombre'],
-            $_POST['descripcion'],
-            $_POST['cliente'],
-            $_POST['categoria'],
-            $_POST['estatus'],
-            $_POST['fecha_validacion']
+            $_POST['Nombre'],
+            $_POST['Descripcion'],
+            $_POST['Cliente'],
+            $_POST['Categoria'],
+            $_POST['Estatus'],
+            $_POST['Fecha_validacion']
         ]);
     }
 
@@ -29,12 +29,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 WHERE id_equipo=?";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
-            $_POST['nombre'],
-            $_POST['descripcion'],
-            $_POST['cliente'],
-            $_POST['categoria'],
-            $_POST['estatus'],
-            $_POST['fecha_validacion'],
+            $_POST['Nombre'],
+            $_POST['Descripcion'],
+            $_POST['Cliente'],
+            $_POST['Categoria'],
+            $_POST['Estatus'],
+            $_POST['Fecha_validacion'],
             $_POST['id_equipo']
         ]);
     }
@@ -72,16 +72,16 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <tbody>
       <?php foreach ($equipos as $eq): ?>
         <tr>
-          <td><?=htmlspecialchars($eq['nombre'])?></td>
-          <td><?=htmlspecialchars($eq['descripcion'])?></td>
-          <td><?=htmlspecialchars($eq['cliente'])?></td>
-          <td><?=htmlspecialchars($eq['categoria'])?></td>
+          <td><?=htmlspecialchars($eq['Nombre'])?></td>
+          <td><?=htmlspecialchars($eq['Descripcion'])?></td>
+          <td><?=htmlspecialchars($eq['Cliente'])?></td>
+          <td><?=htmlspecialchars($eq['Categoria'])?></td>
           <td>
-            <span class="badge bg-<?=($eq['estatus']==='Activo'?'success':'danger')?>">
-              <?=htmlspecialchars($eq['estatus'])?>
+            <span class="badge bg-<?=($eq['Estatus']==='Activo'?'success':'danger')?>">
+              <?=htmlspecialchars($eq['Estatus'])?>
             </span>
           </td>
-          <td><?=htmlspecialchars($eq['fecha_validacion'])?></td>
+          <td><?=htmlspecialchars($eq['Fecha_validacion'])?></td>
           <td class="text-center">
             <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditar<?=$eq['id_equipo']?>">✏️</button>
             <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalEliminar<?=$eq['id_equipo']?>">🗑️</button>
@@ -100,17 +100,17 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="modal-body">
                   <input type="hidden" name="accion" value="editar">
                   <input type="hidden" name="id_equipo" value="<?=$eq['id_equipo']?>">
-                  <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" name="nombre" value="<?=$eq['nombre']?>" required></div>
-                  <div class="mb-2"><label>Descripción</label><textarea class="form-control" name="descripcion"><?=$eq['descripcion']?></textarea></div>
-                  <div class="mb-2"><label>Cliente</label><input type="text" class="form-control" name="cliente" value="<?=$eq['cliente']?>"></div>
-                  <div class="mb-2"><label>Categoría</label><input type="text" class="form-control" name="categoria" value="<?=$eq['categoria']?>"></div>
+                  <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" name="nombre" value="<?=$eq['Nombre']?>" required></div>
+                  <div class="mb-2"><label>Descripción</label><textarea class="form-control" name="descripcion"><?=$eq['Descripcion']?></textarea></div>
+                  <div class="mb-2"><label>Cliente</label><input type="text" class="form-control" name="cliente" value="<?=$eq['Cliente']?>"></div>
+                  <div class="mb-2"><label>Categoría</label><input type="text" class="form-control" name="categoria" value="<?=$eq['Categoria']?>"></div>
                   <div class="mb-2"><label>Estatus</label>
                     <select class="form-select" name="estatus">
-                      <option <?=$eq['estatus']==='Activo'?'selected':''?>>Activo</option>
-                      <option <?=$eq['estatus']==='Inactivo'?'selected':''?>>Inactivo</option>
+                      <option <?=$eq['Estatus']==='Activo'?'selected':''?>>Activo</option>
+                      <option <?=$eq['Estatus']==='Inactivo'?'selected':''?>>Inactivo</option>
                     </select>
                   </div>
-                  <div class="mb-2"><label>Fecha Validación</label><input type="date" class="form-control" name="fecha_validacion" value="<?=$eq['fecha_validacion']?>"></div>
+                  <div class="mb-2"><label>Fecha Validación</label><input type="date" class="form-control" name="fecha_validacion" value="<?=$eq['Fecha_validacion']?>"></div>
                 </div>
                 <div class="modal-footer">
                   <button type="submit" class="btn btn-warning">Guardar Cambios</button>
@@ -133,7 +133,7 @@ $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="modal-body">
                   <input type="hidden" name="accion" value="eliminar">
                   <input type="hidden" name="id_equipo" value="<?=$eq['id_equipo']?>">
-                  ¿Seguro que deseas eliminar <strong><?=$eq['nombre']?></strong>?
+                  ¿Seguro que deseas eliminar <strong><?=$eq['Nombre']?></strong>?
                 </div>
                 <div class="modal-footer">
                   <button type="submit" class="btn btn-danger">Eliminar</button>
