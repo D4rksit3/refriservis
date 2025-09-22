@@ -1,7 +1,4 @@
 <?php
-// ==========================
-// CONFIGURACIÓN Y CONEXIÓN
-// ==========================
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -12,7 +9,6 @@ require_once __DIR__.'/../includes/header.php';
 
 <div class="container my-4">
 
-  <!-- Título y botón -->
   <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
     <h2 class="h4 mb-2">📋 Inventario de Productos</h2>
     <button class="btn btn-success btn-sm mb-2" data-bs-toggle="modal" data-bs-target="#modalAgregar">
@@ -20,7 +16,6 @@ require_once __DIR__.'/../includes/header.php';
     </button>
   </div>
 
-  <!-- Tabla responsive -->
   <div class="table-responsive shadow-sm rounded">
     <table id="tablaProductos" class="table table-striped table-bordered align-middle">
       <thead class="table-primary">
@@ -47,7 +42,7 @@ require_once __DIR__.'/../includes/header.php';
 <div class="modal fade" id="modalAgregar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form id="formAgregar" method="post">
+      <form method="post" action="productos_crud.php">
         <div class="modal-header bg-success text-white">
           <h5 class="modal-title">➕ Nuevo Producto</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -62,7 +57,7 @@ require_once __DIR__.'/../includes/header.php';
               <option>Inactivo</option>
             </select>
           </div>
-          <div class="mb-2"><label>Valor Unitario</label><input type="number" class="form-control" name="Valor_unitario"></div>
+          <div class="mb-2"><label>Valor Unitario</label><input type="text" class="form-control" name="Valor_unitario"></div>
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-success">Agregar</button>
@@ -77,7 +72,7 @@ require_once __DIR__.'/../includes/header.php';
 <div class="modal fade" id="modalEditar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form id="formEditar" method="post">
+      <form method="post" action="productos_crud.php">
         <div class="modal-header bg-warning">
           <h5 class="modal-title">✏️ Editar Producto</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -93,7 +88,7 @@ require_once __DIR__.'/../includes/header.php';
               <option>Inactivo</option>
             </select>
           </div>
-          <div class="mb-2"><label>Valor Unitario</label><input type="number" class="form-control" id="editValor" name="Valor_unitario"></div>
+          <div class="mb-2"><label>Valor Unitario</label><input type="text" class="form-control" id="editValor" name="Valor_unitario"></div>
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-warning">Guardar Cambios</button>
@@ -107,7 +102,7 @@ require_once __DIR__.'/../includes/header.php';
 <div class="modal fade" id="modalEliminar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form id="formEliminar" method="post">
+      <form method="post" action="productos_crud.php">
         <div class="modal-header bg-danger text-white">
           <h5 class="modal-title">🗑️ Eliminar Producto</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -134,70 +129,6 @@ require_once __DIR__.'/../includes/header.php';
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<script>
-$(document).ready(function () {
-    var tabla = $('#tablaProductos').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: {
-            url: 'productos_data.php?ajax=1',
-            type: 'GET'
-        },
-        pageLength: 10,
-        lengthMenu: [10,25,50,100],
-        columns: [
-            { data: 'productos_id' },
-            { data: 'Nombre' },
-            { data: 'Categoria' },
-            { data: 'Estatus' },
-            { data: 'Valor_unitario' },
-            { data: 'acciones', orderable:false, searchable:false }
-        ],
-        language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
-    });
 
-    // AGREGAR
-    $('#formAgregar').submit(function(e){
-        e.preventDefault();
-        $.post('productos_data.php', $(this).serialize(), function(){
-            $('#modalAgregar').modal('hide');
-            tabla.ajax.reload(null,false);
-            $('#formAgregar')[0].reset();
-        });
-    });
 
-    // EDITAR
-    $(document).on('click','.btnEditar', function(){
-        $('#editId').val($(this).data('id'));
-        $('#editNombre').val($(this).data('nombre'));
-        $('#editCategoria').val($(this).data('categoria'));
-        $('#editEstatus').val($(this).data('estatus'));
-        $('#editValor').val($(this).data('valor'));
-        $('#modalEditar').modal('show');
-    });
-
-    $('#formEditar').submit(function(e){
-        e.preventDefault();
-        $.post('productos_data.php', $(this).serialize(), function(){
-            $('#modalEditar').modal('hide');
-            tabla.ajax.reload(null,false);
-        });
-    });
-
-    // ELIMINAR
-    $(document).on('click','.btnEliminar', function(){
-        $('#deleteId').val($(this).data('id'));
-        $('#modalEliminar').modal('show');
-    });
-
-    $('#formEliminar').submit(function(e){
-        e.preventDefault();
-        $.post('productos_data.php', $(this).serialize(), function(){
-            $('#modalEliminar').modal('hide');
-            tabla.ajax.reload(null,false);
-        });
-    });
-});
-</script>
-
-<?php include __DIR__.'/../includes/footer.php'; ?>
+<?php include __DIR__ . '/../includes/footer.php'; ?>

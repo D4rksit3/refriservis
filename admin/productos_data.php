@@ -1,89 +1,60 @@
 <?php
-ini_set('display_errors',1);
-ini_set('display_startup_errors',1);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+
+header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__.'/../config/db.php';
 
-// ====================
-// MODO AJAX DataTables
-// ====================
-if(isset($_GET['ajax']) && $_GET['ajax']==1){
-    $draw = $_GET['draw'] ?? 1;
-    $start = $_GET['start'] ?? 0;
-    $length = $_GET['length'] ?? 10;
-    $search = $_GET['search']['value'] ?? '';
-    $orderCol = $_GET['order'][0]['column'] ?? 0;
-    $orderDir = $_GET['order'][0]['dir'] ?? 'asc';
+$draw   = intval($_GET['draw'] ?? 0);
+$start  = intval($_GET['start'] ?? 0);
+$length = intval($_GET['length'] ?? 10);
+$searchValue = $_GET['search']['value'] ?? '';
+$orderCol = $_GET['order'][0]['column'] ?? 0;
+$orderDir = $_GET['order'][0]['dir'] ?? 'asc';
 
-    $columns = ['productos_id','Nombre','Categoria','Estatus','Valor_unitario'];
-    $orderBy = $columns[$orderCol] ?? 'productos_id';
+$columns = ['productos_id','Nombre','Categoria','Estatus','Valor_unitario'];
+$orderBy = $columns[$orderCol] ?? 'productos_id';
 
-    $totalRecords = $pdo->query("SELECT COUNT(*) FROM productos")->fetchColumn();
+// Total registros
+$totalQuery = $pdo->query("SELECT COUNT(*) FROM productos");
+$recordsTotal = $totalQuery->fetchColumn();
 
-    $where = '';
-    $params = [];
-    if(!empty($search)){
-        $where = "WHERE Nombre LIKE ? OR Categoria LIKE ? OR Estatus LIKE ?";
-        $params = ["%$search%","%$search%","%$search%"];
-    }
-
-    $filteredRecords = $pdo->prepare("SELECT COUNT(*) FROM productos $where");
-    $filteredRecords->execute($params);
-    $filteredRecords = $filteredRecords->fetchColumn();
-
-    $sql = "SELECT * FROM productos $where ORDER BY $orderBy $orderDir LIMIT ?,?";
-    $stmt = $pdo->prepare($sql);
-    foreach($params as $i=>$v){
-        $stmt->bindValue($i+1,$v,PDO::PARAM_STR);
-    }
-    $stmt->bindValue(count($params)+1,(int)$start,PDO::PARAM_INT);
-    $stmt->bindValue(count($params)+2,(int)$length,PDO::PARAM_INT);
-    $stmt->execute();
-    $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    foreach($data as &$row){
-        $row['acciones'] = '
-        <button class="btn btn-warning btn-sm btnEditar" 
-            data-id="'.$row['productos_id'].'" 
-            data-nombre="'.htmlspecialchars($row['Nombre']).'" 
-            data-categoria="'.htmlspecialchars($row['Categoria']).'" 
-            data-estatus="'.htmlspecialchars($row['Estatus']).'" 
-            data-valor="'.$row['Valor_unitario'].'">
-            ✏️
-        </button>
-        <button class="btn btn-danger btn-sm btnEliminar" data-id="'.$row['productos_id'].'">🗑️</button>';
-    }
-
-    echo json_encode([
-        "draw"=>intval($draw),
-        "recordsTotal"=>$totalRecords,
-        "recordsFiltered"=>$filteredRecords,
-        "data"=>$data
-    ]);
-    exit;
+// Filtro
+$where = "";
+$params = [];
+if(!empty($searchValue)){
+    $where = "WHERE Nombre LIKE ? OR Categoria LIKE ? OR Estatus LIKE ? OR Valor_unitario LIKE ?";
+    $params = array_fill(0, 4, "%$searchValue%");
 }
 
-// ====================
-// CRUD (Agregar / Editar / Eliminar)
-// ====================
-if($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['accion'])){
-    $accion = $_POST['accion'];
+// Total filtrado
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM productos $where");
+$stmt->execute($params);
+$recordsFiltered = $stmt->fetchColumn();
 
-    if($accion==='agregar'){
-        $sql = "INSERT INTO productos (Nombre,Categoria,Estatus,Valor_unitario) VALUES (?,?,?,?)";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$_POST['Nombre'],$_POST['Categoria'],$_POST['Estatus'],$_POST['Valor_unitario']]);
-    }
-
-    if($accion==='editar'){
-        $sql = "UPDATE productos SET Nombre=?, Categoria=?, Estatus=?, Valor_unitario=? WHERE productos_id=?";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$_POST['Nombre'],$_POST['Categoria'],$_POST['Estatus'],$_POST['Valor_unitario'],$_POST['productos_id']]);
-    }
-
-    if($accion==='eliminar'){
-        $sql = "DELETE FROM productos WHERE productos_id=?";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$_POST['productos_id']]);
-    }
+// Obtener datos
+$sql = "SELECT * FROM productos $where ORDER BY $orderBy $orderDir LIMIT ?, ?";
+$stmt = $pdo->prepare($sql);
+foreach ($params as $i => $val) {
+    $stmt->bindValue($i+1, $val, PDO::PARAM_STR);
 }
+$stmt->bindValue(count($params)+1, $start, PDO::PARAM_INT);
+$stmt->bindValue(count($params)+2, $length, PDO::PARAM_INT);
+$stmt->execute();
+$data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Agregar botones
+foreach($data as &$row){
+    $row['acciones'] = '
+        <button class="btn btn-sm btn-warning editar" data-id="'.$row['productos_id'].'">✏️ Editar</button>
+        <button class="btn btn-sm btn-danger eliminar" data-id="'.$row['productos_id'].'">🗑️ Eliminar</button>
+    ';
+}
+
+echo json_encode([
+    "draw"=>$draw,
+    "recordsTotal"=>$recordsTotal,
+    "recordsFiltered"=>$recordsFiltered,
+    "data"=>$data
+]);

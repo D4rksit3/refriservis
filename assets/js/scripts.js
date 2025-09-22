@@ -60,68 +60,50 @@ $(document).ready(function () {
 
 
 
-$(document).ready(function () {
-    var tabla = $('#tablaProductos').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: {
-            url: 'productos_data.php?ajax=1',
-            type: 'GET'
-        },
-        pageLength: 10,
-        lengthMenu: [10,25,50,100],
-        columns: [
-            { data: 'productos_id' },
-            { data: 'Nombre' },
-            { data: 'Categoria' },
-            { data: 'Estatus' },
-            { data: 'Valor_unitario' },
-            { data: 'acciones', orderable:false, searchable:false }
-        ],
-        language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
+
+
+
+    var table = $('#tablaProductos').DataTable({
+        "ajax": "productos_data.php",
+        "columns": [
+            { "data": "productos_id" },
+            { "data": "Nombre" },
+            { "data": "Categoria" },
+            { "data": "Estatus" },
+            { "data": "Valor_unitario" },
+            { "data": "acciones", "orderable": false, "searchable": false }
+        ]
     });
 
-    // AGREGAR
-    $('#formAgregar').submit(function(e){
-        e.preventDefault();
-        $.post('productos_data.php', $(this).serialize(), function(){
-            $('#modalAgregar').modal('hide');
-            tabla.ajax.reload(null,false);
-            $('#formAgregar')[0].reset();
+    // Editar modal
+    $('#tablaProductos').on('click', '.editar', function() {
+        var id = $(this).data('id');
+        $.getJSON('productos_data.php', function(data) {
+            var producto = data.data.find(p => p.productos_id == id);
+            if (producto) {
+                $('#editId').val(producto.productos_id);
+                $('#editNombre').val(producto.Nombre);
+                $('#editCategoria').val(producto.Categoria);
+                $('#editEstatus').val(producto.Estatus);
+                $('#editValor').val(producto.Valor_unitario);
+                $('#modalEditar').modal('show');
+            }
         });
     });
 
-    // EDITAR
-    $(document).on('click','.btnEditar', function(){
-        $('#editId').val($(this).data('id'));
-        $('#editNombre').val($(this).data('nombre'));
-        $('#editCategoria').val($(this).data('categoria'));
-        $('#editEstatus').val($(this).data('estatus'));
-        $('#editValor').val($(this).data('valor'));
-        $('#modalEditar').modal('show');
-    });
-
-    $('#formEditar').submit(function(e){
-        e.preventDefault();
-        $.post('productos_data.php', $(this).serialize(), function(){
-            $('#modalEditar').modal('hide');
-            tabla.ajax.reload(null,false);
-        });
-    });
-
-    // ELIMINAR
-    $(document).on('click','.btnEliminar', function(){
-        $('#deleteId').val($(this).data('id'));
+    // Eliminar modal
+    $('#tablaProductos').on('click', '.eliminar', function() {
+        var id = $(this).data('id');
+        $('#deleteId').val(id);
         $('#modalEliminar').modal('show');
     });
 
-    $('#formEliminar').submit(function(e){
-        e.preventDefault();
-        $.post('productos_data.php', $(this).serialize(), function(){
-            $('#modalEliminar').modal('hide');
-            tabla.ajax.reload(null,false);
-        });
-    });
+    
+
+
+
+
+    
 });
 
 
