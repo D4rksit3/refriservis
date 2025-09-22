@@ -81,7 +81,7 @@ require_once __DIR__.'/../includes/header.php';
 <div class="modal fade" id="modalEditar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form method="post">
+      <form method="post" form="equipos_crud.php">
         <div class="modal-header bg-warning">
           <h5 class="modal-title">✏️ Editar Equipo</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
