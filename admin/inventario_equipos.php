@@ -49,7 +49,7 @@ require_once __DIR__.'/../includes/header.php';
 <div class="modal fade" id="modalAgregar" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form method="post">
+      <form method="post" action="equipos_crud.php">
         <div class="modal-header bg-success text-white">
           <h5 class="modal-title">➕ Nuevo Equipo</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
