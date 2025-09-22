@@ -241,7 +241,7 @@ $(document).ready(function () {
   var tabla = $('#tablaEquipos').DataTable({
     processing: true,
     serverSide: true,
-    ajax: 'equipos.php?ajax=1',
+    ajax: 'inventario_equipos.php?ajax=1',
     columns: [
       { data: 'id_equipo' },
       { data: 'Nombre' },
