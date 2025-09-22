@@ -1,7 +1,9 @@
 $(document).ready(function () {
-    // Inicializar DataTable solo una vez
+
+    // Inicializar DataTable solo una vez y guardar la instancia
+    var tabla = null;
     if (!$.fn.DataTable.isDataTable('#tablaEquipos')) {
-        var tabla = $('#tablaEquipos').DataTable({
+        tabla = $('#tablaEquipos').DataTable({
             processing: true,
             serverSide: true,
             ajax: {
@@ -24,12 +26,15 @@ $(document).ready(function () {
                 url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
             }
         });
+    } else {
+        tabla = $('#tablaEquipos').DataTable();
     }
 
-    // Editar
+    // Delegated event para Editar
     $(document).on('click', '.editar', function () {
         var row = $(this).closest('tr');
         var data = tabla.row(row).data();
+        if (!data) return; // prevenir errores si fila no existe
 
         $('#editId').val(data.id_equipo);
         $('#editNombre').val(data.Nombre);
@@ -41,10 +46,12 @@ $(document).ready(function () {
         $('#modalEditar').modal('show');
     });
 
-    // Eliminar
+    // Delegated event para Eliminar
     $(document).on('click', '.eliminar', function () {
         var row = $(this).closest('tr');
         var data = tabla.row(row).data();
+        if (!data) return;
+
         $('#deleteId').val(data.id_equipo);
         $('#modalEliminar').modal('show');
     });
