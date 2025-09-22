@@ -53,20 +53,23 @@ require_once __DIR__.'/../includes/header.php';
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <input type="hidden" name="accion" value="agregar">
-          <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" name="Nombre" required></div>
-          <div class="mb-2"><label>Categoria</label><input type="text" class="form-control" name="Categoria"></div>
-          <div class="mb-2"><label>Estatus</label>
-            <select class="form-select" name="Estatus">
-              <option>Activo</option>
-              <option>Inactivo</option>
-            </select>
-          </div>
-          <div class="mb-2"><label>Valor Unitario</label><input type="number" class="form-control" name="Valor_unitario" step="0.01" required></div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-success">Agregar</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <form id="formAgregar" method="post">
+            <input type="hidden" name="accion" value="agregar">
+            <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" name="Nombre" required></div>
+            <div class="mb-2"><label>Categoria</label><input type="text" class="form-control" name="Categoria"></div>
+            <div class="mb-2"><label>Estatus</label>
+                <select class="form-select" name="Estatus">
+                    <option>Activo</option>
+                    <option>Inactivo</option>
+                </select>
+            </div>
+            <div class="mb-2"><label>Valor Unitario</label><input type="number" class="form-control" name="Valor_unitario"></div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-success">Agregar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+        </form>
+
         </div>
       </form>
     </div>
