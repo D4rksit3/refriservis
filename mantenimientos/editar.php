@@ -1,109 +1,112 @@
 <?php
 // mantenimientos/editar.php
 session_start();
-if (!isset($_SESSION['usuario']) || !in_array($_SESSION['rol'], ['admin','digitador','operador'])) {
-    header('Location: /index.php'); exit;
+if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
+    header('Location: /index.php');
+    exit;
 }
-require_once __DIR__.'/../config/db.php';
-require_once __DIR__.'/../includes/header.php';
+
+require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/header.php';
 
 $id = $_GET['id'] ?? null;
-if (!$id) die("Mantenimiento no encontrado.");
+if (!$id) {
+    die("<div class='alert alert-danger'>ID inválido</div>");
+}
 
-// Traer mantenimiento
-$stmt = $pdo->prepare("SELECT * FROM mantenimientos WHERE id = ?");
+// Obtener mantenimiento actual
+$stmt = $pdo->prepare("
+    SELECT m.*, c.nombre AS cliente, i.nombre AS inventario,
+           u.usuario AS digitador, op.usuario AS operador,
+           mod.usuario AS modificado_por_usuario
+    FROM mantenimientos m
+    LEFT JOIN clientes c ON c.id = m.cliente_id
+    LEFT JOIN inventario i ON i.id = m.inventario_id
+    LEFT JOIN usuarios u ON u.id = m.digitador_id
+    LEFT JOIN usuarios op ON op.id = m.operador_id
+    LEFT JOIN usuarios mod ON mod.id = m.modificado_por
+    WHERE m.id = ?
+");
 $stmt->execute([$id]);
-$m = $stmt->fetch();
-if (!$m) die("Mantenimiento no encontrado.");
+$mantenimiento = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// Traer datos para selects
-$clientes = $pdo->query("SELECT id, cliente FROM clientes ORDER BY cliente")->fetchAll();
-$equipos = $pdo->query("SELECT id_equipo, Nombre FROM equipos ORDER BY Nombre")->fetchAll();
-$operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"')->fetchAll();
+if (!$mantenimiento) {
+    die("<div class='alert alert-danger'>Mantenimiento no encontrado</div>");
+}
 
-$errors = [];
+// Procesar formulario
+$ok = $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $titulo = trim($_POST['titulo'] ?? '');
-    $descripcion = trim($_POST['descripcion'] ?? '');
-    $fecha = $_POST['fecha'] ?? date('Y-m-d');
-    $cliente_id = $_POST['cliente_id'] ?: null;
-    $operador_id = $_POST['operador_id'] ?: null;
-    $equiposSel = $_POST['equipos'] ?? [];
+    $descripcion = $_POST['descripcion'] ?? '';
+    $estado = $_POST['estado'] ?? '';
 
-    if ($titulo === '') $errors[] = 'Título es obligatorio.';
-
-    if (empty($errors)) {
-        // Guardar hasta 7 equipos
-        $equipCols = [];
-        for ($i=0;$i<7;$i++) $equipCols[$i] = $equiposSel[$i] ?? null;
-
-        $stmt = $pdo->prepare("
-            UPDATE mantenimientos SET 
-            titulo=?, descripcion=?, fecha=?, cliente_id=?, operador_id=?, 
-            equipo1=?, equipo2=?, equipo3=?, equipo4=?, equipo5=?, equipo6=?, equipo7=?
-            WHERE id=?
+    try {
+        $upd = $pdo->prepare("
+            UPDATE mantenimientos
+            SET descripcion = ?, estado = ?, 
+                modificado_por = ?, modificado_en = NOW()
+            WHERE id = ?
         ");
-        $stmt->execute([
-            $titulo, $descripcion, $fecha, $cliente_id, $operador_id,
-            $equipCols[0], $equipCols[1], $equipCols[2], $equipCols[3], $equipCols[4], $equipCols[5], $equipCols[6],
-            $id
-        ]);
-        echo "<div class='alert alert-success'>Mantenimiento actualizado.</div>";
-        $stmt = $pdo->prepare("SELECT * FROM mantenimientos WHERE id = ?");
+        $upd->execute([$descripcion, $estado, $_SESSION['usuario_id'], $id]);
+
+        $ok = "Mantenimiento actualizado correctamente.";
+        // refrescar datos
         $stmt->execute([$id]);
-        $m = $stmt->fetch();
+        $mantenimiento = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        $error = "Error al actualizar: " . $e->getMessage();
     }
 }
 ?>
 
 <div class="card p-3">
-    <h5>Editar Mantenimiento #<?=$m['id']?></h5>
-    <?php foreach($errors as $e) echo "<div class='alert alert-danger small'>$e</div>"; ?>
-    <form method="post" class="row g-2">
-        <div class="col-12">
-            <label class="form-label">Título</label>
-            <input class="form-control" name="titulo" value="<?=htmlspecialchars($m['titulo'])?>" required>
-        </div>
-        <div class="col-12">
-            <label class="form-label">Descripción</label>
-            <textarea class="form-control" name="descripcion"><?=htmlspecialchars($m['descripcion'])?></textarea>
-        </div>
-        <div class="col-4">
-            <label class="form-label">Fecha</label>
-            <input type="date" class="form-control" name="fecha" value="<?=$m['fecha']?>">
-        </div>
-        <div class="col-4">
-            <label class="form-label">Cliente</label>
-            <select name="cliente_id" class="form-select">
-                <option value="">-- Ninguno --</option>
-                <?php foreach($clientes as $c): ?>
-                    <option value="<?=$c['id']?>" <?=$m['cliente_id']==$c['id']?'selected':''?>><?=htmlspecialchars($c['cliente'])?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="col-4">
-            <label class="form-label">Asignar Operador</label>
-            <select name="operador_id" class="form-select">
-                <option value="">-- Ninguno --</option>
-                <?php foreach($operadores as $o): ?>
-                    <option value="<?=$o['id']?>" <?=$m['operador_id']==$o['id']?'selected':''?>><?=htmlspecialchars($o['nombre'])?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="col-12">
-            <label class="form-label">Equipos (máx. 7)</label>
-            <select name="equipos[]" class="form-select" multiple>
-                <?php 
-                for ($i=1;$i<=7;$i++) $selectedEquip[$i-1] = $m['equipo'.$i];
-                foreach($equipos as $e): ?>
-                    <option value="<?=$e['id_equipo']?>" <?=in_array($e['id_equipo'],$selectedEquip)?'selected':''?>><?=htmlspecialchars($e['Nombre'])?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="col-12 text-end">
-            <button class="btn btn-primary">Guardar</button>
-        </div>
-    </form>
+  <h5>Editar Mantenimiento</h5>
+
+  <?php if($ok): ?>
+    <div class="alert alert-success small"><?= $ok ?></div>
+  <?php endif; ?>
+  <?php if($error): ?>
+    <div class="alert alert-danger small"><?= $error ?></div>
+  <?php endif; ?>
+
+  <form method="post" class="row g-3">
+    <div class="col-12">
+      <label class="form-label">Cliente</label>
+      <input type="text" class="form-control" value="<?= htmlspecialchars($mantenimiento['cliente']) ?>" disabled>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Inventario</label>
+      <input type="text" class="form-control" value="<?= htmlspecialchars($mantenimiento['inventario']) ?>" disabled>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Descripción</label>
+      <textarea name="descripcion" class="form-control" rows="4"><?= htmlspecialchars($mantenimiento['descripcion']) ?></textarea>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Estado</label>
+      <select name="estado" class="form-select">
+        <option value="pendiente" <?= $mantenimiento['estado'] === 'pendiente' ? 'selected' : '' ?>>Pendiente</option>
+        <option value="en_proceso" <?= $mantenimiento['estado'] === 'en_proceso' ? 'selected' : '' ?>>En Proceso</option>
+        <option value="finalizado" <?= $mantenimiento['estado'] === 'finalizado' ? 'selected' : '' ?>>Finalizado</option>
+      </select>
+    </div>
+    <div class="col-12 text-end">
+      <button type="submit" class="btn btn-primary">💾 Guardar cambios</button>
+      <a href="/operador/mis_mantenimientos.php" class="btn btn-secondary">⬅ Volver</a>
+    </div>
+  </form>
+
+  <hr>
+  <h6>Historial</h6>
+  <ul class="list-unstyled small">
+    <li><strong>Digitador:</strong> <?= htmlspecialchars($mantenimiento['digitador']) ?></li>
+    <li><strong>Operador:</strong> <?= htmlspecialchars($mantenimiento['operador']) ?></li>
+    <?php if ($mantenimiento['modificado_por_usuario']): ?>
+      <li><strong>Última modificación por:</strong> <?= htmlspecialchars($mantenimiento['modificado_por_usuario']) ?> el <?= $mantenimiento['modificado_en'] ?></li>
+    <?php else: ?>
+      <li><em>Aún no ha sido modificado.</em></li>
+    <?php endif; ?>
+  </ul>
 </div>
 
-<?php require_once __DIR__.'/../includes/footer.php'; ?>
+
