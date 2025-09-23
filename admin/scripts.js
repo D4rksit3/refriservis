@@ -57,18 +57,27 @@ $(document).ready(function(){
     });
 
     // -------------- EQUIPOS: AGREGAR --------------
-    $('#formAgregarEquipo').on('submit', function(e){
+    $('#formAgregarEquipo').submit(function(e){
         e.preventDefault();
         $.post('equipos_crud.php', $(this).serialize(), function(resp){
-            if(resp && resp.success){
-                $('#formAgregarEquipo')[0].reset();
-                if(tablaEquipos) tablaEquipos.ajax.reload(null,false);
-                cerrarModalById('modalAgregarEquipo');
-            } else {
-                alert(resp && resp.message ? resp.message : 'Error al agregar');
+            if(resp.success){
+                $('#modalAgregar').modal('hide');
+                $('#modalAgregar').modal('hide');  // <-- ESTA LÍNEA ESTÁ DUPLICADA ❌
+                tabla.ajax.reload();
+
+                // Este bloque también está duplicando reload
+                $(document).on('hidden.bs.modal', '.modal', function () {
+                    $('.modal-backdrop').remove();
+                    $('body').removeClass('modal-open');
+                    $('body').css('overflow', 'auto');
+                });
+                $('#modalAgregar').on('hidden.bs.modal', function () {
+                    tabla.ajax.reload(); // <-- recarga de nuevo
+                });
             }
-        }, 'json').fail(function(){ alert('Error de red'); });
+        }, 'json');
     });
+
 
     // -------------- EQUIPOS: EDITAR --------------
     // abrir edit - delegación
