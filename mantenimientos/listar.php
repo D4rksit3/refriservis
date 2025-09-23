@@ -102,4 +102,4 @@ $equiposAll = $pdo->query("SELECT id_equipo, Nombre FROM equipos")->fetchAll(PDO
     </table>
   </div>
 </div>
-<?php require_once __DIR__.'/../includes/footer.php'; ?>
+
