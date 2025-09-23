@@ -30,6 +30,9 @@ $(document).ready(function(){
                     $('body').removeClass('modal-open');   // desbloquea scroll
                     $('body').css('overflow', 'auto');     // por si se queda bloqueado
                 });
+                $('#modalAgregar').on('hidden.bs.modal', function () {
+                    tabla.ajax.reload(); // refrescar tabla solo cuando de verdad cerró
+                });
             } else alert('Error al agregar');
         }, 'json');
     });
