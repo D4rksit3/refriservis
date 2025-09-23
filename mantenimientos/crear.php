@@ -2,11 +2,10 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-// mantenimientos/crear.php
+
 session_start();
-if (!isset($_SESSION['usuario']) || !in_array($_SESSION['rol'], ['admin','digitador'])) { 
-    header('Location: /index.php'); 
-    exit; 
+if (!isset($_SESSION['usuario']) || !in_array($_SESSION['rol'], ['admin','digitador'])) {
+    header('Location: /index.php'); exit;
 }
 
 require_once __DIR__.'/../config/db.php';
@@ -22,43 +21,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $operador_id = $_POST['operador_id'] ?: null;
 
     if ($titulo === '') $errors[] = 'Título es obligatorio.';
+
     if (empty($errors)) {
         $stmt = $pdo->prepare('
             INSERT INTO mantenimientos 
             (titulo, descripcion, fecha, cliente_id, inventario_id, estado, digitador_id, operador_id) 
             VALUES (?,?,?,?,?,"pendiente",?,?)
         ');
-        $stmt->execute([
-            $titulo,
-            $descripcion,
-            $fecha,
-            $cliente_id,
-            $inventario_id,
-            $_SESSION['user_id'],
-            $operador_id
-        ]);
+        $stmt->execute([$titulo, $descripcion, $fecha, $cliente_id, $inventario_id, $_SESSION['usuario_id'], $operador_id]);
         header('Location: /mantenimientos/listar.php'); 
         exit;
     }
 }
 
 // Datos para selects
-$clientes = $pdo->query('
-    SELECT id, cliente, direccion, telefono, responsable, email, ultima_visita, estatus 
-    FROM clientes 
-    ORDER BY cliente
-')->fetchAll();
-
-// Inventario actualizado según tu tabla
-$invent = $pdo->query('
-    SELECT id_equipo, Nombre, Categoria, Estatus 
-    FROM inventario 
-    ORDER BY Nombre
-')->fetchAll();
-
+$clientes = $pdo->query('SELECT id, nombre, direccion, telefono, responsable, email, ultima_visita, estatus FROM clientes ORDER BY nombre')->fetchAll();
+$invent = $pdo->query('SELECT id, nombre, marca, modelo, serie, gas, codigo FROM inventario ORDER BY nombre')->fetchAll();
 $operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"')->fetchAll();
 ?>
-
 <div class="card p-3">
     <h5>Crear mantenimiento</h5>
     <?php foreach($errors as $e) echo "<div class='alert alert-danger small'>$e</div>"; ?>
@@ -81,9 +61,7 @@ $operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"'
                 <option value="">-- Ninguno --</option>
                 <?php foreach($clientes as $c): ?>
                     <option value="<?=$c['id']?>">
-                        <?=htmlspecialchars($c['cliente'])?> |
-                        <?=htmlspecialchars($c['responsable'])?> |
-                        <?=htmlspecialchars($c['telefono'])?>
+                        <?=htmlspecialchars($c['nombre'].' - '.$c['direccion'].' - '.$c['telefono'])?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -93,10 +71,8 @@ $operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"'
             <select name="inventario_id" class="form-select">
                 <option value="">-- Ninguno --</option>
                 <?php foreach($invent as $i): ?>
-                    <option value="<?=$i['id_equipo']?>">
-                        <?=htmlspecialchars($i['Nombre'])?> |
-                        <?=htmlspecialchars($i['Categoria'])?> |
-                        <?=htmlspecialchars($i['Estatus'])?>
+                    <option value="<?=$i['id']?>">
+                        <?=htmlspecialchars($i['nombre'].' | '.$i['marca'].' '.$i['modelo'].' | Serie: '.$i['serie'])?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -115,5 +91,4 @@ $operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"'
         </div>
     </form>
 </div>
-
 <?php require_once __DIR__.'/../includes/footer.php'; ?>
