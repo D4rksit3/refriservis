@@ -49,7 +49,13 @@ $clientes = $pdo->query('
     ORDER BY cliente
 ')->fetchAll();
 
-$invent = $pdo->query('SELECT id, equipo FROM inventario ORDER BY equipo')->fetchAll();
+// Inventario actualizado según tu tabla
+$invent = $pdo->query('
+    SELECT id_equipo, Nombre, Categoria, Estatus 
+    FROM inventario 
+    ORDER BY Nombre
+')->fetchAll();
+
 $operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"')->fetchAll();
 ?>
 
@@ -87,7 +93,11 @@ $operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"'
             <select name="inventario_id" class="form-select">
                 <option value="">-- Ninguno --</option>
                 <?php foreach($invent as $i): ?>
-                    <option value="<?=$i['id']?>"><?=htmlspecialchars($i['equipo'])?></option>
+                    <option value="<?=$i['id_equipo']?>">
+                        <?=htmlspecialchars($i['Nombre'])?> |
+                        <?=htmlspecialchars($i['Categoria'])?> |
+                        <?=htmlspecialchars($i['Estatus'])?>
+                    </option>
                 <?php endforeach; ?>
             </select>
         </div>
