@@ -47,7 +47,6 @@ if ($action === 'import' && $_SERVER['REQUEST_METHOD']==='POST') {
 
     while (($row = fgetcsv($file)) !== false) {
       if (empty($row[5])) $row[5] = null;
-      $row[6] = ($row[6] == '1' || strtolower($row[6])=='activo') ? 1 : 0;
       $stmt->execute($row);
     }
     fclose($file);
@@ -175,12 +174,12 @@ if ($action === 'list') {
                       <div class="col-6"><label class="form-label">Responsable</label><input class="form-control" name="responsable" value="<?=$c['responsable']?>"></div>
                       <div class="col-12"><label class="form-label">Email</label><input class="form-control" type="email" name="email" value="<?=$c['email']?>"></div>
                       <div class="col-6"><label class="form-label">Última visita</label><input class="form-control" type="date" name="ultima_visita" value="<?=$c['ultima_visita']?>"></div>
-                      <div class="col-6 d-flex flex-column">
-                        <label class="form-label">Estatus</label>
-                        <div class="form-check form-switch">
-                          <input class="form-check-input" type="checkbox" name="estatus" value="1" <?=$c['estatus']?'checked':''?>>
-                          <label class="form-check-label"><?=$c['estatus']?'Activo':'Inactivo'?></label>
-                        </div>
+                      <div class="col-6">
+                        <label class="form-label">Estatus</label><br>
+                        <label class="switch">
+                          <input type="checkbox" name="estatus" <?=$c['estatus'] ? 'checked' : ''?>>
+                          <span class="slider round"></span>
+                        </label>
                       </div>
                     </div>
                     <div class="modal-footer">
@@ -242,12 +241,12 @@ if ($action === 'list') {
             <div class="col-6"><label class="form-label">Responsable</label><input class="form-control" name="responsable"></div>
             <div class="col-12"><label class="form-label">Email</label><input class="form-control" type="email" name="email"></div>
             <div class="col-6"><label class="form-label">Última visita</label><input class="form-control" type="date" name="ultima_visita"></div>
-            <div class="col-6 d-flex flex-column">
-              <label class="form-label">Estatus</label>
-              <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" name="estatus" value="1" checked>
-                <label class="form-check-label">Activo</label>
-              </div>
+            <div class="col-6">
+              <label class="form-label">Estatus</label><br>
+              <label class="switch">
+                <input type="checkbox" name="estatus" checked>
+                <span class="slider round"></span>
+              </label>
             </div>
           </div>
           <div class="modal-footer">
@@ -278,6 +277,38 @@ if ($action === 'list') {
       </div>
     </div>
   </div>
+
+  <!-- CSS Switch -->
+  <style>
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+  }
+  .switch input {display:none;}
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 18px; width: 18px;
+    left: 3px; bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+  }
+  input:checked + .slider { background-color: #4CAF50; }
+  input:checked + .slider:before { transform: translateX(26px); }
+  .slider.round { border-radius: 34px; }
+  .slider.round:before { border-radius: 50%; }
+  </style>
 
   <?php
 }
