@@ -5,7 +5,7 @@ if (!isset($_SESSION['usuario'])) { header('Location: /index.php'); exit; }
 require_once __DIR__.'/../config/db.php';
 require_once __DIR__.'/../includes/header.php';
 
-// Si admin ve todos; digitador ve los suyos; operador puede ver asignados
+// Filtrado por rol
 $where = '1=1';
 $params = [];
 if ($_SESSION['rol'] === 'digitador') {
@@ -16,7 +16,7 @@ if ($_SESSION['rol'] === 'digitador') {
   $params[] = $_SESSION['usuario_id'];
 }
 
-// Traemos los mantenimientos
+// Traemos mantenimientos
 $stmt = $pdo->prepare("SELECT * FROM mantenimientos WHERE $where ORDER BY creado_en DESC");
 $stmt->execute($params);
 $rows = $stmt->fetchAll();
@@ -54,13 +54,10 @@ $equiposAll = $pdo->query("SELECT id_equipo, Nombre FROM equipos")->fetchAll(PDO
             <td><?=$r['fecha']?></td>
             <td>
               <?php
-                // Cliente
                 if ($r['cliente_id']) {
                     $c = $pdo->query("SELECT cliente FROM clientes WHERE id=".$r['cliente_id'])->fetchColumn();
                     echo htmlspecialchars($c);
-                } else {
-                    echo '-';
-                }
+                } else { echo '-'; }
               ?>
             </td>
             <td>
