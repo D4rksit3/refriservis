@@ -17,18 +17,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $descripcion = trim($_POST['descripcion'] ?? '');
     $fecha = $_POST['fecha'] ?? date('Y-m-d');
     $cliente_id = $_POST['cliente_id'] ?: null;
-    $inventario_id = $_POST['inventario_id'] ?: null;
     $operador_id = $_POST['operador_id'] ?: null;
+
+    // Array de hasta 7 equipos
+    $equipos = [];
+    for ($i=1; $i<=7; $i++) {
+        $equipos[$i] = $_POST['equipos'][$i-1] ?? null;
+    }
 
     if ($titulo === '') $errors[] = 'Título es obligatorio.';
 
     if (empty($errors)) {
         $stmt = $pdo->prepare('
             INSERT INTO mantenimientos 
-            (titulo, descripcion, fecha, cliente_id, inventario_id, estado, digitador_id, operador_id) 
-            VALUES (?,?,?,?,?,"pendiente",?,?)
+            (titulo, descripcion, fecha, cliente_id, estado, digitador_id, operador_id,
+            equipo1,equipo2,equipo3,equipo4,equipo5,equipo6,equipo7)
+            VALUES (?,?,?,?, "pendiente", ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
-        $stmt->execute([$titulo, $descripcion, $fecha, $cliente_id, $inventario_id, $_SESSION['usuario_id'], $operador_id]);
+        $stmt->execute([
+            $titulo, $descripcion, $fecha, $cliente_id, $_SESSION['usuario_id'], $operador_id,
+            $equipos[1], $equipos[2], $equipos[3], $equipos[4], $equipos[5], $equipos[6], $equipos[7]
+        ]);
+
         header('Location: /mantenimientos/listar.php'); 
         exit;
     }
@@ -36,10 +46,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Datos para selects
 $clientes = $pdo->query('SELECT id, cliente, direccion, telefono, responsable, email, ultima_visita, estatus FROM clientes ORDER BY Cliente')->fetchAll();
-
-$invent = $pdo->query('SELECT id, nombre, marca, modelo, serie, gas, codigo FROM inventario ORDER BY nombre')->fetchAll();
+$equipos = $pdo->query('SELECT id_equipo, Nombre, Categoria, Estatus FROM equipos ORDER BY Nombre')->fetchAll();
 $operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"')->fetchAll();
 ?>
+
 <div class="card p-3">
     <h5>Crear mantenimiento</h5>
     <?php foreach($errors as $e) echo "<div class='alert alert-danger small'>$e</div>"; ?>
@@ -67,17 +77,22 @@ $operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"'
                 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-4">
-            <label class="form-label">Inventario</label>
-            <select name="inventario_id" class="form-select">
-                <option value="">-- Ninguno --</option>
-                <?php foreach($invent as $i): ?>
-                    <option value="<?=$i['id']?>">
-                        <?=htmlspecialchars($i['nombre'].' | '.$i['marca'].' '.$i['modelo'].' | Serie: '.$i['serie'])?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+
+        <!-- Selección de hasta 7 equipos -->
+        <div class="col-8">
+            <label class="form-label">Seleccionar hasta 7 equipos</label>
+            <?php for ($i=0; $i<7; $i++): ?>
+                <select name="equipos[]" class="form-select mb-1">
+                    <option value="">-- Ninguno --</option>
+                    <?php foreach($equipos as $eq): ?>
+                        <option value="<?=$eq['id_equipo']?>">
+                            <?=htmlspecialchars($eq['Nombre'].' | '.$eq['Categoria'].' | '.$eq['Estatus'])?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            <?php endfor; ?>
         </div>
+
         <div class="col-6">
             <label class="form-label">Asignar Operador</label>
             <select name="operador_id" class="form-select">
@@ -87,9 +102,11 @@ $operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"'
                 <?php endforeach; ?>
             </select>
         </div>
+
         <div class="col-12 text-end">
             <button class="btn btn-primary">Crear</button>
         </div>
     </form>
 </div>
+
 <?php require_once __DIR__.'/../includes/footer.php'; ?>
