@@ -13,9 +13,7 @@ $action = $_GET['action'] ?? 'list';
 if ($action === 'download_format') {
   header('Content-Type: text/csv');
   header('Content-Disposition: attachment;filename=clientes_formato.csv');
-  $campos = [
-    "Cliente","Dirección","Teléfono","Responsable","Email","Última visita","Estatus"
-  ];
+  $campos = ["Cliente","Dirección","Teléfono","Responsable","Email","Última visita","Estatus"];
   $out = fopen("php://output","w");
   fputcsv($out, $campos);
   fclose($out);
@@ -40,7 +38,7 @@ if ($action === 'export_all') {
 if ($action === 'import' && $_SERVER['REQUEST_METHOD']==='POST') {
   if (is_uploaded_file($_FILES['archivo']['tmp_name'])) {
     $file = fopen($_FILES['archivo']['tmp_name'], 'r');
-    $header = fgetcsv($file); // omitir encabezado
+    fgetcsv($file); // omitir encabezado
 
     $stmt = $pdo->prepare("
       INSERT INTO clientes (cliente,direccion,telefono,responsable,email,ultima_visita,estatus)
@@ -48,6 +46,8 @@ if ($action === 'import' && $_SERVER['REQUEST_METHOD']==='POST') {
     ");
 
     while (($row = fgetcsv($file)) !== false) {
+      // convertir fecha vacía en NULL
+      if (empty($row[5])) $row[5] = null;
       $stmt->execute($row);
     }
     fclose($file);
@@ -63,8 +63,13 @@ if ($action === 'add' && $_SERVER['REQUEST_METHOD']==='POST') {
     VALUES (?,?,?,?,?,?,?)
   ");
   $stmt->execute([
-    $_POST['cliente'], $_POST['direccion'], $_POST['telefono'],
-    $_POST['responsable'], $_POST['email'], $_POST['ultima_visita'], $_POST['estatus']
+    $_POST['cliente'], 
+    $_POST['direccion'], 
+    $_POST['telefono'],
+    $_POST['responsable'], 
+    $_POST['email'], 
+    !empty($_POST['ultima_visita']) ? $_POST['ultima_visita'] : null, 
+    $_POST['estatus']
   ]);
   header("Location: /admin/clientes.php?ok=1");
   exit;
@@ -79,7 +84,9 @@ if ($action === 'edit' && $_SERVER['REQUEST_METHOD']==='POST') {
   ");
   $stmt->execute([
     $_POST['cliente'], $_POST['direccion'], $_POST['telefono'],
-    $_POST['responsable'], $_POST['email'], $_POST['ultima_visita'], $_POST['estatus'], $_POST['id']
+    $_POST['responsable'], $_POST['email'],
+    !empty($_POST['ultima_visita']) ? $_POST['ultima_visita'] : null, 
+    $_POST['estatus'], $_POST['id']
   ]);
   header("Location: /admin/clientes.php?ok=1");
   exit;
@@ -91,9 +98,20 @@ if ($action === 'delete' && isset($_GET['id'])) {
   header('Location: /admin/clientes.php?ok=1'); exit;
 }
 
-// === Listado de clientes ===
+// === Listado de clientes con paginación SQL ===
 if ($action === 'list') {
-  $lista = $pdo->query('SELECT * FROM clientes ORDER BY id DESC')->fetchAll();
+  $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+  $limit = 10;
+  $offset = ($page - 1) * $limit;
+
+  $stmt = $pdo->prepare("SELECT * FROM clientes ORDER BY id DESC LIMIT :limit OFFSET :offset");
+  $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+  $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+  $stmt->execute();
+  $lista = $stmt->fetchAll();
+
+  $total = $pdo->query("SELECT COUNT(*) FROM clientes")->fetchColumn();
+  $total_pages = ceil($total / $limit);
   ?>
   <div class="card p-3">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
@@ -107,7 +125,7 @@ if ($action === 'list') {
     </div>
 
     <div class="table-responsive mt-3">
-      <table id="tablaClientes" class="table table-striped table-sm align-middle">
+      <table class="table table-striped table-sm align-middle">
         <thead class="table-light">
           <tr>
             <th>Cliente</th>
@@ -131,12 +149,8 @@ if ($action === 'list') {
               <td><?=htmlspecialchars($c['ultima_visita'])?></td>
               <td><?=htmlspecialchars($c['estatus'])?></td>
               <td class="text-end">
-                <button class="btn btn-sm btn-outline-primary" 
-                        data-bs-toggle="modal" 
-                        data-bs-target="#modalEdit<?=$c['id']?>">Editar</button>
-                <button class="btn btn-sm btn-outline-danger" 
-                        data-bs-toggle="modal" 
-                        data-bs-target="#modalDelete<?=$c['id']?>">Eliminar</button>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEdit<?=$c['id']?>">Editar</button>
+                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalDelete<?=$c['id']?>">Eliminar</button>
               </td>
             </tr>
 
@@ -185,11 +199,21 @@ if ($action === 'list') {
                 </div>
               </div>
             </div>
-
           <?php endforeach; ?>
         </tbody>
       </table>
     </div>
+
+    <!-- Paginador -->
+    <nav>
+      <ul class="pagination justify-content-center">
+        <?php for ($i=1; $i<=$total_pages; $i++): ?>
+          <li class="page-item <?= $i==$page ? 'active':'' ?>">
+            <a class="page-link" href="?page=<?=$i?>"><?=$i?></a>
+          </li>
+        <?php endfor; ?>
+      </ul>
+    </nav>
   </div>
 
   <!-- Modal Nuevo Cliente -->
@@ -238,22 +262,6 @@ if ($action === 'list') {
       </div>
     </div>
   </div>
-
-  <!-- DataTables -->
-  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-  <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-  <script>
-    $(document).ready(function(){
-      $('#tablaClientes').DataTable({
-        "pageLength": 10,
-        "lengthMenu": [10, 20, 100],
-        "language": {
-          "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-        }
-      });
-    });
-  </script>
 
   <?php
 }
