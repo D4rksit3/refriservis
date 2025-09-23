@@ -14,7 +14,10 @@ if($accion=='agregar'){
         $_POST['Estatus'],
         $_POST['Fecha_validad']
     ]);
-    echo json_encode(['success'=>$success]);
+    echo json_encode([
+        'success'=>$success
+        'redirect' => 'inventario_equipos.php'
+    ]);
     exit;
 }
 
