@@ -1,255 +1,183 @@
 <?php
-// operador/form_reporte.php
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+
+
 session_start();
-if (!isset($_SESSION['usuario']) || ($_SESSION['rol'] !== 'operador' && $_SESSION['rol'] !== 'tecnico')) {
-    header('Location: /index.php'); exit;
-}
-
 require_once __DIR__.'/../config/db.php';
-require_once __DIR__.'/../includes/header.php';
 
-$mantenimiento_id = (int)($_GET['id'] ?? 0);
-if (!$mantenimiento_id) {
-    die("Mantenimiento no especificado.");
-}
+$mantenimiento_id = $_GET['id'] ?? null;
 
-/* Traer datos del mantenimiento + cliente + inventario */
 $stmt = $pdo->prepare("
-  SELECT m.*, c.cliente AS cliente_nombre, c.direccion AS cliente_direccion, c.telefono AS cliente_telefono, c.responsable AS cliente_responsable, 
-         c.email AS cliente_email,
-         i.nombre AS equipo, i.marca, i.modelo, i.serie, i.gas, i.codigo
-  FROM mantenimientos m
-  LEFT JOIN clientes c ON c.id = m.cliente_id
-  LEFT JOIN inventario i ON i.id = m.inventario_id
-  WHERE m.id = ?
+    SELECT m.id, m.titulo, m.fecha, c.nombre AS cliente, c.direccion, 
+           i.nombre AS equipo, i.marca, i.modelo, i.serie, i.gas, i.codigo
+    FROM mantenimientos m
+    LEFT JOIN clientes c ON m.cliente_id = c.id
+    LEFT JOIN inventario i ON m.inventario_id = i.id
+    WHERE m.id = ?
 ");
 $stmt->execute([$mantenimiento_id]);
 $datos = $stmt->fetch(PDO::FETCH_ASSOC);
-if (!$datos) { die("Mantenimiento no encontrado."); }
 
-/* Ver si ya existe un reporte para esta orden (carga automática) */
-$reporte = null;
-$stmt = $pdo->prepare("SELECT * FROM reportes WHERE mantenimiento_id = ? LIMIT 1");
-$stmt->execute([$mantenimiento_id]);
-$reporte = $stmt->fetch(PDO::FETCH_ASSOC);
-
-$parametros = [];
-if ($reporte) {
-    $stmt = $pdo->prepare("SELECT * FROM parametros_funcionamiento WHERE reporte_id = ? ORDER BY id");
-    $stmt->execute([$reporte['id']]);
-    $parametros = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} else {
-    // Plantilla de medidas por defecto
-    $parametros = [
-      ['medida'=>'Corriente electrica nominal (A)'],
-      ['medida'=>'Tension electrica nominal (V)'],
-      ['medida'=>'Presion de descarga (PSI)'],
-      ['medida'=>'Presion de succion (PSI)']
-    ];
+if (!$datos) {
+    die("Mantenimiento no encontrado");
 }
 ?>
-
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Generar Reporte</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    canvas {
+      border: 1px solid #ccc;
+      width: 100%;
+      height: 200px;
+    }
+  </style>
+</head>
+<body class="bg-light">
 <div class="container py-4">
-  <div class="card">
+  <div class="card shadow-sm">
     <div class="card-body">
-      <h3 class="mb-3">Reporte de Servicio Técnico
-        <?php if ($reporte): ?><small class="text-muted"> — Reporte existente #<?= $reporte['id'] ?></small><?php endif; ?>
-      </h3>
+      <h3 class="mb-3">Reporte de Servicio Técnico</h3>
+      
+      <form action="guardar_informe.php" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="mantenimiento_id" value="<?= $datos['id'] ?>">
 
-      <form action="/operador/guardar_informe.php" method="post" enctype="multipart/form-data" id="formReporte">
-        <input type="hidden" name="mantenimiento_id" value="<?= htmlspecialchars($mantenimiento_id) ?>">
-        <?php if ($reporte): ?>
-          <input type="hidden" name="reporte_id" value="<?= htmlspecialchars($reporte['id']) ?>">
-        <?php endif; ?>
-
-        <!-- Datos auto -->
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <h6>Cliente</h6>
-            <p class="mb-1"><strong><?= htmlspecialchars($datos['cliente_nombre']) ?></strong></p>
-            <p class="mb-1"><?= htmlspecialchars($datos['cliente_direccion']) ?></p>
-            <p class="mb-1">Contacto: <?= htmlspecialchars($datos['cliente_responsable']) ?> — <?= htmlspecialchars($datos['cliente_telefono']) ?></p>
-            <p class="mb-1">Email: <?= htmlspecialchars($datos['cliente_email']) ?></p>
-          </div>
-          <div class="col-md-6">
-            <h6>Equipo</h6>
-            <p class="mb-1"><strong><?= htmlspecialchars($datos['equipo']) ?></strong></p>
-            <p class="mb-1">Marca: <?= htmlspecialchars($datos['marca']) ?> — Modelo: <?= htmlspecialchars($datos['modelo']) ?></p>
-            <p class="mb-1">Serie: <?= htmlspecialchars($datos['serie']) ?> — Gas: <?= htmlspecialchars($datos['gas']) ?></p>
-            <p class="mb-1">Código: <?= htmlspecialchars($datos['codigo']) ?></p>
-            <p class="mb-1">Fecha de orden: <?= htmlspecialchars($datos['fecha']) ?></p>
-          </div>
-        </div>
-
-        <!-- Trabajos y observaciones -->
+        <!-- Datos automáticos -->
         <div class="mb-3">
-          <label class="form-label">Trabajos realizados</label>
-          <textarea name="trabajos" class="form-control" rows="4" required><?= $reporte['trabajos'] ?? '' ?></textarea>
+          <strong>Cliente:</strong> <?= htmlspecialchars($datos['cliente']) ?><br>
+          <strong>Dirección:</strong> <?= htmlspecialchars($datos['direccion']) ?><br>
+          <strong>Equipo:</strong> <?= htmlspecialchars($datos['equipo']) ?><br>
+          <strong>Marca:</strong> <?= htmlspecialchars($datos['marca']) ?><br>
+          <strong>Modelo:</strong> <?= htmlspecialchars($datos['modelo']) ?><br>
+          <strong>Serie:</strong> <?= htmlspecialchars($datos['serie']) ?><br>
+          <strong>Gas:</strong> <?= htmlspecialchars($datos['gas']) ?><br>
+          <strong>Código:</strong> <?= htmlspecialchars($datos['codigo']) ?><br>
+          <strong>Fecha:</strong> <?= $datos['fecha'] ?>
         </div>
 
+        <!-- Trabajos -->
+        <div class="mb-3">
+          <label class="form-label">Trabajos Realizados</label>
+          <textarea name="trabajos" class="form-control" rows="3" required></textarea>
+        </div>
+
+        <!-- Observaciones -->
         <div class="mb-3">
           <label class="form-label">Observaciones</label>
-          <textarea name="observaciones" class="form-control" rows="3"><?= $reporte['observaciones'] ?? '' ?></textarea>
+          <textarea name="observaciones" class="form-control" rows="3"></textarea>
         </div>
 
-        <!-- Parámetros -->
-        <h5 class="mt-4">Parámetros de funcionamiento</h5>
-        <div class="table-responsive mb-3">
+        <!-- Parámetros de funcionamiento -->
+        <h5>Parámetros de Funcionamiento</h5>
+        <div class="table-responsive">
           <table class="table table-bordered align-middle text-center">
             <thead class="table-light">
               <tr>
                 <th>Medida</th>
-                <th>Antes 1</th>
-                <th>Después 1</th>
-                <th>Antes 2</th>
-                <th>Después 2</th>
+                <th>Antes</th>
+                <th>Después</th>
+                <th>Antes</th>
+                <th>Después</th>
               </tr>
             </thead>
-            <tbody id="parametrosBody">
+            <tbody>
               <?php
-                if ($parametros) {
-                  foreach ($parametros as $p):
-                    // para compatibilidad: si vienen columnas, usarlas
-                    $antes1 = $p['antes1'] ?? '';
-                    $despues1 = $p['despues1'] ?? '';
-                    $antes2 = $p['antes2'] ?? '';
-                    $despues2 = $p['despues2'] ?? '';
-                    $medida = $p['medida'] ?? ($p['medida'] ?? '');
-              ?>
+              $parametros = [
+                "Corriente electrica nominal (A)",
+                "Tension electrica nominal (V)",
+                "Presion de descarga (PSI)",
+                "Presion de succion (PSI)"
+              ];
+              foreach ($parametros as $p): ?>
                 <tr>
-                  <td>
-                    <input type="hidden" name="medida[]" value="<?= htmlspecialchars($medida) ?>">
-                    <?= htmlspecialchars($medida) ?>
-                  </td>
-                  <td><input class="form-control" name="antes1[]" value="<?=htmlspecialchars($antes1)?>"></td>
-                  <td><input class="form-control" name="despues1[]" value="<?=htmlspecialchars($despues1)?>"></td>
-                  <td><input class="form-control" name="antes2[]" value="<?=htmlspecialchars($antes2)?>"></td>
-                  <td><input class="form-control" name="despues2[]" value="<?=htmlspecialchars($despues2)?>"></td>
+                  <td><input type="hidden" name="medida[]" value="<?= $p ?>"><?= $p ?></td>
+                  <td><input type="text" name="antes1[]" class="form-control"></td>
+                  <td><input type="text" name="despues1[]" class="form-control"></td>
+                  <td><input type="text" name="antes2[]" class="form-control"></td>
+                  <td><input type="text" name="despues2[]" class="form-control"></td>
                 </tr>
-              <?php endforeach; } ?>
+              <?php endforeach; ?>
             </tbody>
           </table>
         </div>
 
-        <!-- Fotos (files) -->
+        <!-- Fotos -->
         <div class="mb-3">
-          <label class="form-label">Fotos (puedes subir varias)</label>
-          <input class="form-control" type="file" name="fotos[]" accept="image/*" multiple>
+          <label class="form-label">Subir Fotos</label>
+          <input type="file" name="fotos[]" multiple accept="image/*" class="form-control">
         </div>
 
-        <!-- Firmas: canvas -->
-        <h5 class="mt-4">Firmas</h5>
+        <!-- Firmas -->
+        <h5>Firmas</h5>
         <div class="row">
-          <?php
-            // Si ya hay firmas guardadas, las mostramos como imagen de referencia
-            $firma_cliente_src = $reporte['firma_cliente'] ? "/uploads/".basename($reporte['firma_cliente']) : '';
-            $firma_tecnico_src = $reporte['firma_tecnico'] ? "/uploads/".basename($reporte['firma_tecnico']) : '';
-            $firma_supervisor_src = $reporte['firma_supervisor'] ? "/uploads/".basename($reporte['firma_supervisor']) : '';
-          ?>
           <div class="col-md-4 mb-3">
-            <label>Firma Cliente</label>
-            <canvas id="firmaCliente" class="border" width="400" height="160"></canvas>
-            <input type="hidden" id="firmaClienteInput" name="firma_cliente_dataurl" value="">
-            <?php if ($firma_cliente_src): ?><div class="mt-2"><small>Firma guardada:</small><br><img src="<?=htmlspecialchars($firma_cliente_src)?>" style="max-width:100%;height:70px"></div><?php endif; ?>
-            <div class="mt-1">
-              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limpiarFirma('firmaCliente')">Limpiar</button>
-            </div>
+            <label class="form-label">Firma Cliente</label>
+            <canvas id="firmaCliente"></canvas>
+            <input type="hidden" name="firma_cliente" id="firmaClienteInput">
+            <button type="button" class="btn btn-sm btn-secondary mt-1" onclick="limpiarFirma('firmaCliente')">Limpiar</button>
           </div>
-
           <div class="col-md-4 mb-3">
-            <label>Firma Técnico</label>
-            <canvas id="firmaTecnico" class="border" width="400" height="160"></canvas>
-            <input type="hidden" id="firmaTecnicoInput" name="firma_tecnico_dataurl" value="">
-            <?php if ($firma_tecnico_src): ?><div class="mt-2"><small>Firma guardada:</small><br><img src="<?=htmlspecialchars($firma_tecnico_src)?>" style="max-width:100%;height:70px"></div><?php endif; ?>
-            <div class="mt-1">
-              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limpiarFirma('firmaTecnico')">Limpiar</button>
-            </div>
+            <label class="form-label">Firma Técnico</label>
+            <canvas id="firmaTecnico"></canvas>
+            <input type="hidden" name="firma_tecnico" id="firmaTecnicoInput">
+            <button type="button" class="btn btn-sm btn-secondary mt-1" onclick="limpiarFirma('firmaTecnico')">Limpiar</button>
           </div>
-
           <div class="col-md-4 mb-3">
-            <label>Firma Supervisor</label>
-            <canvas id="firmaSupervisor" class="border" width="400" height="160"></canvas>
-            <input type="hidden" id="firmaSupervisorInput" name="firma_supervisor_dataurl" value="">
-            <?php if ($firma_supervisor_src): ?><div class="mt-2"><small>Firma guardada:</small><br><img src="<?=htmlspecialchars($firma_supervisor_src)?>" style="max-width:100%;height:70px"></div><?php endif; ?>
-            <div class="mt-1">
-              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limpiarFirma('firmaSupervisor')">Limpiar</button>
-            </div>
+            <label class="form-label">Firma Supervisor</label>
+            <canvas id="firmaSupervisor"></canvas>
+            <input type="hidden" name="firma_supervisor" id="firmaSupervisorInput">
+            <button type="button" class="btn btn-sm btn-secondary mt-1" onclick="limpiarFirma('firmaSupervisor')">Limpiar</button>
           </div>
         </div>
 
-        <div class="mt-4">
-          <button class="btn btn-success" type="submit">Guardar Informe</button>
-          <?php if ($reporte): ?>
-            <a class="btn btn-outline-primary" href="/operador/reporte.php?id=<?= $reporte['id'] ?>" target="_blank">Ver Reporte</a>
-          <?php endif; ?>
-        </div>
-
+        <button type="submit" class="btn btn-success w-100">Guardar Informe</button>
       </form>
     </div>
   </div>
 </div>
 
-<!-- scripts -->
 <script>
-/* Canvas signing helper */
+// Lógica para firmar en canvas
 function initFirma(canvasId, inputId) {
   const canvas = document.getElementById(canvasId);
   const input = document.getElementById(inputId);
   const ctx = canvas.getContext("2d");
-  ctx.lineWidth = 2;
-  ctx.lineCap = "round";
-  let drawing = false;
-  let last = {x:0,y:0};
+  let dibujando = false;
 
-  function pos(e) {
-    const rect = canvas.getBoundingClientRect();
-    let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
-  }
-
-  function start(e) {
-    drawing = true;
-    const p = pos(e);
-    last = p;
-    ctx.beginPath();
-    ctx.moveTo(p.x, p.y);
-    e.preventDefault();
-  }
-  function move(e) {
-    if (!drawing) return;
-    const p = pos(e);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-    last = p;
-    e.preventDefault();
-  }
-  function end(e) {
-    drawing = false;
+  canvas.addEventListener("mousedown", () => dibujando = true);
+  canvas.addEventListener("mouseup", () => {
+    dibujando = false;
     input.value = canvas.toDataURL("image/png");
+  });
+  canvas.addEventListener("mousemove", (e) => {
+    if (!dibujando) return;
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "black";
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.stroke();
     ctx.beginPath();
-  }
-
-  canvas.addEventListener("mousedown", start);
-  canvas.addEventListener("mousemove", move);
-  canvas.addEventListener("mouseup", end);
-  canvas.addEventListener("mouseout", end);
-  canvas.addEventListener("touchstart", start, {passive:false});
-  canvas.addEventListener("touchmove", move, {passive:false});
-  canvas.addEventListener("touchend", end, {passive:false});
+    ctx.moveTo(e.offsetX, e.offsetY);
+  });
 }
 
 function limpiarFirma(canvasId) {
   const canvas = document.getElementById(canvasId);
   const ctx = canvas.getContext("2d");
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  const input = document.getElementById(canvasId + 'Input');
-  if (input) input.value = '';
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-initFirma('firmaCliente','firmaClienteInput');
-initFirma('firmaTecnico','firmaTecnicoInput');
-initFirma('firmaSupervisor','firmaSupervisorInput');
+initFirma("firmaCliente","firmaClienteInput");
+initFirma("firmaTecnico","firmaTecnicoInput");
+initFirma("firmaSupervisor","firmaSupervisorInput");
 </script>
-
-<?php require_once __DIR__.'/../includes/footer.php'; ?>
+</body>
+</html>

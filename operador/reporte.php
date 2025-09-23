@@ -1,132 +1,260 @@
 <?php
-// operador/reporte.php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 session_start();
-if (!isset($_SESSION['usuario'])) { header('Location: /index.php'); exit; }
-
 require_once __DIR__.'/../config/db.php';
-$reporte_id = (int)($_GET['id'] ?? 0);
-if (!$reporte_id) die("Reporte no especificado.");
 
+$mantenimiento_id = $_GET['id'] ?? null;
+
+if(!$mantenimiento_id){
+    die("⚠️ ID de mantenimiento no proporcionado");
+}
+
+// Traer mantenimiento + cliente + inventario principal
 $stmt = $pdo->prepare("
-  SELECT r.*, m.titulo AS orden_titulo, m.fecha AS orden_fecha,
-         c.cliente AS cliente_nombre, c.direccion AS cliente_direccion, c.responsable AS cliente_responsable, c.telefono AS cliente_telefono,
-         i.nombre AS equipo, i.marca, i.modelo, i.serie, i.gas, i.codigo,
-         u.nombre AS tecnico
-  FROM reportes r
-  LEFT JOIN mantenimientos m ON m.id = r.mantenimiento_id
-  LEFT JOIN clientes c ON c.id = m.cliente_id
-  LEFT JOIN inventario i ON i.id = m.inventario_id
-  LEFT JOIN usuarios u ON u.id = r.usuario_id
-  WHERE r.id = ?
+    SELECT m.id, m.titulo, m.fecha,
+           c.nombre AS cliente, c.direccion,
+           i.nombre AS equipo, i.marca, i.modelo, i.serie, i.gas, i.codigo
+    FROM mantenimientos m
+    LEFT JOIN clientes c ON m.cliente_id = c.id
+    LEFT JOIN inventario i ON m.inventario_id = i.id
+    WHERE m.id = ?
 ");
-$stmt->execute([$reporte_id]);
-$rep = $stmt->fetch(PDO::FETCH_ASSOC);
-if (!$rep) die("Reporte no encontrado.");
+$stmt->execute([$mantenimiento_id]);
+$datos = $stmt->fetch(PDO::FETCH_ASSOC);
 
-$params = $pdo->prepare("SELECT * FROM parametros_funcionamiento WHERE reporte_id=? ORDER BY id");
-$params->execute([$reporte_id]);
-$params = $params->fetchAll(PDO::FETCH_ASSOC);
+if (!$datos) {
+    die("❌ Mantenimiento con ID=$mantenimiento_id no encontrado en la base de datos.");
+}
 
-$fotos = $pdo->prepare("SELECT * FROM fotos_reporte WHERE reporte_id=? ORDER BY id");
-$fotos->execute([$reporte_id]);
-$fotos = $fotos->fetchAll(PDO::FETCH_ASSOC);
+// --- Equipos relacionados (si tienes tabla intermedia mantenimientos_inventario) ---
+$equipos = [];
+try {
+    $stmt2 = $pdo->prepare("
+        SELECT nombre, marca, modelo, serie, gas, codigo
+        FROM inventario
+        WHERE id IN (
+            SELECT inventario_id FROM mantenimientos_inventario WHERE mantenimiento_id = ?
+        )
+        LIMIT 7
+    ");
+    $stmt2->execute([$mantenimiento_id]);
+    $equipos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    // Si no existe la tabla intermedia, usamos solo el inventario principal
+    if ($datos['equipo']) {
+        $equipos[] = [
+            'nombre' => $datos['equipo'],
+            'marca' => $datos['marca'],
+            'modelo' => $datos['modelo'],
+            'serie' => $datos['serie'],
+            'gas' => $datos['gas'],
+            'codigo' => $datos['codigo']
+        ];
+    }
+}
+
+// Completar hasta 7 filas vacías
+for($i=count($equipos); $i<7; $i++){
+    $equipos[] = ['nombre'=>'','marca'=>'','modelo'=>'','serie'=>'','gas'=>'','codigo'=>''];
+}
+
+// Parámetros de funcionamiento
+$parametros = [
+    "Corriente eléctrica nominal (Amperios)" => ['L1','L2','L3'],
+    "Tensión eléctrica nominal (Voltios)"    => ['V1','V2','V3'],
+    "Presión de descarga (PSI)"              => ['P1','P2','P3'],
+    "Presión de succión (PSI)"               => ['S1','S2','S3']
+];
 ?>
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <title>Reporte #<?= $rep['id'] ?> - <?= htmlspecialchars($rep['orden_titulo']) ?></title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body { background: #fff; color: #111; }
-    .report-header { border-bottom: 2px solid #eee; margin-bottom: 18px; padding-bottom: 12px; }
-    .firma { width: 220px; height: 80px; border:1px solid #ddd; display:block; object-fit:contain; }
-    @media print {
-      .no-print { display:none; }
-      .container { max-width: 100%; }
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Reporte de Servicio Técnico</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+canvas { border:1px solid #ccc; width:100%; height:200px; }
+</style>
 </head>
-<body>
-<div class="container my-4">
-  <div class="d-flex justify-content-between report-header">
-    <div>
-      <h4>Reporte de Servicio Técnico</h4>
-      <div><strong>Orden:</strong> <?= htmlspecialchars($rep['orden_titulo']) ?></div>
-      <div><strong>Reporte ID:</strong> <?= $rep['id'] ?> — <strong>Fecha:</strong> <?= htmlspecialchars($rep['creado_en']) ?></div>
-    </div>
-    <div class="text-end">
-      <h6>Datos del Cliente</h6>
-      <div><strong><?= htmlspecialchars($rep['cliente_nombre']) ?></strong></div>
-      <div><?= htmlspecialchars($rep['cliente_direccion']) ?></div>
-      <div><?= htmlspecialchars($rep['cliente_responsable']) ?> — <?= htmlspecialchars($rep['cliente_telefono']) ?></div>
-    </div>
-  </div>
+<body class="bg-light">
+<div class="container py-4">
+<div class="card shadow-sm">
+<div class="card-body">
+<h3 class="mb-3">Reporte de Servicio Técnico</h3>
 
-  <h5>Equipo</h5>
-  <p><?= htmlspecialchars($rep['equipo']) ?> — Marca: <?= htmlspecialchars($rep['marca']) ?> / Modelo: <?= htmlspecialchars($rep['modelo']) ?> / Serie: <?= htmlspecialchars($rep['serie']) ?></p>
+<form action="guardar_informe.php" method="post" enctype="multipart/form-data">
+<input type="hidden" name="mantenimiento_id" value="<?= $datos['id'] ?>">
 
-  <h5>Trabajos realizados</h5>
-  <p><?= nl2br(htmlspecialchars($rep['trabajos'])) ?></p>
-
-  <h5>Observaciones</h5>
-  <p><?= nl2br(htmlspecialchars($rep['observaciones'])) ?></p>
-
-  <?php if ($params): ?>
-    <h5>Parámetros de funcionamiento</h5>
-    <table class="table table-sm table-bordered">
-      <thead class="table-light"><tr><th>Medida</th><th>Antes 1</th><th>Después 1</th><th>Antes 2</th><th>Después 2</th></tr></thead>
-      <tbody>
-        <?php foreach($params as $p): ?>
-          <tr>
-            <td><?=htmlspecialchars($p['medida'])?></td>
-            <td><?=htmlspecialchars($p['antes1'])?></td>
-            <td><?=htmlspecialchars($p['despues1'])?></td>
-            <td><?=htmlspecialchars($p['antes2'])?></td>
-            <td><?=htmlspecialchars($p['despues2'])?></td>
-          </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-  <?php endif; ?>
-
-  <?php if ($fotos): ?>
-    <h5>Fotos</h5>
-    <div class="row">
-      <?php foreach($fotos as $f): ?>
-        <div class="col-md-3 mb-2">
-          <img src="/uploads/<?=htmlspecialchars($f['archivo'])?>" class="img-fluid" style="max-height:160px;object-fit:cover;border:1px solid #ddd;padding:3px;">
-        </div>
-      <?php endforeach; ?>
-    </div>
-  <?php endif; ?>
-
-  <h5 class="mt-4">Firmas</h5>
-  <div class="d-flex gap-4 align-items-center">
-    <div>
-      <div>Cliente</div>
-      <?php if ($rep['firma_cliente']): ?>
-        <img src="/uploads/<?=htmlspecialchars($rep['firma_cliente'])?>" class="firma">
-      <?php else: ?><div class="text-muted">No registrada</div><?php endif; ?>
-    </div>
-    <div>
-      <div>Técnico</div>
-      <?php if ($rep['firma_tecnico']): ?>
-        <img src="/uploads/<?=htmlspecialchars($rep['firma_tecnico'])?>" class="firma">
-      <?php else: ?><div class="text-muted">No registrada</div><?php endif; ?>
-    </div>
-    <div>
-      <div>Supervisor</div>
-      <?php if ($rep['firma_supervisor']): ?>
-        <img src="/uploads/<?=htmlspecialchars($rep['firma_supervisor'])?>" class="firma">
-      <?php else: ?><div class="text-muted">No registrada</div><?php endif; ?>
-    </div>
-  </div>
-
-  <div class="mt-4 no-print">
-    <a class="btn btn-primary" href="javascript:window.print()">Imprimir / PDF</a>
-    <a class="btn btn-secondary" href="/operador/mis_mantenimientos.php">Volver</a>
-  </div>
+<!-- Datos del cliente -->
+<div class="mb-3">
+<strong>Cliente:</strong> <?= htmlspecialchars($datos['cliente'] ?? '') ?><br>
+<strong>Dirección:</strong> <?= htmlspecialchars($datos['direccion'] ?? '') ?><br>
+<strong>Fecha:</strong> <?= $datos['fecha'] ?>
 </div>
+
+<!-- Equipos -->
+<h5>Datos de Identificación de los Equipos a Intervenir</h5>
+<div class="table-responsive">
+<table class="table table-bordered text-center">
+<thead class="table-light">
+<tr>
+<th>#</th><th>Tipo de Equipo</th><th>Marca</th><th>Modelo</th>
+<th>Ubicación/Serie</th><th>Tipo de Gas</th><th>Código</th>
+</tr>
+</thead>
+<tbody>
+<?php foreach($equipos as $k=>$eq): ?>
+<tr>
+<td><?= $k+1 ?></td>
+<td><input type="text" name="eq_nombre[]" class="form-control" value="<?= htmlspecialchars($eq['nombre']) ?>"></td>
+<td><input type="text" name="eq_marca[]" class="form-control" value="<?= htmlspecialchars($eq['marca']) ?>"></td>
+<td><input type="text" name="eq_modelo[]" class="form-control" value="<?= htmlspecialchars($eq['modelo']) ?>"></td>
+<td><input type="text" name="eq_serie[]" class="form-control" value="<?= htmlspecialchars($eq['serie']) ?>"></td>
+<td><input type="text" name="eq_gas[]" class="form-control" value="<?= htmlspecialchars($eq['gas']) ?>"></td>
+<td><input type="text" name="eq_codigo[]" class="form-control" value="<?= htmlspecialchars($eq['codigo']) ?>"></td>
+</tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+</div>
+
+<!-- Trabajos -->
+<div class="mb-3">
+<label class="form-label">Trabajos Realizados</label>
+<textarea name="trabajos" class="form-control" rows="3" required></textarea>
+</div>
+
+<!-- Observaciones -->
+<div class="mb-3">
+<label class="form-label">Observaciones</label>
+<textarea name="observaciones" class="form-control" rows="3"></textarea>
+</div>
+
+<!-- Parámetros de Funcionamiento -->
+<h5>Parámetros de Funcionamiento</h5>
+<div class="table-responsive">
+<table class="table table-bordered text-center">
+<thead class="table-light">
+<tr>
+<th>Medida</th>
+<th>Antes L1</th><th>Después L1</th>
+<th>Antes L2</th><th>Después L2</th>
+<th>Antes L3</th><th>Después L3</th>
+</tr>
+</thead>
+<tbody>
+<?php foreach($parametros as $nombre => $letras): ?>
+<tr>
+<td><?= $nombre ?></td>
+<?php foreach($letras as $letra): ?>
+<td><input type="text" name="antes_<?= $letra ?>[]" class="form-control"></td>
+<td><input type="text" name="despues_<?= $letra ?>[]" class="form-control"></td>
+<?php endforeach; ?>
+</tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+</div>
+
+<!-- Fotos -->
+<div class="mb-3">
+<label class="form-label">Subir Fotos</label>
+<input type="file" name="fotos[]" multiple accept="image/*" class="form-control">
+</div>
+
+<!-- Firmas -->
+<h5>Firmas</h5>
+<div class="row">
+<?php
+$firmaCampos = ['Cliente'=>'firmaCliente','Técnico'=>'firmaTecnico','Supervisor'=>'firmaSupervisor'];
+foreach($firmaCampos as $label=>$id): ?>
+<div class="col-md-4 mb-3">
+<label class="form-label">Firma <?= $label ?></label>
+<canvas id="<?= $id ?>"></canvas>
+<input type="hidden" name="<?= strtolower($label) ?>_firma" id="<?= $id ?>Input">
+<button type="button" class="btn btn-sm btn-secondary mt-1" onclick="limpiarFirma('<?= $id ?>')">Limpiar</button>
+</div>
+<?php endforeach; ?>
+</div>
+
+<button type="submit" class="btn btn-success w-100">Guardar Informe</button>
+</form>
+</div></div></div>
+
+<script>
+function initFirma(canvasId, inputId) {
+    const canvas = document.getElementById(canvasId);
+    const input = document.getElementById(inputId);
+    const ctx = canvas.getContext("2d");
+
+    // Escalar canvas para pantallas móviles/retina
+    function resizeCanvas() {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        ctx.scale(ratio, ratio);
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    let dibujando = false;
+
+    function startDraw(x, y) {
+        dibujando = true;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+    function draw(x, y) {
+        if (!dibujando) return;
+        ctx.lineWidth = 2;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "black";
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+    function endDraw() {
+        if (dibujando) {
+            dibujando = false;
+            input.value = canvas.toDataURL("image/png");
+        }
+    }
+
+    // Eventos para mouse
+    canvas.addEventListener("mousedown", e => startDraw(e.offsetX, e.offsetY));
+    canvas.addEventListener("mousemove", e => draw(e.offsetX, e.offsetY));
+    canvas.addEventListener("mouseup", endDraw);
+    canvas.addEventListener("mouseout", endDraw);
+
+    // Eventos para touch
+    canvas.addEventListener("touchstart", e => {
+        const rect = canvas.getBoundingClientRect();
+        const t = e.touches[0];
+        startDraw(t.clientX - rect.left, t.clientY - rect.top);
+    });
+    canvas.addEventListener("touchmove", e => {
+        const rect = canvas.getBoundingClientRect();
+        const t = e.touches[0];
+        draw(t.clientX - rect.left, t.clientY - rect.top);
+        e.preventDefault();
+    });
+    canvas.addEventListener("touchend", endDraw);
+}
+
+function limpiarFirma(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+<?php foreach($firmaCampos as $label=>$id): ?>
+initFirma("<?= $id ?>","<?= $id ?>Input");
+<?php endforeach; ?>
+</script>
+
 </body>
 </html>
