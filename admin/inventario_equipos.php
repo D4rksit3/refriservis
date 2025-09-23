@@ -1,130 +1,139 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
+// ==========================
+// CONFIGURACIÓN Y CONEXIÓN
+// ==========================
 require_once __DIR__.'/../config/db.php';
-require_once __DIR__.'/../includes/header.php';
 ?>
-
-<div class="container my-4">
-
-  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-    <h2 class="h4 mb-2">📋 Inventario de Equipos</h2>
-    <button class="btn btn-success btn-sm mb-2" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
-      ➕ Nuevo
-    </button>
-  </div>
-
-  <div class="table-responsive shadow-sm rounded">
-    <table id="tablaEquipos" class="table table-striped table-bordered align-middle">
-      <thead class="table-primary">
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Descripcion</th>
-          <th>Cliente</th>
-          <th>Categoria</th>
-          <th>Estatus</th>
-          <th>Fecha Validación</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Productos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-4">
+  <h2 class="mb-3">Gestión de Productos</h2>
+  <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#modalAgregar">➕ Nuevo Producto</button>
+  <div id="productosTable"></div>
 </div>
 
-<!-- MODAL AGREGAR EQUIPO -->
-<div class="modal fade" id="modalAgregarEquipo" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+<!-- Modal Agregar -->
+<div class="modal fade" id="modalAgregar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
     <div class="modal-content">
-      <form id="formAgregarEquipo" method="post">
-        <div class="modal-header bg-success text-white">
-          <h5 class="modal-title">➕ Nuevo Equipo</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" name="accion" value="agregar">
-          <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" name="Nombre" required></div>
-          <div class="mb-2"><label>Descripcion</label><textarea class="form-control" name="Descripcion"></textarea></div>
-          <div class="mb-2"><label>Cliente</label><input type="text" class="form-control" name="Cliente"></div>
-          <div class="mb-2"><label>Categoria</label><input type="text" class="form-control" name="Categoria"></div>
-          <div class="mb-2"><label>Estatus</label>
-            <select class="form-select" name="Estatus">
-              <option>Activo</option>
-              <option>Inactivo</option>
+      <div class="modal-header">
+        <h5 class="modal-title">Agregar Producto</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formAgregar">
+          <div class="mb-3">
+            <label>Nombre</label>
+            <input type="text" name="Nombre" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Categoría</label>
+            <input type="text" name="Categoria" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label>Estatus</label>
+            <select name="Estatus" class="form-control">
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
             </select>
           </div>
-          <div class="mb-2"><label>Fecha Validación</label><input type="date" class="form-control" name="Fecha_validad"></div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-success">Agregar</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL EDITAR EQUIPO -->
-<div class="modal fade" id="modalEditarEquipo" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <form id="formEditarEquipo" method="post">
-        <div class="modal-header bg-warning">
-          <h5 class="modal-title">✏️ Editar Equipo</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-          <input type="hidden" name="accion" value="editar">
-          <input type="hidden" name="id_equipo" id="editIdEquipo">
-          <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" id="editNombreEquipo" name="Nombre" required></div>
-          <div class="mb-2"><label>Descripcion</label><textarea class="form-control" id="editDescripcionEquipo" name="Descripcion"></textarea></div>
-          <div class="mb-2"><label>Cliente</label><input type="text" class="form-control" id="editClienteEquipo" name="Cliente"></div>
-          <div class="mb-2"><label>Categoria</label><input type="text" class="form-control" id="editCategoriaEquipo" name="Categoria"></div>
-          <div class="mb-2"><label>Estatus</label>
-            <select class="form-select" id="editEstatusEquipo" name="Estatus">
-              <option>Activo</option>
-              <option>Inactivo</option>
-            </select>
+          <div class="mb-3">
+            <label>Valor Unitario</label>
+            <input type="number" name="Valor_unitario" class="form-control" required>
           </div>
-          <div class="mb-2"><label>Fecha Validación</label><input type="date" class="form-control" id="editFechaEquipo" name="Fecha_validad"></div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-warning">Guardar Cambios</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        </div>
-      </form>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" id="btnGuardar">Guardar</button>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- MODAL ELIMINAR EQUIPO -->
-<div class="modal fade" id="modalEliminarEquipo" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
     <div class="modal-content">
-      <form id="formEliminarEquipo" method="post">
-        <input type="hidden" name="accion" value="eliminar">
-        <input type="hidden" name="id_equipo" id="deleteIdEquipo">
-        <div class="modal-body p-4">
-          <p>¿Estás seguro de que deseas eliminar este equipo?</p>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-danger">Eliminar</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        </div>
-      </form>
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Producto</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="editarContent">
+        <!-- Se carga con AJAX -->
+      </div>
     </div>
   </div>
 </div>
 
-<!-- SCRIPTS: jQuery, DataTables, Bootstrap 5, scripts.js (unificado) -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="scripts.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function cargarProductos(){
+  $("#productosTable").load("productos_data.php");
+}
 
-<?php include __DIR__ . '/../includes/footer.php'; ?>
+// Cargar tabla al inicio
+$(document).ready(function(){
+  cargarProductos();
+
+  // Guardar producto
+  $("#btnGuardar").click(function(){
+    $.post("productos_actions.php", $("#formAgregar").serialize() + "&action=add", function(res){
+      if(res.trim() == "ok"){
+        $("#modalAgregar").modal("hide");
+        $("#formAgregar")[0].reset();
+        cargarProductos();
+      } else {
+        alert("Error: " + res);
+      }
+    });
+  });
+
+  // Cuando cierre modal, limpiar backdrop
+  $('#modalAgregar, #modalEditar').on('hidden.bs.modal', function () {
+    $('.modal-backdrop').remove();
+    $('body').removeClass('modal-open');
+  });
+});
+
+// Eliminar producto
+function eliminarProducto(id){
+  if(confirm("¿Seguro que deseas eliminar este producto?")){
+    $.post("productos_actions.php", {action:"delete", id:id}, function(res){
+      if(res.trim() == "ok"){
+        cargarProductos();
+      } else {
+        alert("Error: " + res);
+      }
+    });
+  }
+}
+
+// Editar producto (abrir modal con datos)
+function editarProducto(id){
+  $("#editarContent").load("productos_actions.php?action=form&id="+id, function(){
+    $("#modalEditar").modal("show");
+  });
+}
+
+// Guardar edición
+function guardarEdicion(id){
+  $.post("productos_actions.php", $("#formEditar").serialize()+"&action=update&id="+id, function(res){
+    if(res.trim()=="ok"){
+      $("#modalEditar").modal("hide");
+      cargarProductos();
+    } else {
+      alert("Error: "+res);
+    }
+  });
+}
+</script>
+</body>
+</html>
