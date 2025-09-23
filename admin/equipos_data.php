@@ -12,43 +12,42 @@ $orderDir = $_GET['order'][0]['dir'] ?? 'asc';
 $columns = ['id_equipo','Nombre','Descripcion','Cliente','Categoria','Estatus','Fecha_validad'];
 $orderBy = $columns[$orderCol] ?? 'id_equipo';
 
-// Total registros
+// total
 $totalQuery = $pdo->query("SELECT COUNT(*) FROM equipos");
-$recordsTotal = $totalQuery->fetchColumn();
+$recordsTotal = (int)$totalQuery->fetchColumn();
 
-// Filtro
+// where / params
 $where = "";
 $params = [];
-if(!empty($searchValue)){
+if($searchValue !== ''){
     $where = "WHERE Nombre LIKE ? OR Descripcion LIKE ? OR Cliente LIKE ? OR Categoria LIKE ? OR Estatus LIKE ?";
-    $params = array_fill(0,5,"%$searchValue%");
+    $params = array_fill(0,5, "%$searchValue%");
 }
 
-// Total filtrado
+// filtered count
 $stmt = $pdo->prepare("SELECT COUNT(*) FROM equipos $where");
 $stmt->execute($params);
-$recordsFiltered = $stmt->fetchColumn();
+$recordsFiltered = (int)$stmt->fetchColumn();
 
-// Datos paginados
+// data
 $sql = "SELECT * FROM equipos $where ORDER BY $orderBy $orderDir LIMIT ?, ?";
 $stmt = $pdo->prepare($sql);
-foreach($params as $i=>$val){
-    $stmt->bindValue($i+1,$val,PDO::PARAM_STR);
-}
-$stmt->bindValue(count($params)+1,$start,PDO::PARAM_INT);
-$stmt->bindValue(count($params)+2,$length,PDO::PARAM_INT);
+foreach($params as $i=>$val){ $stmt->bindValue($i+1, $val, PDO::PARAM_STR); }
+$stmt->bindValue(count($params)+1, (int)$start, PDO::PARAM_INT);
+$stmt->bindValue(count($params)+2, (int)$length, PDO::PARAM_INT);
 $stmt->execute();
 $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Agregar botones
+// add action buttons (use data-id attributes)
 foreach($data as &$row){
-    $row['acciones'] = '<button type="button" class="editar btn btn-warning btn-sm" data-id="'.$row['id_equipo'].'">✏️ Editar</button>
-                        <button type="button" class="eliminar btn btn-danger btn-sm" data-id="'.$row['id_equipo'].'">🗑️ Eliminar</button>';
+    $id = $row['id_equipo'];
+    $row['acciones'] = '<button type="button" class="btn btn-sm btn-warning editar-equipo" data-id="'.$id.'">✏️ Editar</button> '
+                     . '<button type="button" class="btn btn-sm btn-danger eliminar-equipo" data-id="'.$id.'">🗑️ Eliminar</button>';
 }
 
 echo json_encode([
-    "draw"=>$draw,
-    "recordsTotal"=>$recordsTotal,
-    "recordsFiltered"=>$recordsFiltered,
-    "data"=>$data
+    "draw" => $draw,
+    "recordsTotal" => $recordsTotal,
+    "recordsFiltered" => $recordsFiltered,
+    "data" => $data
 ]);
