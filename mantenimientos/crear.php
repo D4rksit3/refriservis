@@ -5,8 +5,7 @@ error_reporting(E_ALL);
 
 session_start();
 if (!isset($_SESSION['usuario']) || !in_array($_SESSION['rol'], ['admin','digitador'])) {
-    header('Location: /index.php'); 
-    exit;
+    header('Location: /index.php'); exit;
 }
 
 require_once __DIR__.'/../config/db.php';
@@ -25,14 +24,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (count($equipos) > 7) $errors[] = 'Solo puede seleccionar hasta 7 equipos.';
 
     if (empty($errors)) {
-        // Prepara query con los 7 equipos
         $stmt = $pdo->prepare('
             INSERT INTO mantenimientos 
             (titulo, descripcion, fecha, cliente_id, operador_id, equipo1, equipo2, equipo3, equipo4, equipo5, equipo6, equipo7, estado, digitador_id) 
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,"pendiente",?)
         ');
 
-        // Rellena los equipos vacíos con null si seleccionó menos de 7
         $equipos_insert = array_pad($equipos, 7, null);
 
         $stmt->execute([
@@ -51,8 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['usuario_id']
         ]);
 
-        header('Location: /mantenimientos/listar.php'); 
-        exit;
+        header('Location: /mantenimientos/listar.php'); exit;
     }
 }
 
@@ -61,6 +57,7 @@ $clientes = $pdo->query('SELECT id, cliente, direccion, telefono, responsable, e
 $equipos = $pdo->query('SELECT id_equipo, Nombre, Categoria, Estatus FROM equipos ORDER BY Nombre')->fetchAll();
 $operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"')->fetchAll();
 ?>
+
 <div class="card p-3">
     <h5>Crear mantenimiento</h5>
     <?php foreach($errors as $e) echo "<div class='alert alert-danger small'>$e</div>"; ?>
@@ -98,10 +95,10 @@ $operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"'
             </select>
         </div>
 
-        <!-- Select múltiple de equipos con Select2 -->
+        <!-- Dropdown multiselect con checkbox y búsqueda -->
         <div class="col-12">
             <label class="form-label">Seleccionar hasta 7 equipos</label>
-            <select name="equipos[]" class="form-select" multiple="multiple" id="select-equipos">
+            <select id="equipos-multi" name="equipos[]" multiple class="form-select">
                 <?php foreach($equipos as $eq): ?>
                     <option value="<?=$eq['id_equipo']?>">
                         <?=htmlspecialchars($eq['Nombre'].' | '.$eq['Categoria'].' | '.$eq['Estatus'])?>
@@ -116,15 +113,19 @@ $operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"'
     </form>
 </div>
 
-<!-- Select2 CSS y JS -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- Bootstrap-Select JS y CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+
 <script>
-$(document).ready(function() {
-    $('#select-equipos').select2({
-        placeholder: "-- Seleccione equipos --",
-        maximumSelectionLength: 7,
-        width: '100%'
+$(document).ready(function(){
+    $('#equipos-multi').selectpicker({
+        liveSearch: true,          // Habilita búsqueda interna
+        maxOptions: 7,             // Máximo de selección
+        actionsBox: true,          // Botones de select/deselect all
+        tickIcon: 'bi-check',      // Icono de check
+        width: '100%',
+        noneSelectedText: '-- Seleccione equipos --'
     });
 });
 </script>
