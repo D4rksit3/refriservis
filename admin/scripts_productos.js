@@ -23,18 +23,27 @@ $(document).ready(function(){
 
     // AGREGAR
     $('#formAgregarEquipo').on('submit', function(e){
-    e.preventDefault();
-    $.post('equipos_crud.php', $(this).serialize(), function(resp){
-        if(resp.success){
-            $('#formAgregarEquipo')[0].reset();
-            $('#modalAgregar').one('hidden.bs.modal', function(){
-                $('#tablaEquipos').DataTable().ajax.reload();
-            }).modal('hide');
-        } else {
-            alert('Error al agregar');
-        }
-    }, 'json');
-});
+        e.preventDefault();
+
+        $.post('equipos_crud.php', $(this).serialize(), function(resp){
+            if(resp.success){
+                // Quitar el foco antes de cerrar
+                document.activeElement.blur();
+
+                // Resetear form
+                $('#formAgregarEquipo')[0].reset();
+
+                // Cerrar modal de forma segura
+                $('#modalAgregar').one('hidden.bs.modal', function(){
+                    $('#tablaEquipos').DataTable().ajax.reload();
+                }).modal('hide');
+
+            } else {
+                alert('Error al agregar');
+            }
+        }, 'json');
+    });
+
 
     // EDITAR - abrir modal con eventos delegados
     $('#tablaProductos').on('click', '.editar', function(){
