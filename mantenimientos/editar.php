@@ -1,7 +1,7 @@
 <?php
 // mantenimientos/editar.php
 session_start();
-if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
+if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'digitador') {
     header('Location: /index.php');
     exit;
 }
