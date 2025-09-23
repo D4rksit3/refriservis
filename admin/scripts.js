@@ -57,27 +57,33 @@ $(document).ready(function(){
     });
 
     // -------------- EQUIPOS: AGREGAR --------------
+        // AGREGAR
     $('#formAgregarEquipo').submit(function(e){
         e.preventDefault();
+
         $.post('equipos_crud.php', $(this).serialize(), function(resp){
             if(resp.success){
+                // Cierra modal correctamente
                 $('#modalAgregar').modal('hide');
-                $('#modalAgregar').modal('hide');  // <-- ESTA LÍNEA ESTÁ DUPLICADA ❌
-                tabla.ajax.reload();
 
-                // Este bloque también está duplicando reload
-                $(document).on('hidden.bs.modal', '.modal', function () {
-                    $('.modal-backdrop').remove();
-                    $('body').removeClass('modal-open');
-                    $('body').css('overflow', 'auto');
+                // Recarga tabla cuando se cierre
+                $('#modalAgregar').one('hidden.bs.modal', function(){
+                    tabla.ajax.reload();
+                    $('#formAgregarEquipo')[0].reset(); // limpiar form
                 });
-                $('#modalAgregar').on('hidden.bs.modal', function () {
-                    tabla.ajax.reload(); // <-- recarga de nuevo
-                });
+
+            } else {
+                alert('Error al agregar');
             }
         }, 'json');
     });
 
+    // Limpieza global de backdrop al cerrar cualquier modal
+    $(document).on('hidden.bs.modal', '.modal', function () {
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        $('body').css('overflow', 'auto');
+    });
 
     // -------------- EQUIPOS: EDITAR --------------
     // abrir edit - delegación
