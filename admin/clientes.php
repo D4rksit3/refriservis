@@ -1,198 +1,145 @@
 <?php
-// ==========================
-// CONFIGURACIÓN Y CONEXIÓN
-// ==========================
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// admin/clientes.php
+session_start();
+if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'admin') {
+    header('Location: /index.php'); exit;
+}
 
-require_once __DIR__ . '/../config/db.php';
+require_once __DIR__.'/../config/db.php';
+require_once __DIR__.'/../includes/header.php';
 
-// ==========================
-// GUARDAR DATOS
-// ==========================
+$action = $_GET['action'] ?? 'list';
+
+// ========================
+// 📌 Procesar formularios
+// ========================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        $nombre = trim($_POST['nombre'] ?? '');
-        $categoria = trim($_POST['categoria'] ?? '');
-        $estatus = isset($_POST['estatus']) ? 'Activo' : 'Inactivo'; // Guardar texto
-        $valor_unitario = $_POST['valor_unitario'] ?? 0;
+    $nombre = trim($_POST['nombre'] ?? '');
+    $telefono = trim($_POST['telefono'] ?? '');
+    $direccion = trim($_POST['direccion'] ?? '');
+    $correo = trim($_POST['correo'] ?? '');
 
-        if ($nombre === '' || $categoria === '') {
-            throw new Exception("⚠️ Nombre y Categoría son obligatorios.");
+    if ($action === 'add') {
+        $stmt = $pdo->prepare('INSERT INTO clientes (nombre,telefono,direccion,correo) VALUES (?,?,?,?)');
+        $stmt->execute([$nombre,$telefono,$direccion,$correo]);
+        header('Location: /admin/clientes.php?ok=1'); exit;
+    } elseif ($action === 'edit') {
+        $id = (int)$_POST['id'];
+        $stmt = $pdo->prepare('UPDATE clientes SET nombre=?,telefono=?,direccion=?,correo=? WHERE id=?');
+        $stmt->execute([$nombre,$telefono,$direccion,$correo,$id]);
+        header('Location: /admin/clientes.php?ok=1'); exit;
+    } elseif ($action === 'upload') {
+        // 📂 Importar CSV de clientes
+        if (isset($_FILES['archivo']['tmp_name']) && is_uploaded_file($_FILES['archivo']['tmp_name'])) {
+            $file = fopen($_FILES['archivo']['tmp_name'], 'r');
+            fgetcsv($file); // saltar cabecera
+            while (($row = fgetcsv($file, 1000, ',')) !== false) {
+                $nombre = $row[0] ?? '';
+                $telefono = $row[1] ?? '';
+                $direccion = $row[2] ?? '';
+                $correo = $row[3] ?? '';
+                if ($nombre !== '') {
+                    $pdo->prepare("INSERT INTO clientes (nombre,telefono,direccion,correo) VALUES (?,?,?,?)")
+                        ->execute([$nombre,$telefono,$direccion,$correo]);
+                }
+            }
+            fclose($file);
         }
-
-        $sql = "INSERT INTO productos (Nombre, Categoria, Estatus, Valor_unitario) 
-                VALUES (?, ?, ?, ?)";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$nombre, $categoria, $estatus, $valor_unitario]);
-
-        // ✅ Redirección después de guardar
-        header("Location: https://refriservis.seguricloud.com/admin/clientes.php?ok=1");
-        exit;
-    } catch (Exception $e) {
-        die("❌ Error: " . $e->getMessage());
-    } catch (PDOException $e) {
-        die("❌ Error SQL: " . $e->getMessage());
+        header('Location: /admin/clientes.php?ok=1'); exit;
     }
 }
 
-// ==========================
-// LISTAR DATOS
-// ==========================
-try {
-    $stmt = $pdo->query("SELECT * FROM productos ORDER BY productos_id DESC");
-    $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    die("❌ Error al listar productos: " . $e->getMessage());
+// ========================
+// 📌 Eliminar cliente
+// ========================
+if ($action === 'delete' && isset($_GET['id'])) {
+    $pdo->prepare('DELETE FROM clientes WHERE id=?')->execute([(int)$_GET['id']]);
+    header('Location: /admin/clientes.php?ok=1'); exit;
 }
-?>
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Gestión de Productos</title>
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        table th, table td {
-            border: 1px solid #ccc;
-            padding: 6px;
-            text-align: left;
-        }
-        table th {
-            background: #f0f0f0;
-        }
-        .activo { color: green; font-weight: bold; }
-        .inactivo { color: red; font-weight: bold; }
+// ========================
+// 📌 Descargar en Excel
+// ========================
+if ($action === 'download') {
+    header("Content-Type: application/vnd.ms-excel");
+    header("Content-Disposition: attachment; filename=clientes.xls");
+    echo "ID\tNombre\tTelefono\tDireccion\tCorreo\n";
+    $lista = $pdo->query('SELECT * FROM clientes ORDER BY id DESC')->fetchAll();
+    foreach ($lista as $c) {
+        echo $c['id']."\t".$c['nombre']."\t".$c['telefono']."\t".$c['direccion']."\t".$c['correo']."\n";
+    }
+    exit;
+}
 
-        /* Modal */
-        #modal {
-            display:none;
-            position:fixed;
-            top:0; left:0;
-            width:100%; height:100%;
-            background:rgba(0,0,0,0.6);
-        }
-        #modal .contenido {
-            background:#fff;
-            padding:20px;
-            margin:50px auto;
-            width:400px;
-            border-radius:10px;
-        }
-        button {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover { opacity: 0.8; }
-
-        /* Switch */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
-        }
-        .switch input {display:none;}
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0;
-            right: 0; bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px; width: 18px;
-            left: 3px; bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .slider {
-            background-color: #4CAF50;
-        }
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-    </style>
-</head>
-<body>
-
-    <!-- ==========================
-         LISTADO PRODUCTOS
-    =========================== -->
-    <h2>📦 Lista de Productos</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Categoría</th>
-                <th>Estatus</th>
-                <th>Valor Unitario</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (count($productos) > 0): ?>
-                <?php foreach ($productos as $p): ?>
-                <tr>
-                    <td><?= htmlspecialchars($p['productos_id']) ?></td>
-                    <td><?= htmlspecialchars($p['Nombre']) ?></td>
-                    <td><?= htmlspecialchars($p['Categoria']) ?></td>
-                    <td class="<?= ($p['Estatus'] === 'Activo') ? 'activo' : 'inactivo' ?>">
-                        <?= htmlspecialchars($p['Estatus']) ?>
-                    </td>
-                    <td><?= htmlspecialchars($p['Valor_unitario']) ?></td>
-                </tr>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <tr><td colspan="5">⚠️ No hay productos registrados</td></tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
-
-    <!-- ==========================
-         BOTÓN Y MODAL
-    =========================== -->
-    <br>
-    <button onclick="document.getElementById('modal').style.display='block'">➕ Agregar Producto</button>
-
-    <div id="modal">
-        <div class="contenido">
-            <h3>Agregar Producto</h3>
-            <form method="post">
-                <label>Nombre:</label><br>
-                <input type="text" name="nombre" required><br><br>
-
-                <label>Categoría:</label><br>
-                <input type="text" name="categoria" required><br><br>
-
-                <label>Estatus:</label><br>
-                <label class="switch">
-                    <input type="checkbox" name="estatus" checked>
-                    <span class="slider"></span>
-                </label>
-                <br><br>
-
-                <label>Valor Unitario:</label><br>
-                <input type="number" step="0.01" name="valor_unitario" required><br><br>
-
-                <button type="submit" style="background:#4CAF50;color:#fff;">Guardar</button>
-                <button type="button" onclick="document.getElementById('modal').style.display='none'" style="background:#aaa;color:#fff;">Cancelar</button>
-            </form>
+// ========================
+// 📌 Vistas
+// ========================
+if ($action === 'list') {
+    $lista = $pdo->query('SELECT * FROM clientes ORDER BY id DESC')->fetchAll();
+    ?>
+    <div class="card p-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5>👥 Clientes</h5>
+            <div>
+                <a class="btn btn-success btn-sm" href="/admin/clientes.php?action=download">⬇ Descargar Excel</a>
+                <a class="btn btn-secondary btn-sm" href="/admin/clientes.php?action=upload">⬆ Carga Masiva</a>
+                <a class="btn btn-primary btn-sm" href="/admin/clientes.php?action=add">+ Nuevo Cliente</a>
+            </div>
+        </div>
+        <div class="table-responsive mt-3">
+            <table class="table table-sm table-striped">
+                <thead><tr><th>ID</th><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Dirección</th><th></th></tr></thead>
+                <tbody>
+                    <?php foreach($lista as $c): ?>
+                        <tr>
+                            <td><?=$c['id']?></td>
+                            <td><?=htmlspecialchars($c['nombre'])?></td>
+                            <td><?=htmlspecialchars($c['telefono'])?></td>
+                            <td><?=htmlspecialchars($c['correo'])?></td>
+                            <td><?=htmlspecialchars($c['direccion'])?></td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-outline-primary" href="/admin/clientes.php?action=edit&id=<?=$c['id']?>">✏ Editar</a>
+                                <a class="btn btn-sm btn-outline-danger" href="/admin/clientes.php?action=delete&id=<?=$c['id']?>" onclick="return confirm('Eliminar cliente?')">🗑 Eliminar</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
     </div>
+    <?php
+} elseif ($action === 'add' || $action === 'edit') {
+    $data = ['id'=>'','nombre'=>'','telefono'=>'','direccion'=>'','correo'=>''];
+    if ($action === 'edit') {
+        $id = (int)($_GET['id'] ?? 0);
+        $stmt = $pdo->prepare('SELECT * FROM clientes WHERE id=?');
+        $stmt->execute([$id]);
+        $data = $stmt->fetch();
+    }
+    ?>
+    <div class="card p-3">
+        <h5><?= $action === 'add' ? '➕ Nuevo Cliente' : '✏ Editar Cliente' ?></h5>
+        <form method="post" class="row g-2">
+            <input type="hidden" name="id" value="<?=htmlspecialchars($data['id'])?>">
+            <div class="col-12"><label class="form-label">Nombre</label><input class="form-control" name="nombre" value="<?=htmlspecialchars($data['nombre'])?>" required></div>
+            <div class="col-6"><label class="form-label">Teléfono</label><input class="form-control" name="telefono" value="<?=htmlspecialchars($data['telefono'])?>"></div>
+            <div class="col-6"><label class="form-label">Correo</label><input class="form-control" name="correo" value="<?=htmlspecialchars($data['correo'])?>"></div>
+            <div class="col-12"><label class="form-label">Dirección</label><input class="form-control" name="direccion" value="<?=htmlspecialchars($data['direccion'])?>"></div>
+            <div class="col-12 text-end"><button class="btn btn-primary"><?= $action === 'add' ? 'Crear' : 'Guardar' ?></button></div>
+        </form>
+    </div>
+    <?php
+} elseif ($action === 'upload') {
+    ?>
+    <div class="card p-3">
+        <h5>📂 Carga Masiva de Clientes</h5>
+        <p>Sube un archivo CSV con las columnas: <b>nombre, telefono, direccion, correo</b></p>
+        <form method="post" enctype="multipart/form-data">
+            <input type="file" name="archivo" accept=".csv" required>
+            <button class="btn btn-primary mt-2">Cargar</button>
+        </form>
+    </div>
+    <?php
+}
 
-</body>
-</html>
+require_once __DIR__.'/../includes/footer.php';
