@@ -25,6 +25,11 @@ $(document).ready(function(){
                 $('#modalAgregar').modal('hide');
                 $('#modalAgregar').modal('hide');
                 tabla.ajax.reload();
+                $(document).on('hidden.bs.modal', '.modal', function () {
+                    $('.modal-backdrop').remove();         // elimina backdrop sobrante
+                    $('body').removeClass('modal-open');   // desbloquea scroll
+                    $('body').css('overflow', 'auto');     // por si se queda bloqueado
+                });
             } else alert('Error al agregar');
         }, 'json');
     });
