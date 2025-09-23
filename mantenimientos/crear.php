@@ -116,18 +116,29 @@ $operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"'
 <!-- Bootstrap-Select JS y CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+<!-- jQuery primero -->
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+<!-- Bootstrap JS y CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Bootstrap-Select CSS y JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
 
 <script>
 $(document).ready(function(){
     $('#equipos-multi').selectpicker({
-        liveSearch: true,          // Habilita búsqueda interna
-        maxOptions: 7,             // Máximo de selección
-        actionsBox: true,          // Botones de select/deselect all
-        tickIcon: 'bi-check',      // Icono de check
+        liveSearch: true,
+        maxOptions: 7,
+        actionsBox: true,
+        tickIcon: 'bi-check',
         width: '100%',
         noneSelectedText: '-- Seleccione equipos --'
     });
 });
 </script>
+
 
 <?php require_once __DIR__.'/../includes/footer.php'; ?>
