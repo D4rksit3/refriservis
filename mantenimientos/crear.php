@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 // mantenimientos/crear.php
 session_start();
 if (!isset($_SESSION['usuario']) || !in_array($_SESSION['rol'], ['admin','digitador'])) { header('Location: /index.php'); exit; }
