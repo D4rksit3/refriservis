@@ -9,7 +9,6 @@ if (!isset($_SESSION['usuario']) || !in_array($_SESSION['rol'], ['admin','digita
 }
 
 require_once __DIR__.'/../config/db.php';
-require_once __DIR__.'/../includes/header.php';
 
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -129,4 +128,4 @@ $(document).ready(function(){
 });
 </script>
 
-<?php require_once __DIR__.'/../includes/footer.php'; ?>
+
