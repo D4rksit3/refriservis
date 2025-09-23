@@ -62,7 +62,7 @@ $operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"'
                 <option value="">-- Ninguno --</option>
                 <?php foreach($clientes as $c): ?>
                     <option value="<?=$c['id']?>">
-                        <?=htmlspecialchars($c['nombre'].' - '.$c['direccion'].' - '.$c['telefono'])?>
+                        <?=htmlspecialchars($c['cliente'].' - '.$c['direccion'].' - '.$c['telefono'])?>
                     </option>
                 <?php endforeach; ?>
             </select>
