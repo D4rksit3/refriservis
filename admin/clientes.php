@@ -46,8 +46,8 @@ if ($action === 'import' && $_SERVER['REQUEST_METHOD']==='POST') {
     ");
 
     while (($row = fgetcsv($file)) !== false) {
-      // convertir fecha vacía en NULL
       if (empty($row[5])) $row[5] = null;
+      $row[6] = ($row[6] == '1' || strtolower($row[6])=='activo') ? 1 : 0;
       $stmt->execute($row);
     }
     fclose($file);
@@ -58,6 +58,7 @@ if ($action === 'import' && $_SERVER['REQUEST_METHOD']==='POST') {
 
 // === Agregar cliente individual ===
 if ($action === 'add' && $_SERVER['REQUEST_METHOD']==='POST') {
+  $estatus = isset($_POST['estatus']) ? 1 : 0;
   $stmt = $pdo->prepare("
     INSERT INTO clientes (cliente,direccion,telefono,responsable,email,ultima_visita,estatus)
     VALUES (?,?,?,?,?,?,?)
@@ -69,7 +70,7 @@ if ($action === 'add' && $_SERVER['REQUEST_METHOD']==='POST') {
     $_POST['responsable'], 
     $_POST['email'], 
     !empty($_POST['ultima_visita']) ? $_POST['ultima_visita'] : null, 
-    $_POST['estatus']
+    $estatus
   ]);
   header("Location: /admin/clientes.php?ok=1");
   exit;
@@ -77,6 +78,7 @@ if ($action === 'add' && $_SERVER['REQUEST_METHOD']==='POST') {
 
 // === Editar cliente ===
 if ($action === 'edit' && $_SERVER['REQUEST_METHOD']==='POST') {
+  $estatus = isset($_POST['estatus']) ? 1 : 0;
   $stmt = $pdo->prepare("
     UPDATE clientes 
     SET cliente=?, direccion=?, telefono=?, responsable=?, email=?, ultima_visita=?, estatus=?
@@ -86,7 +88,7 @@ if ($action === 'edit' && $_SERVER['REQUEST_METHOD']==='POST') {
     $_POST['cliente'], $_POST['direccion'], $_POST['telefono'],
     $_POST['responsable'], $_POST['email'],
     !empty($_POST['ultima_visita']) ? $_POST['ultima_visita'] : null, 
-    $_POST['estatus'], $_POST['id']
+    $estatus, $_POST['id']
   ]);
   header("Location: /admin/clientes.php?ok=1");
   exit;
@@ -147,7 +149,9 @@ if ($action === 'list') {
               <td><?=htmlspecialchars($c['responsable'])?></td>
               <td><?=htmlspecialchars($c['email'])?></td>
               <td><?=htmlspecialchars($c['ultima_visita'])?></td>
-              <td><?=htmlspecialchars($c['estatus'])?></td>
+              <td>
+                <?= $c['estatus'] ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-danger">Inactivo</span>' ?>
+              </td>
               <td class="text-end">
                 <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEdit<?=$c['id']?>">Editar</button>
                 <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalDelete<?=$c['id']?>">Eliminar</button>
@@ -171,7 +175,13 @@ if ($action === 'list') {
                       <div class="col-6"><label class="form-label">Responsable</label><input class="form-control" name="responsable" value="<?=$c['responsable']?>"></div>
                       <div class="col-12"><label class="form-label">Email</label><input class="form-control" type="email" name="email" value="<?=$c['email']?>"></div>
                       <div class="col-6"><label class="form-label">Última visita</label><input class="form-control" type="date" name="ultima_visita" value="<?=$c['ultima_visita']?>"></div>
-                      <div class="col-6"><label class="form-label">Estatus</label><input class="form-control" name="estatus" value="<?=$c['estatus']?>"></div>
+                      <div class="col-6 d-flex flex-column">
+                        <label class="form-label">Estatus</label>
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" name="estatus" value="1" <?=$c['estatus']?'checked':''?>>
+                          <label class="form-check-label"><?=$c['estatus']?'Activo':'Inactivo'?></label>
+                        </div>
+                      </div>
                     </div>
                     <div class="modal-footer">
                       <button class="btn btn-primary">Guardar cambios</button>
@@ -232,7 +242,13 @@ if ($action === 'list') {
             <div class="col-6"><label class="form-label">Responsable</label><input class="form-control" name="responsable"></div>
             <div class="col-12"><label class="form-label">Email</label><input class="form-control" type="email" name="email"></div>
             <div class="col-6"><label class="form-label">Última visita</label><input class="form-control" type="date" name="ultima_visita"></div>
-            <div class="col-6"><label class="form-label">Estatus</label><input class="form-control" name="estatus"></div>
+            <div class="col-6 d-flex flex-column">
+              <label class="form-label">Estatus</label>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="estatus" value="1" checked>
+                <label class="form-check-label">Activo</label>
+              </div>
+            </div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-primary">Guardar</button>
