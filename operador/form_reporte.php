@@ -66,28 +66,41 @@ for ($i = 1; $i <= 7; $i++) {
       <table class="table table-bordered">
         <thead class="table-light">
           <tr>
-            <th>#</th><th>Tipo</th><th>Marca</th><th>Modelo</th><th>Ubicación/Serie</th><th>Tipo de gas</th><th>Código</th>
+            <th>#</th>
+            <th>Tipo</th>
+            <th>Marca</th>
+            <th>Modelo</th>
+            <th>Ubicación/Serie</th>
+            <th>Tipo de gas</th>
+            <th>Código</th>
           </tr>
         </thead>
         <tbody>
-          <?php if($equipos): ?>
-            <?php foreach($equipos as $i=>$eq): ?>
-              <tr>
-                <td><?= $i+1 ?></td>
-                <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][tipo]" value="<?=htmlspecialchars($eq['nombre'])?>"></td>
-                <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][marca]" value="<?=htmlspecialchars($eq['marca'])?>"></td>
-                <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][modelo]" value="<?=htmlspecialchars($eq['modelo'])?>"></td>
-                <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][serie]" value="<?=htmlspecialchars($eq['serie'])?>"></td>
-                <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][gas]" value="<?=htmlspecialchars($eq['gas'])?>"></td>
-                <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][codigo]" value="<?=htmlspecialchars($eq['codigo'])?>"></td>
-              </tr>
-            <?php endforeach; ?>
-          <?php else: ?>
-            <tr><td colspan="7" class="text-center">No hay equipos vinculados</td></tr>
-          <?php endif; ?>
+          <?php for($i=0;$i<7;$i++): ?>
+          <tr>
+            <td><?= $i+1 ?></td>
+            <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][tipo]" readonly></td>
+            <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][marca]" readonly></td>
+            <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][modelo]" readonly></td>
+            <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][ubicacion]" readonly></td>
+            <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][gas]" readonly></td>
+            <td>
+              <select class="form-select form-select-sm equipo-select" name="equipos[<?= $i ?>][codigo]" data-index="<?= $i ?>">
+                <option value="">-- Seleccione --</option>
+                <?php
+                  $equiposList = $pdo->query("SELECT Identificador FROM equipos ORDER BY Identificador")->fetchAll(PDO::FETCH_COLUMN);
+                  foreach($equiposList as $ident){
+                    echo "<option value='".htmlspecialchars($ident)."'>".htmlspecialchars($ident)."</option>";
+                  }
+                ?>
+              </select>
+            </td>
+          </tr>
+          <?php endfor; ?>
         </tbody>
       </table>
     </div>
+
 
     <h6>PARÁMETROS DE FUNCIONAMIENTO (Antes / Después)</h6>
     <div class="table-responsive mb-3">
@@ -177,6 +190,10 @@ for ($i = 1; $i <= 7; $i++) {
   </form>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <!-- signature_pad -->
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
@@ -219,6 +236,31 @@ document.getElementById('formReporte').addEventListener('submit', function(e){
   }
   // dejar que el form se envíe (multipart/form-data) con los campos y los base64 en hidden inputs
 });
+
+$(document).ready(function(){
+  $('.equipo-select').select2({
+    placeholder: "Buscar equipo...",
+    allowClear: true,
+    width: '100%'
+  });
+
+  $('.equipo-select').on('change', function(){
+    let codigo = $(this).val();
+    let index = $(this).data('index');
+    if(!codigo) return;
+
+    $.getJSON('/operador/ajax_get_equipo.php', { codigo }, function(data){
+      if(data){
+        $(`[name="equipos[${index}][tipo]"]`).val(data.tipo || '');
+        $(`[name="equipos[${index}][marca]"]`).val(data.marca || '');
+        $(`[name="equipos[${index}][modelo]"]`).val(data.modelo || '');
+        $(`[name="equipos[${index}][ubicacion]"]`).val(data.ubicacion || '');
+        $(`[name="equipos[${index}][gas]"]`).val(data.gas || '');
+      }
+    });
+  });
+});
+
 </script>
 </body>
 </html>
