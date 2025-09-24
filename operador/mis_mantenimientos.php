@@ -20,6 +20,7 @@ $stmt = $pdo->prepare('
         m.titulo, 
         m.fecha, 
         m.estado, 
+        m.creado_en,
         c.cliente AS cliente, 
         i.nombre AS inventario,
         u.nombre AS digitador
@@ -48,12 +49,24 @@ $rows = $stmt->fetchAll();
           <p class="card-text mb-1"><b>Fecha:</b> <?= $r['fecha'] ?></p>
           <p class="card-text mb-2"><b>Estado:</b> <?= $r['estado'] ?></p>
           <div class="d-flex gap-2">
-            <?php if($r['estado'] !== 'finalizado'): ?>
-              <a href="/mantenimientos/editar.php?id=<?= $r['id'] ?>" class="btn btn-primary btn-sm flex-fill">Actualizar</a>
-            <?php endif; ?>
-            <?php if($r['estado'] === 'finalizado'): ?>
+
+            <?php if ($r['estado'] === 'pendiente' || $r['estado'] === 'en proceso'): ?>
+              <!-- Siempre se pueden generar reportes en pendientes y en proceso -->
               <a class="btn btn-sm btn-outline-success flex-fill" href="/operador/form_reporte.php?id=<?= $r['id'] ?>">Generar Reporte</a>
+            <?php elseif ($r['estado'] === 'finalizado'): ?>
+              <?php
+                // Calcular si han pasado menos de 24hrs desde creado_en
+                $creado = new DateTime($r['creado_en']);
+                $ahora = new DateTime();
+                $diffHoras = ($ahora->getTimestamp() - $creado->getTimestamp()) / 3600;
+              ?>
+              <?php if ($diffHoras <= 24): ?>
+                <a href="/mantenimientos/editar.php?id=<?= $r['id'] ?>" class="btn btn-primary btn-sm flex-fill">Editar</a>
+              <?php else: ?>
+                <span class="text-muted small">Edición bloqueada (más de 24h)</span>
+              <?php endif; ?>
             <?php endif; ?>
+
           </div>
         </div>
       </div>
