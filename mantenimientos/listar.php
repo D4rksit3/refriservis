@@ -149,15 +149,39 @@ function cargarMantenimientos() {
         tbody.appendChild(tr);
       });
 
-      // Paginación
+      // Paginación en bloques de 10
       const pagUl = document.getElementById('paginacion');
       pagUl.innerHTML = '';
-      for (let p = 1; p <= data.total_paginas; p++) {
-        const li = document.createElement('li');
-        li.className = `page-item ${p === pagina ? 'active' : ''}`;
-        li.innerHTML = `<a class="page-link" href="#">${p}</a>`;
-        li.addEventListener('click', (e) => { e.preventDefault(); pagina = p; cargarMantenimientos(); });
-        pagUl.appendChild(li);
+
+      let bloque = Math.floor((pagina - 1) / 10);
+      let inicio = bloque * 10 + 1;
+      let fin = Math.min(inicio + 9, data.total_paginas);
+
+      // Flecha «Anterior»
+      if (inicio > 1) {
+          const liPrev = document.createElement('li');
+          liPrev.className = 'page-item';
+          liPrev.innerHTML = `<a class="page-link" href="#">«</a>`;
+          liPrev.addEventListener('click', e => { e.preventDefault(); pagina = inicio - 1; cargarMantenimientos(); });
+          pagUl.appendChild(liPrev);
+      }
+
+      // Números de página
+      for (let p = inicio; p <= fin; p++) {
+          const li = document.createElement('li');
+          li.className = `page-item ${p === pagina ? 'active' : ''}`;
+          li.innerHTML = `<a class="page-link" href="#">${p}</a>`;
+          li.addEventListener('click', (e) => { e.preventDefault(); pagina = p; cargarMantenimientos(); });
+          pagUl.appendChild(li);
+      }
+
+      // Flecha »Siguiente
+      if (fin < data.total_paginas) {
+          const liNext = document.createElement('li');
+          liNext.className = 'page-item';
+          liNext.innerHTML = `<a class="page-link" href="#">»</a>`;
+          liNext.addEventListener('click', e => { e.preventDefault(); pagina = fin + 1; cargarMantenimientos(); });
+          pagUl.appendChild(liNext);
       }
     });
 }
