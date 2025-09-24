@@ -37,7 +37,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     $total = $countStmt->fetchColumn();
     $total_paginas = ceil($total / $por_pagina);
 
-    // Traer mantenimientos
+    // Traer mantenimientos (solo 10 por página)
     $stmt = $pdo->prepare("SELECT * FROM mantenimientos WHERE $where ORDER BY creado_en DESC LIMIT $inicio,$por_pagina");
     $stmt->execute($params);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -74,7 +74,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 
     echo json_encode([
         'rows'=>$result,
-        'total_paginas'=>$total_paginas
+        'total_paginas'=>$total_paginas,
+        'total_registros'=>$total
     ]);
     exit;
 }
@@ -94,6 +95,8 @@ require_once __DIR__.'/../includes/header.php';
   </div>
 
   <input type="text" id="buscar" class="form-control mb-3" placeholder="Buscar por título...">
+
+  <div id="info-registros" class="mb-2"></div>
 
   <div class="table-responsive">
     <table class="table table-sm" id="tabla-mantenimientos">
@@ -131,6 +134,8 @@ function cargarMantenimientos() {
     .then(data => {
       const tbody = document.querySelector('#tabla-mantenimientos tbody');
       tbody.innerHTML = '';
+
+      // Mostrar registros
       data.rows.forEach(r => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -148,6 +153,11 @@ function cargarMantenimientos() {
         `;
         tbody.appendChild(tr);
       });
+
+      // Info registros
+      const inicioRegistro = ((pagina -1) * porPagina) + 1;
+      const finRegistro = inicioRegistro + data.rows.length - 1;
+      document.getElementById('info-registros').innerText = `Mostrando ${inicioRegistro} a ${finRegistro} de ${data.total_registros} registros`;
 
       // Paginación en bloques de 10
       const pagUl = document.getElementById('paginacion');
