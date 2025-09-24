@@ -187,9 +187,16 @@ function cargarMantenimientos() {
           <td>${r.digitador || '-'}</td>
           <td>${r.operador || '-'}</td>
           <td class="text-end">
-            <button class="btn btn-sm btn-outline-primary btn-editar" data-id="${r.id}">Editar</button>
-            ${r.estado === 'finalizado' ? `<button class="btn btn-sm btn-outline-success btn-reporte" data-id="${r.id}">Descargar Reporte</button>` : ''}
+            ${r.estado !== 'finalizado' 
+                ? `<button class="btn btn-sm btn-outline-primary btn-editar" data-id="${r.id}">Editar</button>` 
+                : ''
+            }
+            ${r.estado === 'finalizado' 
+                ? `<button class="btn btn-sm btn-outline-success btn-reporte" data-id="${r.id}">Descargar Reporte</button>` 
+                : ''
+            }
           </td>
+
         `;
         tbody.appendChild(tr);
       });
