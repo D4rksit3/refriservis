@@ -6,47 +6,81 @@ require_once __DIR__.'/../config/db.php';
 require_once __DIR__.'/../includes/header.php';
 
 // ============================
-// Parámetros de búsqueda
+// Manejo de AJAX
 // ============================
-$busqueda = $_GET['buscar'] ?? '';
-$where = '1=1';
-$params = [];
+if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+    $pagina = max(1, (int)($_GET['pagina'] ?? 1));
+    $por_pagina = 10;
+    $inicio = ($pagina - 1) * $por_pagina;
+    $buscar = $_GET['buscar'] ?? '';
 
-// Filtro por rol
-if ($_SESSION['rol'] === 'digitador') {
-  $where = 'digitador_id = ?';
-  $params[] = $_SESSION['usuario_id'];
-} elseif ($_SESSION['rol'] === 'operador') {
-  $where = 'operador_id = ?';
-  $params[] = $_SESSION['usuario_id'];
+    // Filtro por rol
+    $where = '1=1';
+    $params = [];
+    if ($_SESSION['rol'] === 'digitador') {
+      $where = 'digitador_id = ?';
+      $params[] = $_SESSION['usuario_id'];
+    } elseif ($_SESSION['rol'] === 'operador') {
+      $where = 'operador_id = ?';
+      $params[] = $_SESSION['usuario_id'];
+    }
+
+    // Filtro búsqueda
+    if ($buscar) {
+        $where .= " AND titulo LIKE ?";
+        $params[] = "%$buscar%";
+    }
+
+    // Contar total
+    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM mantenimientos WHERE $where");
+    $countStmt->execute($params);
+    $total = $countStmt->fetchColumn();
+    $total_paginas = ceil($total / $por_pagina);
+
+    // Traer mantenimientos
+    $stmt = $pdo->prepare("SELECT * FROM mantenimientos WHERE $where ORDER BY creado_en DESC LIMIT $inicio,$por_pagina");
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Mapear equipos
+    $equiposAll = $pdo->query("SELECT id_equipo, Nombre FROM equipos")->fetchAll(PDO::FETCH_KEY_PAIR);
+
+    // Preparar respuesta
+    $result = [];
+    foreach ($rows as $r) {
+        $equipoNombres = [];
+        for ($i=1; $i<=7; $i++) {
+            $eqId = $r['equipo'.$i];
+            if ($eqId && isset($equiposAll[$eqId])) $equipoNombres[] = $equiposAll[$eqId];
+        }
+
+        // Estado color
+        $estado_color = $r['estado']==='finalizado' ? 'success' : ($r['estado']==='en proceso' ? 'warning text-dark' : 'secondary');
+
+        // Cliente, digitador, operador
+        $cliente = $r['cliente_id'] ? $pdo->query("SELECT cliente FROM clientes WHERE id=".$r['cliente_id'])->fetchColumn() : null;
+        $digitador = $r['digitador_id'] ? $pdo->query("SELECT nombre FROM usuarios WHERE id=".$r['digitador_id'])->fetchColumn() : null;
+        $operador = $r['operador_id'] ? $pdo->query("SELECT nombre FROM usuarios WHERE id=".$r['operador_id'])->fetchColumn() : null;
+
+        $result[] = [
+            'id'=>$r['id'],
+            'titulo'=>htmlspecialchars($r['titulo']),
+            'fecha'=>$r['fecha'],
+            'cliente'=>htmlspecialchars($cliente),
+            'equipos'=>htmlspecialchars(implode(', ', $equipoNombres)),
+            'estado'=>htmlspecialchars($r['estado']),
+            'estado_color'=>$estado_color,
+            'digitador'=>htmlspecialchars($digitador),
+            'operador'=>htmlspecialchars($operador),
+        ];
+    }
+
+    echo json_encode([
+        'rows'=>$result,
+        'total_paginas'=>$total_paginas
+    ]);
+    exit;
 }
-
-// Filtro por búsqueda en título
-if ($busqueda) {
-    $where .= " AND titulo LIKE ?";
-    $params[] = "%$busqueda%";
-}
-
-// ============================
-// Paginación
-// ============================
-$por_pagina = 10;
-$pagina = max(1, (int)($_GET['pagina'] ?? 1));
-$inicio = ($pagina - 1) * $por_pagina;
-
-// Contar total de registros
-$countStmt = $pdo->prepare("SELECT COUNT(*) FROM mantenimientos WHERE $where");
-$countStmt->execute($params);
-$total = $countStmt->fetchColumn();
-$total_paginas = ceil($total / $por_pagina);
-
-// Traemos mantenimientos con límite
-$stmt = $pdo->prepare("SELECT * FROM mantenimientos WHERE $where ORDER BY creado_en DESC LIMIT $inicio, $por_pagina");
-$stmt->execute($params);
-$rows = $stmt->fetchAll();
-
-// Traer todos los equipos para mapear por id
-$equiposAll = $pdo->query("SELECT id_equipo, Nombre FROM equipos")->fetchAll(PDO::FETCH_KEY_PAIR);
 ?>
 
 <div class="card p-3">
@@ -57,16 +91,10 @@ $equiposAll = $pdo->query("SELECT id_equipo, Nombre FROM equipos")->fetchAll(PDO
     <?php endif; ?>
   </div>
 
-  <!-- Formulario de búsqueda -->
-  <form method="get" class="mb-3">
-    <div class="input-group">
-      <input type="text" name="buscar" class="form-control" placeholder="Buscar por título..." value="<?=htmlspecialchars($busqueda)?>">
-      <button class="btn btn-outline-secondary" type="submit">Buscar</button>
-    </div>
-  </form>
+  <input type="text" id="buscar" class="form-control mb-3" placeholder="Buscar por título...">
 
   <div class="table-responsive">
-    <table class="table table-sm">
+    <table class="table table-sm" id="tabla-mantenimientos">
       <thead>
         <tr>
           <th>ID</th>
@@ -80,70 +108,61 @@ $equiposAll = $pdo->query("SELECT id_equipo, Nombre FROM equipos")->fetchAll(PDO
           <th></th>
         </tr>
       </thead>
-      <tbody>
-        <?php foreach($rows as $r): ?>
-          <tr>
-            <td><?=$r['id']?></td>
-            <td><?=htmlspecialchars($r['titulo'])?></td>
-            <td><?=$r['fecha']?></td>
-            <td>
-              <?php
-                if ($r['cliente_id']) {
-                    $c = $pdo->query("SELECT cliente FROM clientes WHERE id=".$r['cliente_id'])->fetchColumn();
-                    echo htmlspecialchars($c);
-                } else { echo '-'; }
-              ?>
-            </td>
-            <td>
-              <?php
-                $equipoNombres = [];
-                for ($i=1;$i<=7;$i++) {
-                    $eqId = $r['equipo'.$i];
-                    if ($eqId && isset($equiposAll[$eqId])) {
-                        $equipoNombres[] = htmlspecialchars($equiposAll[$eqId]);
-                    }
-                }
-                echo $equipoNombres ? implode(', ', $equipoNombres) : '-';
-              ?>
-            </td>
-            <td>
-              <span class="badge bg-<?= $r['estado']==='finalizado' ? 'success' : ($r['estado']==='en proceso' ? 'warning text-dark' : 'secondary') ?>">
-                <?=htmlspecialchars($r['estado'])?>
-              </span>
-            </td>
-            <td>
-              <?php
-                if ($r['digitador_id']) {
-                    $d = $pdo->query("SELECT nombre FROM usuarios WHERE id=".$r['digitador_id'])->fetchColumn();
-                    echo htmlspecialchars($d);
-                } else { echo '-'; }
-              ?>
-            </td>
-            <td>
-              <?php
-                if ($r['operador_id']) {
-                    $o = $pdo->query("SELECT nombre FROM usuarios WHERE id=".$r['operador_id'])->fetchColumn();
-                    echo htmlspecialchars($o);
-                } else { echo '-'; }
-              ?>
-            </td>
-            <td class="text-end">
-              <a class="btn btn-sm btn-outline-primary" href="/mantenimientos/editar.php?id=<?=$r['id']?>">Ver / Editar</a>
-            </td>
-          </tr>
-        <?php endforeach; ?>
-      </tbody>
+      <tbody></tbody>
     </table>
   </div>
 
-  <!-- Paginación -->
   <nav>
-    <ul class="pagination justify-content-center">
-      <?php for($p=1;$p<=$total_paginas;$p++): ?>
-        <li class="page-item <?= $p==$pagina ? 'active' : '' ?>">
-          <a class="page-link" href="?pagina=<?=$p?>&buscar=<?=urlencode($busqueda)?>"><?=$p?></a>
-        </li>
-      <?php endfor; ?>
-    </ul>
+    <ul class="pagination justify-content-center" id="paginacion"></ul>
   </nav>
 </div>
+
+<script>
+let pagina = 1;
+const porPagina = 10;
+
+function cargarMantenimientos() {
+  const buscar = document.getElementById('buscar').value;
+
+  fetch(`?ajax=1&pagina=${pagina}&buscar=${encodeURIComponent(buscar)}`)
+    .then(res => res.json())
+    .then(data => {
+      const tbody = document.querySelector('#tabla-mantenimientos tbody');
+      tbody.innerHTML = '';
+      data.rows.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.id}</td>
+          <td>${r.titulo}</td>
+          <td>${r.fecha}</td>
+          <td>${r.cliente || '-'}</td>
+          <td>${r.equipos || '-'}</td>
+          <td><span class="badge bg-${r.estado_color}">${r.estado}</span></td>
+          <td>${r.digitador || '-'}</td>
+          <td>${r.operador || '-'}</td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-primary" href="/mantenimientos/editar.php?id=${r.id}">Ver / Editar</a>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Paginación
+      const pagUl = document.getElementById('paginacion');
+      pagUl.innerHTML = '';
+      for (let p = 1; p <= data.total_paginas; p++) {
+        const li = document.createElement('li');
+        li.className = `page-item ${p === pagina ? 'active' : ''}`;
+        li.innerHTML = `<a class="page-link" href="#">${p}</a>`;
+        li.addEventListener('click', (e) => { e.preventDefault(); pagina = p; cargarMantenimientos(); });
+        pagUl.appendChild(li);
+      }
+    });
+}
+
+// Búsqueda en tiempo real
+document.getElementById('buscar').addEventListener('input', () => { pagina = 1; cargarMantenimientos(); });
+
+// Cargar inicialmente
+cargarMantenimientos();
+</script>
