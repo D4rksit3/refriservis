@@ -1,8 +1,4 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../lib/fpdf.php'; // tu FPDF nativo
 
@@ -17,7 +13,13 @@ if (!$m || $m['estado'] !== 'finalizado') {
     exit("⚠️ Reporte solo disponible para finalizados");
 }
 
-$cliente = $pdo->query("SELECT cliente FROM clientes WHERE id=" . $m['cliente_id'])->fetchColumn();
+// Traer cliente con consulta preparada
+$cliente = '-';
+if (!empty($m['cliente_id'])) {
+    $stmtC = $pdo->prepare("SELECT cliente FROM clientes WHERE id=?");
+    $stmtC->execute([$m['cliente_id']]);
+    $cliente = $stmtC->fetchColumn() ?: '-';
+}
 
 // =========================
 // PDF con FPDF
@@ -45,18 +47,18 @@ $pdf->Cell(0,8,utf8_decode("Cliente: " . $cliente),0,1);
 $pdf->Cell(0,8,utf8_decode("Fecha: " . $m['fecha']),0,1);
 $pdf->Ln(5);
 
-// Sección equipos (ejemplo tabla vacía)
+// Tabla de equipos
 $pdf->SetFont('Arial','B',11);
 $pdf->Cell(0,8,utf8_decode("DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS A INTERVENIR"),0,1);
 $pdf->SetFont('Arial','',10);
 
-// Dibujar tabla de ejemplo (7 filas, 6 columnas)
 $headers = ["#", "Tipo", "Marca", "Modelo", "Serie", "Gas"];
 $w = [10, 30, 30, 30, 40, 40];
 foreach ($headers as $i => $h) {
     $pdf->Cell($w[$i],8,utf8_decode($h),1,0,'C');
 }
 $pdf->Ln();
+
 for ($i=1;$i<=7;$i++){
     $pdf->Cell($w[0],8,$i,1);
     $pdf->Cell($w[1],8,"",1);
