@@ -17,7 +17,9 @@ require_once __DIR__.'/../includes/header.php';
 $stmt = $pdo->prepare('
     SELECT m.id, m.titulo, m.fecha, m.estado, 
            m.descripcion, m.observaciones, m.repuestos, 
-           c.nombre AS cliente, i.nombre AS inventario, u.nombre AS digitador
+           c.id AS cliente_id, 
+           i.id AS inventario_id, 
+           u.usuario AS digitador
     FROM mantenimientos m
     LEFT JOIN clientes c ON c.id = m.cliente_id
     LEFT JOIN inventario i ON i.id = m.inventario_id
@@ -37,8 +39,8 @@ $rows = $stmt->fetchAll();
       <div class="card shadow-sm mb-3">
         <div class="card-body">
           <h6 class="card-title"><?= htmlspecialchars($r['titulo']) ?></h6>
-          <p class="card-text mb-1"><b>Cliente:</b> <?= htmlspecialchars($r['cliente']) ?></p>
-          <p class="card-text mb-1"><b>Inventario:</b> <?= htmlspecialchars($r['inventario']) ?></p>
+          <p class="card-text mb-1"><b>Cliente ID:</b> <?= htmlspecialchars($r['cliente_id']) ?></p>
+          <p class="card-text mb-1"><b>Inventario ID:</b> <?= htmlspecialchars($r['inventario_id']) ?></p>
           <p class="card-text mb-1"><b>Fecha:</b> <?= $r['fecha'] ?></p>
           <p class="card-text mb-1"><b>Estado:</b> <?= $r['estado'] ?></p>
           <p class="card-text mb-1"><b>Digitador:</b> <?= htmlspecialchars($r['digitador']) ?></p>
