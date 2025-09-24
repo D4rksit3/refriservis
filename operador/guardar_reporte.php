@@ -101,7 +101,8 @@ try {
     // header("Location: reporte_pdf.php?id=".$insertId);
     // exit;
 
-    echo json_encode(['success'=>true,'id'=>$insertId,'numero_reporte'=>$numero_reporte]);
+    //echo json_encode(['success'=>true,'id'=>$insertId,'numero_reporte'=>$numero_reporte]);
+    header("Location: reporte_pdf.php?id=".$insertId);
     exit;
 
 } catch (Exception $e) {
