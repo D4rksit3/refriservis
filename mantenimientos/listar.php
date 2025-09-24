@@ -3,12 +3,12 @@
 session_start();
 if (!isset($_SESSION['usuario'])) { header('Location: /index.php'); exit; }
 require_once __DIR__.'/../config/db.php';
-require_once __DIR__.'/../includes/header.php';
 
 // ============================
 // Manejo de AJAX
 // ============================
 if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+    header('Content-Type: application/json'); // importante para JSON
     $pagina = max(1, (int)($_GET['pagina'] ?? 1));
     $por_pagina = 10;
     $inicio = ($pagina - 1) * $por_pagina;
@@ -45,7 +45,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     // Mapear equipos
     $equiposAll = $pdo->query("SELECT id_equipo, Nombre FROM equipos")->fetchAll(PDO::FETCH_KEY_PAIR);
 
-    // Preparar respuesta
     $result = [];
     foreach ($rows as $r) {
         $equipoNombres = [];
@@ -54,10 +53,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
             if ($eqId && isset($equiposAll[$eqId])) $equipoNombres[] = $equiposAll[$eqId];
         }
 
-        // Estado color
         $estado_color = $r['estado']==='finalizado' ? 'success' : ($r['estado']==='en proceso' ? 'warning text-dark' : 'secondary');
 
-        // Cliente, digitador, operador
         $cliente = $r['cliente_id'] ? $pdo->query("SELECT cliente FROM clientes WHERE id=".$r['cliente_id'])->fetchColumn() : null;
         $digitador = $r['digitador_id'] ? $pdo->query("SELECT nombre FROM usuarios WHERE id=".$r['digitador_id'])->fetchColumn() : null;
         $operador = $r['operador_id'] ? $pdo->query("SELECT nombre FROM usuarios WHERE id=".$r['operador_id'])->fetchColumn() : null;
@@ -81,6 +78,11 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     ]);
     exit;
 }
+
+// ============================
+// HTML principal
+// ============================
+require_once __DIR__.'/../includes/header.php';
 ?>
 
 <div class="card p-3">
