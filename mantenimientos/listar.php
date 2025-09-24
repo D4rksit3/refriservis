@@ -5,9 +5,14 @@ if (!isset($_SESSION['usuario'])) { header('Location: /index.php'); exit; }
 require_once __DIR__.'/../config/db.php';
 require_once __DIR__.'/../includes/header.php';
 
-// Filtrado por rol
+// ============================
+// Parámetros de búsqueda
+// ============================
+$busqueda = $_GET['buscar'] ?? '';
 $where = '1=1';
 $params = [];
+
+// Filtro por rol
 if ($_SESSION['rol'] === 'digitador') {
   $where = 'digitador_id = ?';
   $params[] = $_SESSION['usuario_id'];
@@ -16,14 +21,34 @@ if ($_SESSION['rol'] === 'digitador') {
   $params[] = $_SESSION['usuario_id'];
 }
 
-// Traemos mantenimientos
-$stmt = $pdo->prepare("SELECT * FROM mantenimientos WHERE $where ORDER BY creado_en DESC");
+// Filtro por búsqueda en título
+if ($busqueda) {
+    $where .= " AND titulo LIKE ?";
+    $params[] = "%$busqueda%";
+}
+
+// ============================
+// Paginación
+// ============================
+$por_pagina = 10;
+$pagina = max(1, (int)($_GET['pagina'] ?? 1));
+$inicio = ($pagina - 1) * $por_pagina;
+
+// Contar total de registros
+$countStmt = $pdo->prepare("SELECT COUNT(*) FROM mantenimientos WHERE $where");
+$countStmt->execute($params);
+$total = $countStmt->fetchColumn();
+$total_paginas = ceil($total / $por_pagina);
+
+// Traemos mantenimientos con límite
+$stmt = $pdo->prepare("SELECT * FROM mantenimientos WHERE $where ORDER BY creado_en DESC LIMIT $inicio, $por_pagina");
 $stmt->execute($params);
 $rows = $stmt->fetchAll();
 
 // Traer todos los equipos para mapear por id
 $equiposAll = $pdo->query("SELECT id_equipo, Nombre FROM equipos")->fetchAll(PDO::FETCH_KEY_PAIR);
 ?>
+
 <div class="card p-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h5>Mantenimientos</h5>
@@ -31,6 +56,15 @@ $equiposAll = $pdo->query("SELECT id_equipo, Nombre FROM equipos")->fetchAll(PDO
       <a class="btn btn-primary btn-sm" href="/mantenimientos/crear.php">+ Nuevo</a>
     <?php endif; ?>
   </div>
+
+  <!-- Formulario de búsqueda -->
+  <form method="get" class="mb-3">
+    <div class="input-group">
+      <input type="text" name="buscar" class="form-control" placeholder="Buscar por título..." value="<?=htmlspecialchars($busqueda)?>">
+      <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+    </div>
+  </form>
+
   <div class="table-responsive">
     <table class="table table-sm">
       <thead>
@@ -101,5 +135,15 @@ $equiposAll = $pdo->query("SELECT id_equipo, Nombre FROM equipos")->fetchAll(PDO
       </tbody>
     </table>
   </div>
-</div>
 
+  <!-- Paginación -->
+  <nav>
+    <ul class="pagination justify-content-center">
+      <?php for($p=1;$p<=$total_paginas;$p++): ?>
+        <li class="page-item <?= $p==$pagina ? 'active' : '' ?>">
+          <a class="page-link" href="?pagina=<?=$p?>&buscar=<?=urlencode($busqueda)?>"><?=$p?></a>
+        </li>
+      <?php endfor; ?>
+    </ul>
+  </nav>
+</div>
