@@ -5,10 +5,10 @@ if (!isset($_SESSION['usuario'])) { header('Location: /index.php'); exit; }
 require_once __DIR__.'/../config/db.php';
 
 // ============================
-// Manejo de AJAX
+// Manejo de AJAX para tabla
 // ============================
 if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
-    header('Content-Type: application/json'); // importante para JSON
+    header('Content-Type: application/json');
     $pagina = max(1, (int)($_GET['pagina'] ?? 1));
     $por_pagina = 10;
     $inicio = ($pagina - 1) * $por_pagina;
@@ -25,7 +25,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
       $params[] = $_SESSION['usuario_id'];
     }
 
-    // Filtro búsqueda
     if ($buscar) {
         $where .= " AND titulo LIKE ?";
         $params[] = "%$buscar%";
@@ -37,7 +36,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
     $total = $countStmt->fetchColumn();
     $total_paginas = ceil($total / $por_pagina);
 
-    // Traer mantenimientos (solo 10 por página)
+    // Traer mantenimientos
     $stmt = $pdo->prepare("SELECT * FROM mantenimientos WHERE $where ORDER BY creado_en DESC LIMIT $inicio,$por_pagina");
     $stmt->execute($params);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -122,6 +121,46 @@ require_once __DIR__.'/../includes/header.php';
   </nav>
 </div>
 
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Mantenimiento</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formEditar">
+          <input type="hidden" name="id" id="edit_id">
+          <div class="mb-3">
+            <label>Título</label>
+            <input type="text" class="form-control" name="titulo" id="edit_titulo">
+          </div>
+          <div class="mb-3">
+            <label>Fecha</label>
+            <input type="date" class="form-control" name="fecha" id="edit_fecha">
+          </div>
+          <div class="mb-3">
+            <label>Cliente</label>
+            <select class="form-control" name="cliente_id" id="edit_cliente">
+              <?php
+                $clientes = $pdo->query("SELECT id, cliente FROM clientes")->fetchAll(PDO::FETCH_ASSOC);
+                foreach($clientes as $c) {
+                  echo "<option value='{$c['id']}'>{$c['cliente']}</option>";
+                }
+              ?>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-primary" id="guardarEditar">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 let pagina = 1;
 const porPagina = 10;
@@ -135,7 +174,6 @@ function cargarMantenimientos() {
       const tbody = document.querySelector('#tabla-mantenimientos tbody');
       tbody.innerHTML = '';
 
-      // Mostrar registros
       data.rows.forEach(r => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -148,7 +186,8 @@ function cargarMantenimientos() {
           <td>${r.digitador || '-'}</td>
           <td>${r.operador || '-'}</td>
           <td class="text-end">
-            <a class="btn btn-sm btn-outline-primary" href="/mantenimientos/editar.php?id=${r.id}">Ver / Editar</a>
+            <button class="btn btn-sm btn-outline-primary btn-editar" data-id="${r.id}">Editar</button>
+            ${r.estado === 'finalizado' ? `<button class="btn btn-sm btn-outline-success btn-reporte" data-id="${r.id}">Descargar Reporte</button>` : ''}
           </td>
         `;
         tbody.appendChild(tr);
@@ -159,15 +198,13 @@ function cargarMantenimientos() {
       const finRegistro = inicioRegistro + data.rows.length - 1;
       document.getElementById('info-registros').innerText = `Mostrando ${inicioRegistro} a ${finRegistro} de ${data.total_registros} registros`;
 
-      // Paginación en bloques de 10
+      // Paginación bloques de 10
       const pagUl = document.getElementById('paginacion');
       pagUl.innerHTML = '';
-
       let bloque = Math.floor((pagina - 1) / 10);
       let inicio = bloque * 10 + 1;
       let fin = Math.min(inicio + 9, data.total_paginas);
 
-      // Flecha «Anterior»
       if (inicio > 1) {
           const liPrev = document.createElement('li');
           liPrev.className = 'page-item';
@@ -176,16 +213,14 @@ function cargarMantenimientos() {
           pagUl.appendChild(liPrev);
       }
 
-      // Números de página
       for (let p = inicio; p <= fin; p++) {
           const li = document.createElement('li');
           li.className = `page-item ${p === pagina ? 'active' : ''}`;
           li.innerHTML = `<a class="page-link" href="#">${p}</a>`;
-          li.addEventListener('click', (e) => { e.preventDefault(); pagina = p; cargarMantenimientos(); });
+          li.addEventListener('click', e => { e.preventDefault(); pagina = p; cargarMantenimientos(); });
           pagUl.appendChild(li);
       }
 
-      // Flecha »Siguiente
       if (fin < data.total_paginas) {
           const liNext = document.createElement('li');
           liNext.className = 'page-item';
@@ -196,9 +231,46 @@ function cargarMantenimientos() {
     });
 }
 
+// Abrir modal editar
+document.querySelector('#tabla-mantenimientos').addEventListener('click', e => {
+  if(e.target.classList.contains('btn-editar')) {
+    const id = e.target.dataset.id;
+    const fila = e.target.closest('tr');
+    document.getElementById('edit_id').value = id;
+    document.getElementById('edit_titulo').value = fila.children[1].innerText;
+    document.getElementById('edit_fecha').value = fila.children[2].innerText;
+    const cliente = fila.children[3].innerText;
+    const selectCliente = document.getElementById('edit_cliente');
+    for(let opt of selectCliente.options) opt.selected = (opt.text === cliente);
+    new bootstrap.Modal(document.getElementById('modalEditar')).show();
+  }
+
+  // Descargar reporte
+  if(e.target.classList.contains('btn-reporte')) {
+    const id = e.target.dataset.id;
+    window.open(`/mantenimientos/reporte.php?id=${id}`, '_blank');
+  }
+});
+
+// Guardar cambios
+document.getElementById('guardarEditar').addEventListener('click', () => {
+  const formData = new FormData(document.getElementById('formEditar'));
+  fetch('/mantenimientos/editar_ajax.php', { method: 'POST', body: formData })
+    .then(res => res.json())
+    .then(res => {
+      if(res.success) {
+        alert('Guardado correctamente');
+        cargarMantenimientos();
+        bootstrap.Modal.getInstance(document.getElementById('modalEditar')).hide();
+      } else {
+        alert('Error al guardar');
+      }
+    });
+});
+
 // Búsqueda en tiempo real
 document.getElementById('buscar').addEventListener('input', () => { pagina = 1; cargarMantenimientos(); });
 
-// Cargar inicialmente
+// Cargar tabla inicialmente
 cargarMantenimientos();
 </script>
