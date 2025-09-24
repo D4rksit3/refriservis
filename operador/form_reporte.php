@@ -5,151 +5,220 @@ if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
     header('Location: /index.php');
     exit;
 }
-require_once __DIR__.'/../config/db.php';
+require_once __DIR__ . '/../config/db.php';
 
-// Obtener datos del mantenimiento
 $id = $_GET['id'] ?? null;
-if (!$id) { die("ID no proporcionado"); }
+if (!$id) die('ID no proporcionado');
 
 $stmt = $pdo->prepare("
-    SELECT m.*, c.cliente, c.direccion, c.responsable
-    FROM mantenimientos m
-    LEFT JOIN clientes c ON c.id = m.cliente_id
-    WHERE m.id = ?
+  SELECT m.*, c.cliente, c.direccion, c.responsable, c.telefono
+  FROM mantenimientos m
+  LEFT JOIN clientes c ON c.id = m.cliente_id
+  WHERE m.id = ?
 ");
 $stmt->execute([$id]);
-$m = $stmt->fetch();
-if (!$m) { die("Mantenimiento no encontrado"); }
+$m = $stmt->fetch(PDO::FETCH_ASSOC);
+if (!$m) die('Mantenimiento no encontrado');
 
-// Obtener equipos relacionados
-$equiposAll = $pdo->query("SELECT id, nombre, marca, modelo, serie, gas, codigo FROM inventario")->fetchAll(PDO::FETCH_UNIQUE);
+// Traer datos de inventario para los equipos (mapa id => datos)
+$inventarioRows = $pdo->query("SELECT id, nombre, marca, modelo, serie, gas, codigo FROM inventario")->fetchAll(PDO::FETCH_UNIQUE);
+
+// Armar array de equipos vinculados al mantenimiento
 $equipos = [];
-for ($i=1; $i<=7; $i++) {
-    $eqId = $m['equipo'.$i];
-    if ($eqId && isset($equiposAll[$eqId])) {
-        $equipos[] = $equiposAll[$eqId];
-    }
+for ($i = 1; $i <= 7; $i++) {
+    $eqId = $m["equipo$i"];
+    if ($eqId && isset($inventarioRows[$eqId])) $equipos[] = $inventarioRows[$eqId];
 }
 ?>
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <title>Reporte de Servicio Técnico</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    .firma-box {border:1px solid #ccc; height:120px; display:flex; justify-content:center; align-items:center; background:#f9f9f9;}
-    canvas {width:100%; height:100%;}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Generar Reporte - Mantenimiento #<?=htmlspecialchars($m['id'])?></title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+  .firma-box { border:1px solid #ccc; height:150px; background:#fff; }
+  canvas { width:100%; height:150px; }
+  .img-preview { max-width:100%; max-height:150px; object-fit:contain; border:1px solid #ddd; padding:4px; background:#fff; }
+  @media (max-width:576px){ .firma-box { height:120px } canvas{ height:120px } }
+</style>
 </head>
 <body class="bg-light">
-<div class="container my-4">
-
-  <h5 class="mb-3 text-center">FORMATO DE CALIDAD - REFRISERVIS S.A.C.</h5>
-  <p class="text-center">REPORTE DE SERVICIO TÉCNICO</p>
-
-  <div class="card p-3 mb-3">
-    <p><b>N° Reporte:</b> (autogenerado al guardar)</p>
-    <p><b>Cliente:</b> <?= htmlspecialchars($m['cliente']) ?></p>
-    <p><b>Dirección:</b> <?= htmlspecialchars($m['direccion']) ?></p>
-    <p><b>Responsable:</b> <?= htmlspecialchars($m['responsable']) ?></p>
-    <p><b>Fecha:</b> <?= htmlspecialchars($m['fecha']) ?></p>
+<div class="container py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5>Reporte de Servicio Técnico — Mantenimiento #<?=htmlspecialchars($m['id'])?></h5>
+    <a class="btn btn-secondary btn-sm" href="/operador/mis_mantenimientos.php">Volver</a>
   </div>
 
-  <form method="post" action="guardar_reporte.php" enctype="multipart/form-data">
-    <input type="hidden" name="mantenimiento_id" value="<?= $m['id'] ?>">
+  <div class="card mb-3 p-3">
+    <div><strong>CLIENTE:</strong> <?=htmlspecialchars($m['cliente'] ?? '-')?></div>
+    <div><strong>DIRECCIÓN:</strong> <?=htmlspecialchars($m['direccion'] ?? '-')?></div>
+    <div><strong>RESPONSABLE:</strong> <?=htmlspecialchars($m['responsable'] ?? '-')?></div>
+    <div><strong>FECHA:</strong> <?=htmlspecialchars($m['fecha'] ?? date('Y-m-d'))?></div>
+  </div>
 
-    <h6>DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS</h6>
+  <form id="formReporte" method="post" action="guardar_reporte.php" enctype="multipart/form-data" class="mb-5">
+    <input type="hidden" name="mantenimiento_id" value="<?=htmlspecialchars($m['id'])?>">
+
+    <h6>DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS A INTERVENIR</h6>
     <div class="table-responsive mb-3">
       <table class="table table-bordered">
-        <thead>
+        <thead class="table-light">
           <tr>
-            <th>#</th><th>Tipo</th><th>Marca</th><th>Modelo</th><th>Serie</th><th>Gas</th><th>Código</th>
+            <th>#</th><th>Tipo</th><th>Marca</th><th>Modelo</th><th>Ubicación/Serie</th><th>Tipo de gas</th><th>Código</th>
           </tr>
         </thead>
         <tbody>
-          <?php foreach($equipos as $i=>$eq): ?>
-          <tr>
-            <td><?= $i+1 ?></td>
-            <td><?= htmlspecialchars($eq['nombre']) ?></td>
-            <td><?= htmlspecialchars($eq['marca']) ?></td>
-            <td><?= htmlspecialchars($eq['modelo']) ?></td>
-            <td><?= htmlspecialchars($eq['serie']) ?></td>
-            <td><?= htmlspecialchars($eq['gas']) ?></td>
-            <td><?= htmlspecialchars($eq['codigo']) ?></td>
-          </tr>
-          <?php endforeach; ?>
+          <?php if($equipos): ?>
+            <?php foreach($equipos as $i=>$eq): ?>
+              <tr>
+                <td><?= $i+1 ?></td>
+                <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][tipo]" value="<?=htmlspecialchars($eq['nombre'])?>"></td>
+                <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][marca]" value="<?=htmlspecialchars($eq['marca'])?>"></td>
+                <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][modelo]" value="<?=htmlspecialchars($eq['modelo'])?>"></td>
+                <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][serie]" value="<?=htmlspecialchars($eq['serie'])?>"></td>
+                <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][gas]" value="<?=htmlspecialchars($eq['gas'])?>"></td>
+                <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][codigo]" value="<?=htmlspecialchars($eq['codigo'])?>"></td>
+              </tr>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <tr><td colspan="7" class="text-center">No hay equipos vinculados</td></tr>
+          <?php endif; ?>
         </tbody>
       </table>
     </div>
 
-    <h6>PARÁMETROS DE FUNCIONAMIENTO</h6>
+    <h6>PARÁMETROS DE FUNCIONAMIENTO (Antes / Después)</h6>
     <div class="table-responsive mb-3">
-      <table class="table table-bordered">
-        <thead>
+      <table class="table table-bordered table-sm">
+        <thead class="table-light">
           <tr>
             <th>Medida</th>
-            <?php foreach($equipos as $i=>$eq): ?>
-              <th><?= $i+1 ?> Antes</th>
-              <th><?= $i+1 ?> Después</th>
-            <?php endforeach; ?>
+            <?php $equipoCount = max(1, count($equipos)); ?>
+            <?php for($i=1;$i<=$equipoCount;$i++): ?>
+              <th colspan="2" class="text-center">Equipo <?= $i ?></th>
+            <?php endfor; ?>
+          </tr>
+          <tr>
+            <th></th>
+            <?php for($i=1;$i<=$equipoCount;$i++): ?>
+              <th>Antes</th><th>Desp.</th>
+            <?php endfor; ?>
           </tr>
         </thead>
         <tbody>
-          <?php 
-          $parametros = [
-            "Corriente L1","Corriente L2","Corriente L3",
-            "Tensión V1","Tensión V2","Tensión V3",
-            "Presión de descarga (PSI)","Presión de succión (PSI)"
-          ];
+          <?php
+          $parametros = ['Corriente eléctrica nominal (Amperios) L1','Corriente L2','Corriente L3',
+                         'Tensión eléctrica nominal V1','Tensión V2','Tensión V3',
+                         'Presión de descarga (PSI)','Presión de succión (PSI)'];
           foreach($parametros as $p): ?>
-          <tr>
-            <td><?= $p ?></td>
-            <?php foreach($equipos as $i=>$eq): ?>
-              <td><input type="text" class="form-control form-control-sm" name="parametros[<?= $p ?>][<?= $i ?>][antes]"></td>
-              <td><input type="text" class="form-control form-control-sm" name="parametros[<?= $p ?>][<?= $i ?>][despues]"></td>
-            <?php endforeach; ?>
-          </tr>
+            <tr>
+              <td style="min-width:200px;"><?=htmlspecialchars($p)?></td>
+              <?php for($i=0;$i<$equipoCount;$i++): ?>
+                <td><input type="text" class="form-control form-control-sm" name="parametros[<?= md5($p) ?>][<?= $i ?>][antes]"></td>
+                <td><input type="text" class="form-control form-control-sm" name="parametros[<?= md5($p) ?>][<?= $i ?>][despues]"></td>
+              <?php endfor; ?>
+            </tr>
           <?php endforeach; ?>
         </tbody>
       </table>
     </div>
 
     <div class="mb-3">
-      <label class="form-label">Trabajos Realizados</label>
-      <textarea class="form-control" name="trabajos" rows="3"></textarea>
+      <label>Trabajos realizados</label>
+      <textarea class="form-control" name="trabajos" rows="4"></textarea>
     </div>
+
     <div class="mb-3">
-      <label class="form-label">Observaciones y Recomendaciones</label>
+      <label>Observaciones y recomendaciones</label>
       <textarea class="form-control" name="observaciones" rows="3"></textarea>
     </div>
 
     <div class="mb-3">
-      <label class="form-label">Fotos de los equipos</label>
-      <input type="file" class="form-control" name="fotos[]" multiple accept="image/*">
+      <label>Fotos del/los equipos (múltiples)</label>
+      <input type="file" class="form-control" name="fotos[]" accept="image/*" multiple>
+      <small class="text-muted">Se guardarán las imágenes y se incluirán en el PDF.</small>
     </div>
 
-    <h6>Firmas</h6>
-    <div class="row g-2">
+    <h6>Firmas (tocar o dibujar)</h6>
+    <div class="row g-3">
       <div class="col-12 col-md-4">
-        <label>Firma Cliente</label>
-        <input type="file" class="form-control" name="firma_cliente" accept="image/*">
+        <label class="form-label">Firma Cliente</label>
+        <div class="firma-box" id="firmaClienteBox"><canvas id="firmaClienteCanvas"></canvas></div>
+        <div class="mt-1 d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearFirma('cliente')">Limpiar</button>
+        </div>
+        <input type="hidden" name="firma_cliente" id="firma_cliente_input">
       </div>
+
       <div class="col-12 col-md-4">
-        <label>Firma Supervisor</label>
-        <input type="file" class="form-control" name="firma_supervisor" accept="image/*">
+        <label class="form-label">Firma Supervisor</label>
+        <div class="firma-box" id="firmaSupervisorBox"><canvas id="firmaSupervisorCanvas"></canvas></div>
+        <div class="mt-1 d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearFirma('supervisor')">Limpiar</button>
+        </div>
+        <input type="hidden" name="firma_supervisor" id="firma_supervisor_input">
       </div>
+
       <div class="col-12 col-md-4">
-        <label>Firma Técnico</label>
-        <input type="file" class="form-control" name="firma_tecnico" accept="image/*">
+        <label class="form-label">Firma Técnico</label>
+        <div class="firma-box" id="firmaTecnicoBox"><canvas id="firmaTecnicoCanvas"></canvas></div>
+        <div class="mt-1 d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearFirma('tecnico')">Limpiar</button>
+        </div>
+        <input type="hidden" name="firma_tecnico" id="firma_tecnico_input">
       </div>
     </div>
 
-    <div class="text-center mt-3">
-      <button type="submit" class="btn btn-success">Guardar Reporte</button>
+    <div class="text-center mt-4">
+      <button type="submit" class="btn btn-success btn-lg" id="btnGuardar">Guardar y Generar Reporte (PDF)</button>
     </div>
   </form>
-
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- signature_pad -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script>
+const sigCliente = new SignaturePad(document.getElementById('firmaClienteCanvas'), { backgroundColor: 'rgba(255,255,255,1)' });
+const sigSupervisor = new SignaturePad(document.getElementById('firmaSupervisorCanvas'), { backgroundColor: 'rgba(255,255,255,1)' });
+const sigTecnico = new SignaturePad(document.getElementById('firmaTecnicoCanvas'), { backgroundColor: 'rgba(255,255,255,1)' });
+
+function resizeCanvases() {
+  [ 'firmaClienteCanvas','firmaSupervisorCanvas','firmaTecnicoCanvas' ].forEach(id=>{
+    const canvas = document.getElementById(id);
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    const w = canvas.clientWidth;
+    canvas.width = w * ratio;
+    canvas.height = 150 * ratio;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(ratio, ratio);
+  });
+  sigCliente.clear(); sigSupervisor.clear(); sigTecnico.clear();
+}
+window.addEventListener('resize', resizeCanvases);
+resizeCanvases();
+
+function clearFirma(tipo){
+  if(tipo==='cliente') sigCliente.clear();
+  if(tipo==='supervisor') sigSupervisor.clear();
+  if(tipo==='tecnico') sigTecnico.clear();
+}
+
+document.getElementById('formReporte').addEventListener('submit', function(e){
+  // enviar firmas como base64 en hidden inputs
+  if (!sigCliente.isEmpty()) {
+    document.getElementById('firma_cliente_input').value = sigCliente.toDataURL('image/png');
+  }
+  if (!sigSupervisor.isEmpty()) {
+    document.getElementById('firma_supervisor_input').value = sigSupervisor.toDataURL('image/png');
+  }
+  if (!sigTecnico.isEmpty()) {
+    document.getElementById('firma_tecnico_input').value = sigTecnico.toDataURL('image/png');
+  }
+  // dejar que el form se envíe (multipart/form-data) con los campos y los base64 en hidden inputs
+});
+</script>
 </body>
 </html>
