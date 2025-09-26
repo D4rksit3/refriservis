@@ -54,8 +54,11 @@ for ($i = 1; $i <= 7; $i++) {
   <div class="card mb-3 p-3">
     <div><strong>CLIENTE:</strong> <?=htmlspecialchars($m['cliente'] ?? '-')?></div>
     <div><strong>DIRECCIÓN:</strong> <?=htmlspecialchars($m['direccion'] ?? '-')?></div>
+    <div><strong>LOCAL:</strong> <?=htmlspecialchars($m['cliente'] ?? '-')?></div>
+    <div><strong># eQUIPOS:</strong> <?=htmlspecialchars($m['cliente'] ?? '-')?></div>
     <div><strong>RESPONSABLE:</strong> <?=htmlspecialchars($m['responsable'] ?? '-')?></div>
     <div><strong>FECHA:</strong> <?=htmlspecialchars($m['fecha'] ?? date('Y-m-d'))?></div>
+
   </div>
 
   <form id="formReporte" method="post" action="guardar_reporte.php" enctype="multipart/form-data" class="mb-5">
