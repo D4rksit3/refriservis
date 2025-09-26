@@ -120,7 +120,7 @@ $categorias = $pdo->query('SELECT nombre FROM categoria ORDER BY nombre')->fetch
             <select name="equipos[]" class="form-select selectpicker" multiple data-live-search="true" data-max-options="7" title="Selecciona equipos...">
                 <?php foreach($equipos as $e): ?>
                     <option value="<?=$e['id_equipo']?>">
-                        <?=htmlspecialchars($e['Nombre'].' | '.$e['Categoria'].' | '.$e['Estatus'])?>
+                        <?=htmlspecialchars($e['Identificador'].' | '.$e['Nombre'].' | '.$e['Categoria'].' | '.$e['Estatus'])?>
                     </option>
                 <?php endforeach; ?>
             </select>
