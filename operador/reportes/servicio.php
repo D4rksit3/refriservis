@@ -30,7 +30,7 @@ $inventarioRows = $pdo->query("
 ")->fetchAll(PDO::FETCH_UNIQUE);
 
 // Lista de equipos (id + Identificador)
-$equiposList = $pdo->query("SELECT id, Identificador FROM equipos ORDER BY Identificador")->fetchAll(PDO::FETCH_ASSOC);
+$equiposList = $pdo->query("SELECT id_equipo, Identificador FROM equipos ORDER BY Identificador")->fetchAll(PDO::FETCH_ASSOC);
 
 // Armar array de equipos asignados al mantenimiento
 $equiposMantenimiento = [];
