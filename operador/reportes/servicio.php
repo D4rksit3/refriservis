@@ -2,7 +2,7 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-
+// operador/form_reporte.php
 session_start();
 if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
     header('Location: /../index.php');
@@ -23,29 +23,25 @@ $stmt->execute([$id]);
 $m = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$m) die('Mantenimiento no encontrado');
 
-// ============================
-// INVENTARIO (mapa id => datos)
-// ============================
+// Traer inventario (mapa id => datos)
 $inventarioRows = $pdo->query("
-  SELECT id, nombre AS tipo, marca, modelo, serie AS ubicacion, gas, codigo
-  FROM inventario
+    SELECT id, nombre AS tipo, marca, modelo, serie AS ubicacion, gas, codigo
+    FROM inventario
 ")->fetchAll(PDO::FETCH_UNIQUE);
 
-// ============================
-// EQUIPOS vinculados al mantenimiento
-// ============================
+// Lista de equipos (id + Identificador)
+$equiposList = $pdo->query("SELECT id, Identificador FROM equipos ORDER BY Identificador")->fetchAll(PDO::FETCH_ASSOC);
+
+// Armar array de equipos asignados al mantenimiento
 $equiposMantenimiento = [];
 for ($i = 1; $i <= 7; $i++) {
     $eqId = $m["equipo$i"] ?? null;
-    $equiposMantenimiento[$i] = $eqId && isset($inventarioRows[$eqId])
-        ? $inventarioRows[$eqId] + ['id' => $eqId]
-        : null;
+    if ($eqId && isset($inventarioRows[$eqId])) {
+        $equiposMantenimiento[$i] = $inventarioRows[$eqId] + ['id' => $eqId];
+    } else {
+        $equiposMantenimiento[$i] = null;
+    }
 }
-
-// ============================
-// Lista de todos los equipos disponibles
-// ============================
-$equiposList = $pdo->query("SELECT id, codigo FROM inventario ORDER BY codigo ASC")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!doctype html>
 <html lang="es">
@@ -78,9 +74,6 @@ $equiposList = $pdo->query("SELECT id, codigo FROM inventario ORDER BY codigo AS
   <form id="formReporte" method="post" action="guardar_reporte.php" enctype="multipart/form-data" class="mb-5">
     <input type="hidden" name="mantenimiento_id" value="<?=htmlspecialchars($m['id'])?>">
 
-    <!-- ============================
-         DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS A INTERVENIR
-    ============================ -->
     <h6>DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS A INTERVENIR</h6>
     <div class="table-responsive mb-3">
       <table class="table table-bordered">
@@ -107,12 +100,11 @@ $equiposList = $pdo->query("SELECT id, codigo FROM inventario ORDER BY codigo AS
             <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][ubicacion]" value="<?=htmlspecialchars($eq['ubicacion'] ?? '')?>" readonly></td>
             <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][gas]" value="<?=htmlspecialchars($eq['gas'] ?? '')?>" readonly></td>
             <td>
-              <select class="form-select form-select-sm equipo-select" name="equipos[<?= $i ?>][codigo]" data-index="<?= $i ?>">
+              <select class="form-select form-select-sm equipo-select" name="equipos[<?= $i ?>][id]" data-index="<?= $i ?>">
                 <option value="">-- Seleccione --</option>
-                <?php foreach($equiposList as $row): ?>
-                  <option value="<?=htmlspecialchars($row['codigo'])?>"
-                    <?=($eq && $eq['codigo']==$row['codigo']?'selected':'')?>>
-                    <?=htmlspecialchars($row['codigo'])?>
+                <?php foreach($equiposList as $e): ?>
+                  <option value="<?= $e['id'] ?>" <?= ($eq && $eq['id']==$e['id'] ? 'selected' : '') ?>>
+                    <?= htmlspecialchars($e['Identificador']) ?>
                   </option>
                 <?php endforeach; ?>
               </select>
@@ -123,9 +115,6 @@ $equiposList = $pdo->query("SELECT id, codigo FROM inventario ORDER BY codigo AS
       </table>
     </div>
 
-    <!-- ============================
-         PARÁMETROS DE FUNCIONAMIENTO (Antes / Después)
-    ============================ -->
     <h6>PARÁMETROS DE FUNCIONAMIENTO (Antes / Después)</h6>
     <div class="table-responsive mb-3">
       <table class="table table-bordered table-sm">
@@ -164,9 +153,6 @@ $equiposList = $pdo->query("SELECT id, codigo FROM inventario ORDER BY codigo AS
       </table>
     </div>
 
-    <!-- ============================
-         OTROS CAMPOS
-    ============================ -->
     <div class="mb-3">
       <label>Trabajos realizados</label>
       <textarea class="form-control" name="trabajos" rows="4"></textarea>
@@ -187,17 +173,28 @@ $equiposList = $pdo->query("SELECT id, codigo FROM inventario ORDER BY codigo AS
     <div class="row g-3">
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Cliente</label>
-        <div class="firma-box"><canvas id="firmaClienteCanvas"></canvas></div>
+        <div class="firma-box" id="firmaClienteBox"><canvas id="firmaClienteCanvas"></canvas></div>
+        <div class="mt-1 d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearFirma('cliente')">Limpiar</button>
+        </div>
         <input type="hidden" name="firma_cliente" id="firma_cliente_input">
       </div>
+
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Supervisor</label>
-        <div class="firma-box"><canvas id="firmaSupervisorCanvas"></canvas></div>
+        <div class="firma-box" id="firmaSupervisorBox"><canvas id="firmaSupervisorCanvas"></canvas></div>
+        <div class="mt-1 d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearFirma('supervisor')">Limpiar</button>
+        </div>
         <input type="hidden" name="firma_supervisor" id="firma_supervisor_input">
       </div>
+
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Técnico</label>
-        <div class="firma-box"><canvas id="firmaTecnicoCanvas"></canvas></div>
+        <div class="firma-box" id="firmaTecnicoBox"><canvas id="firmaTecnicoCanvas"></canvas></div>
+        <div class="mt-1 d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearFirma('tecnico')">Limpiar</button>
+        </div>
         <input type="hidden" name="firma_tecnico" id="firma_tecnico_input">
       </div>
     </div>
@@ -212,32 +209,65 @@ $equiposList = $pdo->query("SELECT id, codigo FROM inventario ORDER BY codigo AS
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <script>
-const sigCliente = new SignaturePad(document.getElementById('firmaClienteCanvas'), { backgroundColor: '#fff' });
-const sigSupervisor = new SignaturePad(document.getElementById('firmaSupervisorCanvas'), { backgroundColor: '#fff' });
-const sigTecnico = new SignaturePad(document.getElementById('firmaTecnicoCanvas'), { backgroundColor: '#fff' });
+const sigCliente = new SignaturePad(document.getElementById('firmaClienteCanvas'), { backgroundColor: 'rgba(255,255,255,1)' });
+const sigSupervisor = new SignaturePad(document.getElementById('firmaSupervisorCanvas'), { backgroundColor: 'rgba(255,255,255,1)' });
+const sigTecnico = new SignaturePad(document.getElementById('firmaTecnicoCanvas'), { backgroundColor: 'rgba(255,255,255,1)' });
 
-document.getElementById('formReporte').addEventListener('submit', function(){
-  if (!sigCliente.isEmpty()) document.getElementById('firma_cliente_input').value = sigCliente.toDataURL();
-  if (!sigSupervisor.isEmpty()) document.getElementById('firma_supervisor_input').value = sigSupervisor.toDataURL();
-  if (!sigTecnico.isEmpty()) document.getElementById('firma_tecnico_input').value = sigTecnico.toDataURL();
+function resizeCanvases() {
+  [ 'firmaClienteCanvas','firmaSupervisorCanvas','firmaTecnicoCanvas' ].forEach(id=>{
+    const canvas = document.getElementById(id);
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    const w = canvas.clientWidth;
+    canvas.width = w * ratio;
+    canvas.height = 150 * ratio;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(ratio, ratio);
+  });
+  sigCliente.clear(); sigSupervisor.clear(); sigTecnico.clear();
+}
+window.addEventListener('resize', resizeCanvases);
+resizeCanvases();
+
+function clearFirma(tipo){
+  if(tipo==='cliente') sigCliente.clear();
+  if(tipo==='supervisor') sigSupervisor.clear();
+  if(tipo==='tecnico') sigTecnico.clear();
+}
+
+document.getElementById('formReporte').addEventListener('submit', function(e){
+  if (!sigCliente.isEmpty()) {
+    document.getElementById('firma_cliente_input').value = sigCliente.toDataURL('image/png');
+  }
+  if (!sigSupervisor.isEmpty()) {
+    document.getElementById('firma_supervisor_input').value = sigSupervisor.toDataURL('image/png');
+  }
+  if (!sigTecnico.isEmpty()) {
+    document.getElementById('firma_tecnico_input').value = sigTecnico.toDataURL('image/png');
+  }
 });
 
 $(document).ready(function(){
-  $('.equipo-select').select2({ placeholder:"Buscar equipo...", allowClear:true, width:'100%' });
+  $('.equipo-select').select2({
+    placeholder: "Buscar equipo...",
+    allowClear: true,
+    width: '100%'
+  });
 
   $('.equipo-select').on('change', function(){
-    let codigo = $(this).val();
+    let id = $(this).val();
     let index = $(this).data('index');
-    if(!codigo) return;
-    $.getJSON('/operador/ajax_get_equipo.php', { codigo }, function(data){
+    if(!id) return;
+
+    $.getJSON('/operador/ajax_get_equipo.php', { id }, function(data){
       if(data){
-        $(`[name="equipos[${index}][tipo]"]`).val(data.tipo||'');
-        $(`[name="equipos[${index}][marca]"]`).val(data.marca||'');
-        $(`[name="equipos[${index}][modelo]"]`).val(data.modelo||'');
-        $(`[name="equipos[${index}][ubicacion]"]`).val(data.ubicacion||'');
-        $(`[name="equipos[${index}][gas]"]`).val(data.gas||'');
+        $(`[name="equipos[${index}][tipo]"]`).val(data.tipo || '');
+        $(`[name="equipos[${index}][marca]"]`).val(data.marca || '');
+        $(`[name="equipos[${index}][modelo]"]`).val(data.modelo || '');
+        $(`[name="equipos[${index}][ubicacion]"]`).val(data.ubicacion || '');
+        $(`[name="equipos[${index}][gas]"]`).val(data.gas || '');
       }
     });
   });
