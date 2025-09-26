@@ -23,11 +23,9 @@ $stmt->execute([$id]);
 $m = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$m) die('Mantenimiento no encontrado');
 
-// Lista de equipos desde tabla `equipos`
-$sqlEquipos = "SELECT id_equipo, Identificador, marca, modelo, ubicacion, voltaje 
-               FROM equipos 
-               ORDER BY Identificador ASC";
-$equiposList = $pdo->query($sqlEquipos)->fetchAll(PDO::FETCH_ASSOC);
+// Lista de equipos desde inventario
+$equiposList = $pdo->query("SELECT id AS id_equipo, Identificador, Marca, Modelo, Ubicacion, Voltaje 
+                            FROM inventario ORDER BY Identificador ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 // Preparar array con equipos del mantenimiento (equipo1..equipo7)
 $equiposMantenimiento = [];
@@ -101,16 +99,16 @@ for ($i = 1; $i <= 7; $i++) {
                       data-index="<?= $i ?>">
                 <option value="">-- Seleccione --</option>
                 <?php foreach($equiposList as $e): ?>
-                  <option value="<?= $e['id_equipo'] ?>" <?= ($eq && $eq['id_equipo']==$e['id_equipo'] ? 'selected' : '') ?>>
-                    <?= htmlspecialchars($e['Identificador']) ?>
-                  </option>
+                    <option value="<?= $e['id_equipo'] ?>" <?= ($eq && $eq['id_equipo']==$e['id_equipo'] ? 'selected' : '') ?>>
+                        <?= htmlspecialchars($e['Identificador']) ?>
+                    </option>
                 <?php endforeach; ?>
               </select>
             </td>
-            <td><input type="text" class="form-control form-control-sm marca-<?= $i ?>" name="equipos[<?= $i ?>][marca]" value="<?=htmlspecialchars($eq['marca'] ?? '')?>" readonly></td>
-            <td><input type="text" class="form-control form-control-sm modelo-<?= $i ?>" name="equipos[<?= $i ?>][modelo]" value="<?=htmlspecialchars($eq['modelo'] ?? '')?>" readonly></td>
-            <td><input type="text" class="form-control form-control-sm ubicacion-<?= $i ?>" name="equipos[<?= $i ?>][ubicacion]" value="<?=htmlspecialchars($eq['ubicacion'] ?? '')?>" readonly></td>
-            <td><input type="text" class="form-control form-control-sm voltaje-<?= $i ?>" name="equipos[<?= $i ?>][voltaje]" value="<?=htmlspecialchars($eq['voltaje'] ?? '')?>" readonly></td>
+            <td><input type="text" class="form-control form-control-sm marca-<?= $i ?>" name="equipos[<?= $i ?>][marca]" value="<?=htmlspecialchars($eq['Marca'] ?? '')?>" readonly></td>
+            <td><input type="text" class="form-control form-control-sm modelo-<?= $i ?>" name="equipos[<?= $i ?>][modelo]" value="<?=htmlspecialchars($eq['Modelo'] ?? '')?>" readonly></td>
+            <td><input type="text" class="form-control form-control-sm ubicacion-<?= $i ?>" name="equipos[<?= $i ?>][ubicacion]" value="<?=htmlspecialchars($eq['Ubicacion'] ?? '')?>" readonly></td>
+            <td><input type="text" class="form-control form-control-sm voltaje-<?= $i ?>" name="equipos[<?= $i ?>][voltaje]" value="<?=htmlspecialchars($eq['Voltaje'] ?? '')?>" readonly></td>
           </tr>
           <?php endfor; ?>
         </tbody>
@@ -216,16 +214,34 @@ document.getElementById('formReporte').addEventListener('submit', function(){
 $(document).ready(function(){
   $('.equipo-select').select2({ placeholder:"Buscar equipo...", allowClear:true, width:'100%' });
 
+  $('.equipo-select').each(function(){
+    let id = $(this).val();
+    let index = $(this).data('index');
+    if(id){
+      $.getJSON('/operador/ajax_get_equipo.php', { id }, function(data){
+        if(data){
+          $(`.marca-${index}`).val(data.Marca||'');
+          $(`.modelo-${index}`).val(data.Modelo||'');
+          $(`.ubicacion-${index}`).val(data.Ubicacion||'');
+          $(`.voltaje-${index}`).val(data.Voltaje||'');
+        }
+      });
+    }
+  });
+
   $('.equipo-select').on('change', function(){
     let id = $(this).val();
     let index = $(this).data('index');
-    if(!id) return;
+    if(!id) {
+      $(`.marca-${index}, .modelo-${index}, .ubicacion-${index}, .voltaje-${index}`).val('');
+      return;
+    }
     $.getJSON('/operador/ajax_get_equipo.php', { id }, function(data){
       if(data){
-        $(`.marca-${index}`).val(data.marca||'');
-        $(`.modelo-${index}`).val(data.modelo||'');
-        $(`.ubicacion-${index}`).val(data.ubicacion||'');
-        $(`.voltaje-${index}`).val(data.voltaje||'');
+        $(`.marca-${index}`).val(data.Marca||'');
+        $(`.modelo-${index}`).val(data.Modelo||'');
+        $(`.ubicacion-${index}`).val(data.Ubicacion||'');
+        $(`.voltaje-${index}`).val(data.Voltaje||'');
       }
     });
   });
