@@ -1,126 +1,117 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-session_start();
-
-if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
-    header('Location: /../index.php');
-    exit;
-}
-
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../lib/fpdf.php';
 
-// ==========================
-// DATOS DEL FORMULARIO
-// ==========================
-$mantenimiento_id = $_POST['mantenimiento_id'] ?? null;
-$trabajos = $_POST['trabajos'] ?? '';
-$observaciones = $_POST['observaciones'] ?? '';
-$firma_cliente = $_POST['firma_cliente'] ?? null;
-$firma_supervisor = $_POST['firma_supervisor'] ?? null;
-$firma_tecnico = $_POST['firma_tecnico'] ?? null;
+// =======================
+// GUARDAR DATOS
+// =======================
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $titulo        = $_POST['titulo'] ?? '';
+    $categoria     = $_POST['categoria'] ?? '';
+    $descripcion   = $_POST['descripcion'] ?? '';
+    $fecha         = $_POST['fecha'] ?? date('Y-m-d');
+    $cliente_id    = $_POST['cliente_id'] ?? null;
+    $inventario_id = $_POST['inventario_id'] ?? null;
+    $estado        = $_POST['estado'] ?? 'pendiente';
+    $digitador_id  = $_POST['digitador_id'] ?? null;
+    $operador_id   = $_POST['operador_id'] ?? null;
 
-// ==========================
-// SUBIDA DE FOTOS
-// ==========================
-$fotosGuardadas = [];
-$uploadDir = __DIR__ . '/../../uploads/fotos_mantenimientos/' . $mantenimiento_id . '/';
-if (!file_exists($uploadDir)) {
-    mkdir($uploadDir, 0777, true);
+    $stmt = $pdo->prepare("INSERT INTO mantenimientos 
+        (titulo, categoria, descripcion, fecha, cliente_id, inventario_id, estado, digitador_id, operador_id) 
+        VALUES (?,?,?,?,?,?,?,?,?)");
+    $stmt->execute([$titulo, $categoria, $descripcion, $fecha, $cliente_id, $inventario_id, $estado, $digitador_id, $operador_id]);
+
+    $mantenimiento_id = $pdo->lastInsertId();
 }
 
-if (!empty($_FILES['fotos']['name'][0])) {
-    foreach ($_FILES['fotos']['tmp_name'] as $key => $tmp_name) {
-        if ($_FILES['fotos']['error'][$key] === UPLOAD_ERR_OK) {
-            $nombre = time() . "_" . basename($_FILES['fotos']['name'][$key]);
-            $destino = $uploadDir . $nombre;
-            if (move_uploaded_file($tmp_name, $destino)) {
-                $fotosGuardadas[] = $destino;
+// =======================
+// OBTENER DATOS COMPLETOS
+// =======================
+$query = $pdo->prepare("SELECT m.*, c.nombre AS cliente, i.nombre AS equipo
+    FROM mantenimientos m
+    LEFT JOIN clientes c ON m.cliente_id = c.id
+    LEFT JOIN inventario i ON m.inventario_id = i.id
+    WHERE m.id = ?");
+$query->execute([$mantenimiento_id]);
+$reporte = $query->fetch(PDO::FETCH_ASSOC);
+
+// =======================
+// PDF CON DISEÑO
+// =======================
+class PDF extends FPDF {
+    function Header() {
+        // Logo
+        $logoPath = __DIR__ . '/../../lib/logo.png';
+        if (file_exists($logoPath)) {
+            $this->Image($logoPath, 10, 8, 30);
+        }
+        $this->SetFont('Arial', 'B', 15);
+        $this->Cell(0, 10, utf8_decode('Reporte de Mantenimiento'), 0, 1, 'C');
+        $this->Ln(5);
+    }
+
+    function Footer() {
+        $this->SetY(-15);
+        $this->SetFont('Arial', 'I', 8);
+        $this->Cell(0, 10, utf8_decode('Página ') . $this->PageNo() . '/{nb}', 0, 0, 'C');
+    }
+}
+
+$pdf = new PDF();
+$pdf->AliasNbPages();
+$pdf->AddPage();
+$pdf->SetFont('Arial', '', 12);
+
+// Tabla de datos
+$pdf->Cell(50, 10, 'ID:', 1);
+$pdf->Cell(0, 10, $reporte['id'], 1, 1);
+
+$pdf->Cell(50, 10, 'Titulo:', 1);
+$pdf->Cell(0, 10, utf8_decode($reporte['titulo']), 1, 1);
+
+$pdf->Cell(50, 10, 'Categoria:', 1);
+$pdf->Cell(0, 10, utf8_decode($reporte['categoria']), 1, 1);
+
+$pdf->Cell(50, 10, 'Descripcion:', 1);
+$pdf->MultiCell(0, 10, utf8_decode($reporte['descripcion']), 1);
+
+$pdf->Cell(50, 10, 'Fecha:', 1);
+$pdf->Cell(0, 10, $reporte['fecha'], 1, 1);
+
+$pdf->Cell(50, 10, 'Cliente:', 1);
+$pdf->Cell(0, 10, utf8_decode($reporte['cliente']), 1, 1);
+
+$pdf->Cell(50, 10, 'Equipo:', 1);
+$pdf->Cell(0, 10, utf8_decode($reporte['equipo']), 1, 1);
+
+$pdf->Cell(50, 10, 'Estado:', 1);
+$pdf->Cell(0, 10, utf8_decode($reporte['estado']), 1, 1);
+
+// =======================
+// FOTOS (BLOB → PDF)
+// =======================
+if (!empty($_FILES['fotos']['tmp_name'][0])) {
+    $pdf->Ln(10);
+    $pdf->SetFont('Arial', 'B', 12);
+    $pdf->Cell(0, 10, utf8_decode('Fotos del equipo:'), 0, 1);
+
+    foreach ($_FILES['fotos']['tmp_name'] as $index => $tmpPath) {
+        if ($_FILES['fotos']['error'][$index] === UPLOAD_ERR_OK) {
+            $ext = pathinfo($_FILES['fotos']['name'][$index], PATHINFO_EXTENSION);
+            $tmpFile = sys_get_temp_dir() . "/foto_" . uniqid() . "." . $ext;
+            move_uploaded_file($tmpPath, $tmpFile);
+
+            if (in_array(strtolower($ext), ['jpg', 'jpeg', 'png'])) {
+                $pdf->Image($tmpFile, null, null, 60, 60);
+                $pdf->Ln(65);
             }
+            unlink($tmpFile);
         }
     }
 }
 
-// ==========================
-// GUARDAR EN BASE DE DATOS
-// ==========================
-$stmt = $pdo->prepare("
-    INSERT INTO reportes_servicio
-    (mantenimiento_id, trabajos, observaciones, firma_cliente, firma_supervisor, firma_tecnico, fecha)
-    VALUES (?,?,?,?,?,?,NOW())
-");
-$stmt->execute([
-    $mantenimiento_id,
-    $trabajos,
-    $observaciones,
-    $firma_cliente,
-    $firma_supervisor,
-    $firma_tecnico
-]);
-$reporte_id = $pdo->lastInsertId();
-
-// ==========================
-// CREAR PDF
-// ==========================
-$pdf = new FPDF();
-$pdf->AddPage();
-$pdf->SetFont('Arial','B',14);
-$pdf->Cell(0,10,'REPORTE DE SERVICIO TECNICO',0,1,'C');
-
-$pdf->SetFont('Arial','',10);
-$pdf->Cell(0,8,"Mantenimiento Nro: $mantenimiento_id",0,1);
-
-$pdf->MultiCell(0,6,"Trabajos Realizados:\n".$trabajos);
-$pdf->Ln(2);
-$pdf->MultiCell(0,6,"Observaciones:\n".$observaciones);
-
-// ==========================
-// FOTOS EN EL PDF
-// ==========================
-if (!empty($fotosGuardadas)) {
-    $pdf->Ln(5);
-    $pdf->SetFont('Arial','B',12);
-    $pdf->Cell(0,8,'Fotos de los equipos:',0,1);
-
-    foreach ($fotosGuardadas as $foto) {
-        $pdf->Image($foto, null, null, 80, 60); // ancho=80mm alto=60mm
-        $pdf->Ln(65);
-    }
-}
-
-// ==========================
-// FIRMAS EN EL PDF
-// ==========================
-$pdf->Ln(10);
-$pdf->SetFont('Arial','B',12);
-$pdf->Cell(0,8,'Firmas:',0,1);
-
-if ($firma_cliente) {
-    $imgData = base64_decode(str_replace('data:image/png;base64,','',$firma_cliente));
-    $firmaPath = $uploadDir."firma_cliente.png";
-    file_put_contents($firmaPath,$imgData);
-    $pdf->Image($firmaPath,20,$pdf->GetY(),40,20);
-}
-if ($firma_supervisor) {
-    $imgData = base64_decode(str_replace('data:image/png;base64,','',$firma_supervisor));
-    $firmaPath = $uploadDir."firma_supervisor.png";
-    file_put_contents($firmaPath,$imgData);
-    $pdf->Image($firmaPath,80,$pdf->GetY(),40,20);
-}
-if ($firma_tecnico) {
-    $imgData = base64_decode(str_replace('data:image/png;base64,','',$firma_tecnico));
-    $firmaPath = $uploadDir."firma_tecnico.png";
-    file_put_contents($firmaPath,$imgData);
-    $pdf->Image($firmaPath,150,$pdf->GetY(),40,20);
-}
-
-$pdfFile = $uploadDir."reporte_$reporte_id.pdf";
-$pdf->Output('F',$pdfFile);
-
-// ==========================
-// REDIRIGIR A DESCARGA
-// ==========================
-header("Location: descargar_reporte.php?id=$reporte_id");
+// =======================
+// DESCARGA DIRECTA
+// =======================
+$pdf->Output('D', "reporte_mantenimiento_{$mantenimiento_id}.pdf");
 exit;
