@@ -2,7 +2,6 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-// operador/form_reporte.php
 session_start();
 if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
     header('Location: /../index.php');
@@ -13,6 +12,7 @@ require_once __DIR__ . '/../../config/db.php';
 $id = $_GET['id'] ?? null;
 if (!$id) die('ID no proporcionado');
 
+// Traer datos del mantenimiento + cliente
 $stmt = $pdo->prepare("
   SELECT m.*, c.cliente, c.direccion, c.responsable, c.telefono
   FROM mantenimientos m
@@ -23,24 +23,26 @@ $stmt->execute([$id]);
 $m = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$m) die('Mantenimiento no encontrado');
 
-// Traer inventario (mapa id => datos)
-$inventarioRows = $pdo->query("
-    SELECT id, nombre AS tipo, marca, modelo, serie AS ubicacion, gas, codigo
-    FROM inventario
-")->fetchAll(PDO::FETCH_UNIQUE);
+// Lista de equipos desde tabla `equipos`
+$sqlEquipos = "SELECT id_equipo, Identificador, marca, modelo, ubicacion, voltaje 
+               FROM equipos 
+               ORDER BY Identificador ASC";
+$equiposList = $pdo->query($sqlEquipos)->fetchAll(PDO::FETCH_ASSOC);
 
-// Lista de equipos (id + Identificador)
-$equiposList = $pdo->query("SELECT id_equipo, Identificador FROM equipos ORDER BY Identificador")->fetchAll(PDO::FETCH_ASSOC);
-
-// Armar array de equipos asignados al mantenimiento
+// Preparar array con equipos del mantenimiento (equipo1..equipo7)
 $equiposMantenimiento = [];
 for ($i = 1; $i <= 7; $i++) {
     $eqId = $m["equipo$i"] ?? null;
-    if ($eqId && isset($inventarioRows[$eqId])) {
-        $equiposMantenimiento[$i] = $inventarioRows[$eqId] + ['id' => $eqId];
-    } else {
-        $equiposMantenimiento[$i] = null;
+    $eq = null;
+    if ($eqId) {
+        foreach ($equiposList as $e) {
+            if ($e['id_equipo'] == $eqId) {
+                $eq = $e;
+                break;
+            }
+        }
     }
+    $equiposMantenimiento[$i] = $eq;
 }
 ?>
 <!doctype html>
@@ -76,16 +78,15 @@ for ($i = 1; $i <= 7; $i++) {
 
     <h6>DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS A INTERVENIR</h6>
     <div class="table-responsive mb-3">
-      <table class="table table-bordered">
+      <table class="table table-bordered align-middle text-center">
         <thead class="table-light">
           <tr>
             <th>#</th>
-            <th>Tipo</th>
+            <th>Identificador</th>
             <th>Marca</th>
             <th>Modelo</th>
-            <th>Ubicación/Serie</th>
-            <th>Tipo de gas</th>
-            <th>Código</th>
+            <th>Ubicación</th>
+            <th>Voltaje</th>
           </tr>
         </thead>
         <tbody>
@@ -94,13 +95,10 @@ for ($i = 1; $i <= 7; $i++) {
           ?>
           <tr>
             <td><?= $i ?></td>
-            <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][tipo]" value="<?=htmlspecialchars($eq['tipo'] ?? '')?>" readonly></td>
-            <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][marca]" value="<?=htmlspecialchars($eq['marca'] ?? '')?>" readonly></td>
-            <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][modelo]" value="<?=htmlspecialchars($eq['modelo'] ?? '')?>" readonly></td>
-            <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][ubicacion]" value="<?=htmlspecialchars($eq['ubicacion'] ?? '')?>" readonly></td>
-            <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][gas]" value="<?=htmlspecialchars($eq['gas'] ?? '')?>" readonly></td>
             <td>
-              <select class="form-select form-select-sm equipo-select" name="equipos[<?= $i ?>][id_equipo]" data-index="<?= $i ?>">
+              <select class="form-select form-select-sm equipo-select" 
+                      name="equipos[<?= $i ?>][id_equipo]" 
+                      data-index="<?= $i ?>">
                 <option value="">-- Seleccione --</option>
                 <?php foreach($equiposList as $e): ?>
                   <option value="<?= $e['id_equipo'] ?>" <?= ($eq && $eq['id_equipo']==$e['id_equipo'] ? 'selected' : '') ?>>
@@ -109,6 +107,10 @@ for ($i = 1; $i <= 7; $i++) {
                 <?php endforeach; ?>
               </select>
             </td>
+            <td><input type="text" class="form-control form-control-sm marca-<?= $i ?>" name="equipos[<?= $i ?>][marca]" value="<?=htmlspecialchars($eq['marca'] ?? '')?>" readonly></td>
+            <td><input type="text" class="form-control form-control-sm modelo-<?= $i ?>" name="equipos[<?= $i ?>][modelo]" value="<?=htmlspecialchars($eq['modelo'] ?? '')?>" readonly></td>
+            <td><input type="text" class="form-control form-control-sm ubicacion-<?= $i ?>" name="equipos[<?= $i ?>][ubicacion]" value="<?=htmlspecialchars($eq['ubicacion'] ?? '')?>" readonly></td>
+            <td><input type="text" class="form-control form-control-sm voltaje-<?= $i ?>" name="equipos[<?= $i ?>][voltaje]" value="<?=htmlspecialchars($eq['voltaje'] ?? '')?>" readonly></td>
           </tr>
           <?php endfor; ?>
         </tbody>
@@ -166,41 +168,29 @@ for ($i = 1; $i <= 7; $i++) {
     <div class="mb-3">
       <label>Fotos del/los equipos (múltiples)</label>
       <input type="file" class="form-control" name="fotos[]" accept="image/*" multiple>
-      <small class="text-muted">Se guardarán las imágenes y se incluirán en el PDF.</small>
     </div>
 
-    <h6>Firmas (tocar o dibujar)</h6>
+    <h6>Firmas</h6>
     <div class="row g-3">
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Cliente</label>
-        <div class="firma-box" id="firmaClienteBox"><canvas id="firmaClienteCanvas"></canvas></div>
-        <div class="mt-1 d-flex gap-2">
-          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearFirma('cliente')">Limpiar</button>
-        </div>
+        <div class="firma-box"><canvas id="firmaClienteCanvas"></canvas></div>
         <input type="hidden" name="firma_cliente" id="firma_cliente_input">
       </div>
-
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Supervisor</label>
-        <div class="firma-box" id="firmaSupervisorBox"><canvas id="firmaSupervisorCanvas"></canvas></div>
-        <div class="mt-1 d-flex gap-2">
-          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearFirma('supervisor')">Limpiar</button>
-        </div>
+        <div class="firma-box"><canvas id="firmaSupervisorCanvas"></canvas></div>
         <input type="hidden" name="firma_supervisor" id="firma_supervisor_input">
       </div>
-
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Técnico</label>
-        <div class="firma-box" id="firmaTecnicoBox"><canvas id="firmaTecnicoCanvas"></canvas></div>
-        <div class="mt-1 d-flex gap-2">
-          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearFirma('tecnico')">Limpiar</button>
-        </div>
+        <div class="firma-box"><canvas id="firmaTecnicoCanvas"></canvas></div>
         <input type="hidden" name="firma_tecnico" id="firma_tecnico_input">
       </div>
     </div>
 
     <div class="text-center mt-4">
-      <button type="submit" class="btn btn-success btn-lg" id="btnGuardar">Guardar y Generar Reporte (PDF)</button>
+      <button type="submit" class="btn btn-success btn-lg">Guardar y Generar Reporte (PDF)</button>
     </div>
   </form>
 </div>
@@ -208,66 +198,34 @@ for ($i = 1; $i <= 7; $i++) {
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+
 <script>
-const sigCliente = new SignaturePad(document.getElementById('firmaClienteCanvas'), { backgroundColor: 'rgba(255,255,255,1)' });
-const sigSupervisor = new SignaturePad(document.getElementById('firmaSupervisorCanvas'), { backgroundColor: 'rgba(255,255,255,1)' });
-const sigTecnico = new SignaturePad(document.getElementById('firmaTecnicoCanvas'), { backgroundColor: 'rgba(255,255,255,1)' });
+// Firma
+const sigCliente = new SignaturePad(document.getElementById('firmaClienteCanvas'));
+const sigSupervisor = new SignaturePad(document.getElementById('firmaSupervisorCanvas'));
+const sigTecnico = new SignaturePad(document.getElementById('firmaTecnicoCanvas'));
 
-function resizeCanvases() {
-  [ 'firmaClienteCanvas','firmaSupervisorCanvas','firmaTecnicoCanvas' ].forEach(id=>{
-    const canvas = document.getElementById(id);
-    const ratio = Math.max(window.devicePixelRatio || 1, 1);
-    const w = canvas.clientWidth;
-    canvas.width = w * ratio;
-    canvas.height = 150 * ratio;
-    const ctx = canvas.getContext("2d");
-    ctx.scale(ratio, ratio);
-  });
-  sigCliente.clear(); sigSupervisor.clear(); sigTecnico.clear();
-}
-window.addEventListener('resize', resizeCanvases);
-resizeCanvases();
-
-function clearFirma(tipo){
-  if(tipo==='cliente') sigCliente.clear();
-  if(tipo==='supervisor') sigSupervisor.clear();
-  if(tipo==='tecnico') sigTecnico.clear();
-}
-
-document.getElementById('formReporte').addEventListener('submit', function(e){
-  if (!sigCliente.isEmpty()) {
-    document.getElementById('firma_cliente_input').value = sigCliente.toDataURL('image/png');
-  }
-  if (!sigSupervisor.isEmpty()) {
-    document.getElementById('firma_supervisor_input').value = sigSupervisor.toDataURL('image/png');
-  }
-  if (!sigTecnico.isEmpty()) {
-    document.getElementById('firma_tecnico_input').value = sigTecnico.toDataURL('image/png');
-  }
+document.getElementById('formReporte').addEventListener('submit', function(){
+  if (!sigCliente.isEmpty()) document.getElementById('firma_cliente_input').value = sigCliente.toDataURL();
+  if (!sigSupervisor.isEmpty()) document.getElementById('firma_supervisor_input').value = sigSupervisor.toDataURL();
+  if (!sigTecnico.isEmpty()) document.getElementById('firma_tecnico_input').value = sigTecnico.toDataURL();
 });
 
+// Select2 + cargar datos de equipo
 $(document).ready(function(){
-  $('.equipo-select').select2({
-    placeholder: "Buscar equipo...",
-    allowClear: true,
-    width: '100%'
-  });
+  $('.equipo-select').select2({ placeholder:"Buscar equipo...", allowClear:true, width:'100%' });
 
   $('.equipo-select').on('change', function(){
     let id = $(this).val();
     let index = $(this).data('index');
     if(!id) return;
-
     $.getJSON('/operador/ajax_get_equipo.php', { id }, function(data){
       if(data){
-        $(`[name="equipos[${index}][tipo]"]`).val(data.tipo || '');
-        $(`[name="equipos[${index}][marca]"]`).val(data.marca || '');
-        $(`[name="equipos[${index}][modelo]"]`).val(data.modelo || '');
-        $(`[name="equipos[${index}][ubicacion]"]`).val(data.ubicacion || '');
-        $(`[name="equipos[${index}][gas]"]`).val(data.gas || '');
+        $(`.marca-${index}`).val(data.marca||'');
+        $(`.modelo-${index}`).val(data.modelo||'');
+        $(`.ubicacion-${index}`).val(data.ubicacion||'');
+        $(`.voltaje-${index}`).val(data.voltaje||'');
       }
     });
   });
