@@ -51,9 +51,9 @@ for ($i = 1; $i <= 7; $i++) {
 <title>Generar Reporte - Mantenimiento #<?=htmlspecialchars($m['id'])?></title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
-  .firma-box { border:1px solid #000000ff; height:150px; background:#fff; }
+  .firma-box { border:1px solid #ccc; height:150px; background:#fff; }
   canvas { width:100%; height:150px; }
-  .img-preview { max-width:100%; max-height:150px; object-fit:contain; border:1px solid #000000ff; padding:4px; background:#fff; }
+  .img-preview { max-width:100%; max-height:150px; object-fit:contain; border:1px solid #ddd; padding:4px; background:#fff; }
   @media (max-width:576px){ .firma-box { height:120px } canvas{ height:120px } }
 </style>
 </head>
