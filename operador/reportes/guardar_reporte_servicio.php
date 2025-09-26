@@ -47,7 +47,7 @@ $pdf->AddPage();
 $pdf->SetFont('Arial','B',10);
 
 // --- CABECERA ---
-$pdf->Image(__DIR__.'../../../lib/logo.png',10,6,40); // Ajusta ruta/logo
+$pdf->Image(__DIR__.'../../../lib/logo.jpeg',10,6,40); // Ajusta ruta/logo
 $pdf->Cell(120);
 $pdf->Cell(70,10,txt("REFRISERVIS S.A.C."),0,1,'R');
 $pdf->SetFont('Arial','',8);
