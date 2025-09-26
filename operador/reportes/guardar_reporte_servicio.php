@@ -10,9 +10,7 @@ if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
 }
 
 require_once __DIR__ . '/../../config/db.php';
-require_once __DIR__ . '/../../vendor/autoload.php'; // Asegúrate que mPDF está instalado con composer
-
-use Mpdf\Mpdf;
+require_once __DIR__ . '/../../lib/fpdf.php';
 
 // =======================
 // Capturar datos del form
@@ -28,7 +26,7 @@ $firma_tecnico = $_POST['firma_tecnico'] ?? '';
 
 // Traer datos del mantenimiento + cliente
 $stmt = $pdo->prepare("
-  SELECT m.*, c.cliente, c.direccion, c.responsable, c.telefono
+  SELECT m.*, c.cliente, c.direccion, c.responsable, c.telefono, m.fecha
   FROM mantenimientos m
   LEFT JOIN clientes c ON c.id = m.cliente_id
   WHERE m.id = ?
@@ -41,128 +39,157 @@ if (!$m) {
 }
 
 // =======================
-// Procesar fotos (BLOB)
+// Procesar fotos (BLOB en memoria)
 // =======================
 $fotos = [];
 if (!empty($_FILES['fotos']['tmp_name'][0])) {
-    foreach ($_FILES['fotos']['tmp_name'] as $k => $tmp) {
+    foreach ($_FILES['fotos']['tmp_name'] as $tmp) {
         if (is_uploaded_file($tmp)) {
-            $data = file_get_contents($tmp);
-            $fotos[] = "data:" . mime_content_type($tmp) . ";base64," . base64_encode($data);
+            $fotos[] = $tmp; // guardamos la ruta temporal para pasársela directo a FPDF
         }
     }
 }
 
 // =======================
-// Generar HTML del PDF
+// Clase personalizada PDF
 // =======================
-$html = '
-<style>
-body { font-family: Arial, sans-serif; font-size: 10pt; }
-table { border-collapse: collapse; width: 100%; }
-th, td { border: 1px solid #000; padding: 4px; text-align: center; font-size: 9pt; }
-h3 { margin: 0; }
-.titulo { background: #cfe2f3; font-weight: bold; }
-.seccion { background: #f4cccc; font-weight: bold; text-align:left; padding:5px; }
-</style>
+class PDF extends FPDF {
+    function Header() {
+        // Logo
+        $this->Image(__DIR__.'/../../public/logo.png', 10, 6, 30);
+        // Título
+        $this->SetFont('Arial','B',12);
+        $this->Cell(0,10,'REPORTE DE SERVICIO TECNICO',0,1,'C');
+        $this->Ln(5);
+    }
+    function Footer() {
+        $this->SetY(-15);
+        $this->SetFont('Arial','I',8);
+        $this->Cell(0,10,'Pagina '.$this->PageNo().'/{nb}',0,0,'C');
+    }
+}
 
-<table width="100%">
-  <tr>
-    <td width="30%"><img src="/ruta/logo.png" height="60"></td>
-    <td width="40%" align="center">
-      <h3>REPORTE DE SERVICIO TECNICO</h3>
-      <div>Oficina: (01) 6557907</div>
-      <div>Emergencias: +51 943 048 606</div>
-      <div>ventas@refriservissac.com</div>
-    </td>
-    <td width="30%" align="right">
-      <b>REFRISERVIS S.A.C.</b><br>
-      <small>001-N°'.str_pad($m['id'], 6, "0", STR_PAD_LEFT).'</small>
-    </td>
-  </tr>
-</table>
+$pdf = new PDF();
+$pdf->AliasNbPages();
+$pdf->AddPage();
+$pdf->SetFont('Arial','',10);
 
-<br>
+// =======================
+// Datos del cliente
+// =======================
+$pdf->SetFont('Arial','B',10);
+$pdf->Cell(30,7,'Cliente:',1);
+$pdf->SetFont('Arial','',10);
+$pdf->Cell(80,7,utf8_decode($m['cliente']),1);
+$pdf->SetFont('Arial','B',10);
+$pdf->Cell(30,7,'Fecha:',1);
+$pdf->SetFont('Arial','',10);
+$pdf->Cell(50,7,$m['fecha'],1);
+$pdf->Ln();
 
-<table>
-  <tr><td><b>CLIENTE</b></td><td colspan="5">'.htmlspecialchars($m['cliente']).'</td></tr>
-  <tr><td><b>DIRECCION</b></td><td colspan="5">'.htmlspecialchars($m['direccion']).'</td></tr>
-  <tr><td><b>RESPONSABLE</b></td><td colspan="2">'.htmlspecialchars($m['responsable']).'</td>
-      <td><b>FECHA</b></td><td colspan="2">'.htmlspecialchars($m['fecha']).'</td></tr>
-</table>
+$pdf->SetFont('Arial','B',10);
+$pdf->Cell(30,7,'Direccion:',1);
+$pdf->SetFont('Arial','',10);
+$pdf->Cell(160,7,utf8_decode($m['direccion']),1);
+$pdf->Ln();
 
-<br>
+$pdf->SetFont('Arial','B',10);
+$pdf->Cell(30,7,'Responsable:',1);
+$pdf->SetFont('Arial','',10);
+$pdf->Cell(160,7,utf8_decode($m['responsable']),1);
+$pdf->Ln(12);
 
-<div class="titulo">DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS A INTERVENIR</div>
-<table>
-  <tr>
-    <th>#</th><th>Identificador</th><th>Marca</th><th>Modelo</th><th>Ubicación</th><th>Voltaje</th>
-  </tr>';
+// =======================
+// Equipos
+// =======================
+$pdf->SetFont('Arial','B',11);
+$pdf->Cell(0,7,'Datos de identificacion de equipos',1,1,'C');
+
+$pdf->SetFont('Arial','B',9);
+$pdf->Cell(10,7,'#',1);
+$pdf->Cell(30,7,'Identificador',1);
+$pdf->Cell(30,7,'Marca',1);
+$pdf->Cell(30,7,'Modelo',1);
+$pdf->Cell(50,7,'Ubicacion',1);
+$pdf->Cell(30,7,'Voltaje',1);
+$pdf->Ln();
+
+$pdf->SetFont('Arial','',9);
 for($i=1;$i<=7;$i++){
     $eq = $equipos[$i] ?? [];
-    $html .= '<tr>
-      <td>'.$i.'</td>
-      <td>'.htmlspecialchars($eq['id_equipo'] ?? '').'</td>
-      <td>'.htmlspecialchars($eq['marca'] ?? '').'</td>
-      <td>'.htmlspecialchars($eq['modelo'] ?? '').'</td>
-      <td>'.htmlspecialchars($eq['ubicacion'] ?? '').'</td>
-      <td>'.htmlspecialchars($eq['voltaje'] ?? '').'</td>
-    </tr>';
+    $pdf->Cell(10,7,$i,1);
+    $pdf->Cell(30,7,utf8_decode($eq['id_equipo'] ?? ''),1);
+    $pdf->Cell(30,7,utf8_decode($eq['marca'] ?? ''),1);
+    $pdf->Cell(30,7,utf8_decode($eq['modelo'] ?? ''),1);
+    $pdf->Cell(50,7,utf8_decode($eq['ubicacion'] ?? ''),1);
+    $pdf->Cell(30,7,utf8_decode($eq['voltaje'] ?? ''),1);
+    $pdf->Ln();
 }
-$html .= '</table><br>';
+$pdf->Ln(10);
 
-$html .= '<div class="titulo">PARÁMETROS DE FUNCIONAMIENTO</div>
-<table>
-  <tr>
-    <th>Medida</th>';
-for($i=1;$i<=7;$i++) $html .= '<th>Eq '.$i.' Antes</th><th>Eq '.$i.' Desp.</th>';
-$html .= '</tr>';
+// =======================
+// Trabajos y Observaciones
+// =======================
+$pdf->SetFont('Arial','B',10);
+$pdf->Cell(0,7,'Trabajos realizados',1,1);
+$pdf->SetFont('Arial','',9);
+$pdf->MultiCell(0,6,utf8_decode($trabajos),1);
+$pdf->Ln(5);
 
-$parametrosNombres = [
-    'Corriente eléctrica nominal (Amperios) L1',
-    'Corriente L2','Corriente L3',
-    'Tensión eléctrica nominal V1','Tensión V2','Tensión V3',
-    'Presión de descarga (PSI)','Presión de succión (PSI)'
-];
-foreach($parametrosNombres as $p){
-    $key = md5($p);
-    $html .= '<tr><td>'.$p.'</td>';
-    for($i=1;$i<=7;$i++){
-        $antes = $parametros[$key][$i]['antes'] ?? '';
-        $desp = $parametros[$key][$i]['despues'] ?? '';
-        $html .= '<td>'.$antes.'</td><td>'.$desp.'</td>';
-    }
-    $html .= '</tr>';
-}
-$html .= '</table><br>';
+$pdf->SetFont('Arial','B',10);
+$pdf->Cell(0,7,'Observaciones y recomendaciones',1,1);
+$pdf->SetFont('Arial','',9);
+$pdf->MultiCell(0,6,utf8_decode($observaciones),1);
+$pdf->Ln(5);
 
-$html .= '<div class="seccion">TRABAJOS REALIZADOS</div>
-<p>'.nl2br(htmlspecialchars($trabajos)).'</p>';
-
-$html .= '<div class="seccion">OBSERVACIONES Y RECOMENDACIONES</div>
-<p>'.nl2br(htmlspecialchars($observaciones)).'</p>';
-
+// =======================
+// Fotos
+// =======================
 if($fotos){
-    $html .= '<div class="seccion">FOTOS</div><table><tr>';
+    $pdf->SetFont('Arial','B',10);
+    $pdf->Cell(0,7,'Fotos',1,1,'C');
+    $pdf->Ln(3);
+    $x = 10; $y = $pdf->GetY();
     foreach($fotos as $foto){
-        $html .= '<td><img src="'.$foto.'" style="max-width:150px; max-height:150px;"></td>';
+        $pdf->Image($foto, $x, $y, 60, 45); // cada foto 60x45
+        $x += 65;
+        if($x > 180){
+            $x = 10;
+            $y += 50;
+        }
     }
-    $html .= '</tr></table>';
+    $pdf->Ln(55);
 }
 
+// =======================
 // Firmas
-$html .= '<br><div class="seccion">FIRMAS</div>
-<table>
-  <tr>
-    <td align="center">Cliente<br><img src="'.$firma_cliente.'" height="80"></td>
-    <td align="center">Supervisor<br><img src="'.$firma_supervisor.'" height="80"></td>
-    <td align="center">Técnico<br><img src="'.$firma_tecnico.'" height="80"></td>
-  </tr>
-</table>';
+// =======================
+$pdf->SetFont('Arial','B',10);
+$pdf->Cell(63,7,'Cliente',1,0,'C');
+$pdf->Cell(63,7,'Supervisor',1,0,'C');
+$pdf->Cell(63,7,'Tecnico',1,1,'C');
+
+$pdf->Cell(63,30,'',1,0,'C');
+$pdf->Cell(63,30,'',1,0,'C');
+$pdf->Cell(63,30,'',1,1,'C');
+
+// Insertar firmas si existen (en base64 vienen con "data:image/png;base64,...")
+function insertarFirma($pdf, $firma, $x, $y){
+    if($firma && strpos($firma, "base64,") !== false){
+        $data = explode(',', $firma);
+        $img = base64_decode($data[1]);
+        $tmp = tempnam(sys_get_temp_dir(), 'sig');
+        file_put_contents($tmp, $img);
+        $pdf->Image($tmp, $x, $y, 40, 25);
+        unlink($tmp);
+    }
+}
+$yFirmas = $pdf->GetY() - 30;
+insertarFirma($pdf, $firma_cliente, 20, $yFirmas+2);
+insertarFirma($pdf, $firma_supervisor, 85, $yFirmas+2);
+insertarFirma($pdf, $firma_tecnico, 150, $yFirmas+2);
 
 // =======================
-// Generar PDF
+// Output
 // =======================
-$mpdf = new Mpdf(['format' => 'A4']);
-$mpdf->WriteHTML($html);
-$mpdf->Output("Reporte_Mantenimiento_{$mantenimiento_id}.pdf", "I");
+$pdf->Output("I","Reporte_Mantenimiento_$mantenimiento_id.pdf");
