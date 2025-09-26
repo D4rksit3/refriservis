@@ -16,7 +16,8 @@ require_once __DIR__.'/../includes/header.php';
 // Traemos los mantenimientos asignados al operador logueado
 $stmt = $pdo->prepare('
     SELECT 
-        m.id, 
+        m.id,
+        categoria 
         m.titulo, 
         m.fecha, 
         m.estado, 
@@ -44,7 +45,7 @@ $rows = $stmt->fetchAll();
         <div class="card-body">
           <h6 class="card-title"><?= htmlspecialchars($r['titulo']) ?></h6>
           <p class="card-text mb-1"><b>Cliente:</b> <?= htmlspecialchars($r['cliente'] ?? '-') ?></p>
-          <p class="card-text mb-1"><b>Inventario:</b> <?= htmlspecialchars($r['inventario'] ?? '-') ?></p>
+          <p class="card-text mb-1"><b>Categoria:</b> <?= htmlspecialchars($r['categoria'] ?? '-') ?></p>
           <p class="card-text mb-1"><b>Digitador:</b> <?= htmlspecialchars($r['digitador'] ?? '-') ?></p>
           <p class="card-text mb-1"><b>Fecha:</b> <?= $r['fecha'] ?></p>
           <p class="card-text mb-2"><b>Estado:</b> <?= $r['estado'] ?></p>
