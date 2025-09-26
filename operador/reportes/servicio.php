@@ -25,7 +25,7 @@ if (!$m) die('Mantenimiento no encontrado');
 
 // Lista de equipos desde inventario
 $equiposList = $pdo->query("SELECT id AS id_equipo, Identificador, Marca, Modelo, Ubicacion, Voltaje 
-                            FROM inventario ORDER BY Identificador ASC")->fetchAll(PDO::FETCH_ASSOC);
+                            FROM equipos ORDER BY Identificador ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 // Preparar array con equipos del mantenimiento (equipo1..equipo7)
 $equiposMantenimiento = [];
