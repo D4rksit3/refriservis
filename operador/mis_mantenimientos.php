@@ -16,14 +16,13 @@ require_once __DIR__.'/../includes/header.php';
 // ============================
 // CONFIGURACIÓN DE PAGINACIÓN
 // ============================
-$itemsPorPagina = 3;
+$itemsPorPagina = 6; // ahora 6 cards por página
 $pagina = isset($_GET['pagina']) && is_numeric($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 $offset = ($pagina - 1) * $itemsPorPagina;
 
 // ============================
 // CONSULTA BASE
 // ============================
-// Filtrar: solo los creados en últimas 24 horas
 $sql = '
     SELECT 
         m.id, 
@@ -32,8 +31,7 @@ $sql = '
         m.fecha, 
         m.estado, 
         m.creado_en,
-        m.categoria,
-        m.reporte_generado, -- campo que marca si ya hay reporte (0 = no, 1 = sí)
+        m.reporte_generado,
         c.cliente AS cliente, 
         i.nombre AS inventario,
         u.nombre AS digitador
@@ -67,15 +65,15 @@ $totalPaginas = ceil($totalRegistros / $itemsPorPagina);
 
 // Mapa de categorías → reportes
 $mapaReportes = [
-    'VRV - FORMATO DE CALIDAD'                        => '/operador/reportes/vrv.php',
+    'VRV - FORMATO DE CALIDAD'                            => '/operador/reportes/vrv.php',
     'VENTILACION MECANICA (VEX-VIN) - FORMATO DE CALIDAD' => '/operador/reportes/vex_vin.php',
-    'UMA - FORMATO DE CALIDAD'                        => '/operador/reportes/uma.php',
-    'SPLIT DECORATIVO - FORMATO DE CALIDAD'           => '/operador/reportes/split.php',
-    'ROOFTOP - FORMATO DE CALIDAD'                    => '/operador/reportes/rooftop.php',
-    'CORTINAS DE AIRE - FORMATO DE CALIDAD'           => '/operador/reportes/cortinas.php',
-    'CHILLERS - FORMATO DE CALIDAD'                   => '/operador/reportes/chillers.php',
-    'BOMBAS DE AGUA - FORMATO DE CALIDAD'             => '/operador/reportes/bombas.php',
-    'REPORTE DE SERVICIO TECNICO'                     => '/operador/reportes/servicio.php'
+    'UMA - FORMATO DE CALIDAD'                            => '/operador/reportes/uma.php',
+    'SPLIT DECORATIVO - FORMATO DE CALIDAD'               => '/operador/reportes/split.php',
+    'ROOFTOP - FORMATO DE CALIDAD'                        => '/operador/reportes/rooftop.php',
+    'CORTINAS DE AIRE - FORMATO DE CALIDAD'               => '/operador/reportes/cortinas.php',
+    'CHILLERS - FORMATO DE CALIDAD'                       => '/operador/reportes/chillers.php',
+    'BOMBAS DE AGUA - FORMATO DE CALIDAD'                 => '/operador/reportes/bombas.php',
+    'REPORTE DE SERVICIO TECNICO'                         => '/operador/reportes/servicio.php'
 ];
 ?>
 
@@ -91,7 +89,7 @@ $mapaReportes = [
               <h6 class="card-title text-primary"><?= htmlspecialchars($r['titulo']) ?></h6>
               <p class="card-text mb-1"><b>Categoría:</b> <?= htmlspecialchars($r['categoria'] ?? '-') ?></p>
               <p class="card-text mb-1"><b>Cliente:</b> <?= htmlspecialchars($r['cliente'] ?? '-') ?></p>
-              <p class="card-text mb-1"><b>Categoria:</b> <?= htmlspecialchars($r['categoria'] ?? '-') ?></p>
+              <p class="card-text mb-1"><b>Inventario:</b> <?= htmlspecialchars($r['inventario'] ?? '-') ?></p>
               <p class="card-text mb-1"><b>Digitador:</b> <?= htmlspecialchars($r['digitador'] ?? '-') ?></p>
               <p class="card-text mb-1"><b>Fecha:</b> <?= $r['fecha'] ?></p>
               <p class="card-text mb-2"><b>Estado:</b> <?= ucfirst($r['estado']) ?></p>
@@ -103,19 +101,16 @@ $mapaReportes = [
                 ?>
 
                 <?php if ($r['reporte_generado']): ?>
-                  <!-- Ya existe reporte -->
                   <a href="<?= $urlReporte ?>?id=<?= $r['id'] ?>" 
                      class="btn btn-secondary btn-sm w-100">Ver Reporte</a>
 
                 <?php elseif ($r['estado'] === 'pendiente' || $r['estado'] === 'en proceso'): ?>
-                  <!-- Generar reporte -->
                   <a href="<?= $urlReporte ?>?id=<?= $r['id'] ?>" 
                      class="btn btn-outline-success btn-sm w-100">
                      Generar Reporte
                   </a>
 
                 <?php elseif ($r['estado'] === 'finalizado'): ?>
-                  <!-- Bloqueado (ya finalizado en las últimas 24h) -->
                   <span class="badge bg-secondary w-100 py-2">Reporte cerrado</span>
                 <?php endif; ?>
               </div>
