@@ -238,13 +238,14 @@ $(document).ready(function(){
     }
     $.getJSON('/operador/ajax_get_equipo.php', { id }, function(data){
       if(data){
-        $(`.marca-${index}`).val(data.Marca||'');
-        $(`.modelo-${index}`).val(data.Modelo||'');
-        $(`.ubicacion-${index}`).val(data.Ubicacion||'');
-        $(`.voltaje-${index}`).val(data.Voltaje||'');
+        $(`.marca-${index}`).val(data.marca || '');
+        $(`.modelo-${index}`).val(data.modelo || '');
+        $(`.ubicacion-${index}`).val(data.ubicacion || '');
+        $(`.voltaje-${index}`).val(data.voltaje || '');
       }
     });
-  });
+});
+
 });
 </script>
 </body>
