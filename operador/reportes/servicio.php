@@ -6,10 +6,10 @@ error_reporting(E_ALL);
 // operador/form_reporte.php
 session_start();
 if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
-    header('Location: /index.php');
+    header('Location: /../index.php');
     exit;
 }
-require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../../config/db.php';
 
 $id = $_GET['id'] ?? null;
 if (!$id) die('ID no proporcionado');
