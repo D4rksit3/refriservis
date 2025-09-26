@@ -24,7 +24,7 @@ $offset = ($pagina - 1) * $itemsPorPagina;
 // CONSULTA BASE
 // ============================
 // Filtrar: solo los creados en últimas 24 horas
-$stmt = $pdo->prepare('
+$sql = '
     SELECT 
         m.id, 
         m.titulo, 
@@ -40,12 +40,17 @@ $stmt = $pdo->prepare('
     LEFT JOIN clientes c ON c.id = m.cliente_id
     LEFT JOIN inventario i ON i.id = m.inventario_id
     LEFT JOIN usuarios u ON u.id = m.digitador_id
-    WHERE m.operador_id = ?
+    WHERE m.operador_id = :operador_id
       AND m.creado_en >= (NOW() - INTERVAL 24 HOUR)
     ORDER BY m.creado_en DESC
-    LIMIT ? OFFSET ?
-');
-$stmt->execute([$_SESSION['usuario_id'], $itemsPorPagina, $offset]);
+    LIMIT :limit OFFSET :offset
+';
+
+$stmt = $pdo->prepare($sql);
+$stmt->bindValue(':operador_id', $_SESSION['usuario_id'], PDO::PARAM_INT);
+$stmt->bindValue(':limit', $itemsPorPagina, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Total de registros (para paginación)
@@ -80,17 +85,17 @@ $mapaReportes = [
     <div class="row">
       <?php foreach($rows as $r): ?>
         <div class="col-md-6 mb-3">
-          <div class="card shadow-sm h-100">
+          <div class="card shadow-sm h-100 border-0">
             <div class="card-body">
-              <h6 class="card-title"><?= htmlspecialchars($r['titulo']) ?></h6>
+              <h6 class="card-title text-primary"><?= htmlspecialchars($r['titulo']) ?></h6>
               <p class="card-text mb-1"><b>Categoría:</b> <?= htmlspecialchars($r['categoria'] ?? '-') ?></p>
               <p class="card-text mb-1"><b>Cliente:</b> <?= htmlspecialchars($r['cliente'] ?? '-') ?></p>
               <p class="card-text mb-1"><b>Inventario:</b> <?= htmlspecialchars($r['inventario'] ?? '-') ?></p>
               <p class="card-text mb-1"><b>Digitador:</b> <?= htmlspecialchars($r['digitador'] ?? '-') ?></p>
               <p class="card-text mb-1"><b>Fecha:</b> <?= $r['fecha'] ?></p>
-              <p class="card-text mb-2"><b>Estado:</b> <?= $r['estado'] ?></p>
-              <div class="d-flex gap-2">
+              <p class="card-text mb-2"><b>Estado:</b> <?= ucfirst($r['estado']) ?></p>
 
+              <div class="d-flex gap-2">
                 <?php
                   $categoria = $r['categoria'];
                   $urlReporte = $mapaReportes[$categoria] ?? '/operador/form_reporte.php';
@@ -99,20 +104,19 @@ $mapaReportes = [
                 <?php if ($r['reporte_generado']): ?>
                   <!-- Ya existe reporte -->
                   <a href="<?= $urlReporte ?>?id=<?= $r['id'] ?>" 
-                     class="btn btn-secondary btn-sm flex-fill">Ver Reporte</a>
+                     class="btn btn-secondary btn-sm w-100">Ver Reporte</a>
 
                 <?php elseif ($r['estado'] === 'pendiente' || $r['estado'] === 'en proceso'): ?>
                   <!-- Generar reporte -->
-                  <a class="btn btn-sm btn-outline-success flex-fill" 
-                     href="<?= $urlReporte ?>?id=<?= $r['id'] ?>">
+                  <a href="<?= $urlReporte ?>?id=<?= $r['id'] ?>" 
+                     class="btn btn-outline-success btn-sm w-100">
                      Generar Reporte
                   </a>
 
                 <?php elseif ($r['estado'] === 'finalizado'): ?>
                   <!-- Bloqueado (ya finalizado en las últimas 24h) -->
-                  <span class="text-muted small">Reporte cerrado</span>
+                  <span class="badge bg-secondary w-100 py-2">Reporte cerrado</span>
                 <?php endif; ?>
-
               </div>
             </div>
           </div>
