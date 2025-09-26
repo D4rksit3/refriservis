@@ -29,7 +29,7 @@ $pdf = new FPDF();
 $pdf->AddPage();
 
 // ✅ Fondo (tu imagen de diseño)
-$templatePath = __DIR__ . '/plantillas/reporte_base.png'; // cambia a tu ruta real
+$templatePath = __DIR__ . '/../../lib/logo.jpeg'; // cambia a tu ruta real
 $pdf->Image($templatePath, 0, 0, 210, 297); // A4
 
 $pdf->SetFont('Arial','',9);
