@@ -15,23 +15,23 @@ require_once __DIR__.'/../includes/header.php';
 
 // Traemos los mantenimientos asignados al operador logueado
 $stmt = $pdo->prepare('
-    SELECT 
-        m.id,
-        categoria 
-        m.titulo, 
-        m.fecha, 
-        m.estado, 
-        m.creado_en,
-        c.cliente AS cliente, 
-        i.nombre AS inventario,
-        u.nombre AS digitador
-    FROM mantenimientos m
-    LEFT JOIN clientes c ON c.id = m.cliente_id
-    LEFT JOIN inventario i ON i.id = m.inventario_id
-    LEFT JOIN usuarios u ON u.id = m.digitador_id
-    WHERE m.operador_id = ?
-    ORDER BY m.creado_en DESC
-');
+        SELECT
+            m.id,
+            m.categoria,
+            m.titulo,
+            m.fecha,
+            m.estado,
+            m.creado_en,
+            c.cliente   AS cliente,
+            i.nombre    AS inventario,
+            u.nombre    AS digitador
+        FROM mantenimientos m
+        LEFT JOIN clientes  c ON c.id = m.cliente_id
+        LEFT JOIN inventario i ON i.id = m.inventario_id
+        LEFT JOIN usuarios  u ON u.id = m.digitador_id
+        WHERE m.operador_id = ?
+        ORDER BY m.creado_en DESC
+    ');
 $stmt->execute([$_SESSION['usuario_id']]);
 $rows = $stmt->fetchAll();
 ?>
