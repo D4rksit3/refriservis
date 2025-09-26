@@ -100,10 +100,10 @@ for ($i = 1; $i <= 7; $i++) {
             <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][ubicacion]" value="<?=htmlspecialchars($eq['ubicacion'] ?? '')?>" readonly></td>
             <td><input type="text" class="form-control form-control-sm" name="equipos[<?= $i ?>][gas]" value="<?=htmlspecialchars($eq['gas'] ?? '')?>" readonly></td>
             <td>
-              <select class="form-select form-select-sm equipo-select" name="equipos[<?= $i ?>][id]" data-index="<?= $i ?>">
+              <select class="form-select form-select-sm equipo-select" name="equipos[<?= $i ?>][id_equipo]" data-index="<?= $i ?>">
                 <option value="">-- Seleccione --</option>
                 <?php foreach($equiposList as $e): ?>
-                  <option value="<?= $e['id'] ?>" <?= ($eq && $eq['id']==$e['id'] ? 'selected' : '') ?>>
+                  <option value="<?= $e['id_equipo'] ?>" <?= ($eq && $eq['id_equipo']==$e['id_equipo'] ? 'selected' : '') ?>>
                     <?= htmlspecialchars($e['Identificador']) ?>
                   </option>
                 <?php endforeach; ?>
