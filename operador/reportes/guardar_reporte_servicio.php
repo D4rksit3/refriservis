@@ -4,7 +4,7 @@ error_reporting(E_ALL);
 session_start();
 
 require_once __DIR__ . '/../../config/db.php';
-require_once __DIR__ . '/../../libs/fpdf.php';
+require_once __DIR__ . '/../../lib/fpdf.php';
 
 // ---- Recibir datos del form ----
 $idMantenimiento = $_POST['mantenimiento_id'] ?? null;
