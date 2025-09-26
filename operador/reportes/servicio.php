@@ -210,25 +210,26 @@ document.getElementById('formReporte').addEventListener('submit', function(){
   if (!sigTecnico.isEmpty()) document.getElementById('firma_tecnico_input').value = sigTecnico.toDataURL();
 });
 
-// Select2 + cargar datos de equipo
 $(document).ready(function(){
   $('.equipo-select').select2({ placeholder:"Buscar equipo...", allowClear:true, width:'100%' });
 
+  // 🔹 Al cargar la página, rellenar los datos de los equipos ya seleccionados
   $('.equipo-select').each(function(){
     let id = $(this).val();
     let index = $(this).data('index');
     if(id){
-      $.getJSON('/operador/ajax_get_equipo.php', { id }, function(data){
-        if(data){
-          $(`.marca-${index}`).val(data.Marca||'');
-          $(`.modelo-${index}`).val(data.Modelo||'');
-          $(`.ubicacion-${index}`).val(data.Ubicacion||'');
-          $(`.voltaje-${index}`).val(data.Voltaje||'');
+      $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id }, function(data){
+        if(data.success){
+          $(`.marca-${index}`).val(data.marca || '');
+          $(`.modelo-${index}`).val(data.modelo || '');
+          $(`.ubicacion-${index}`).val(data.ubicacion || '');
+          $(`.voltaje-${index}`).val(data.voltaje || '');
         }
       });
     }
   });
 
+  // 🔹 Cuando se cambia un identificador
   $('.equipo-select').on('change', function(){
     let id = $(this).val();
     let index = $(this).data('index');
@@ -236,17 +237,17 @@ $(document).ready(function(){
       $(`.marca-${index}, .modelo-${index}, .ubicacion-${index}, .voltaje-${index}`).val('');
       return;
     }
-    $.getJSON('/operador/ajax_get_equipo.php', { id }, function(data){
-      if(data){
+    $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id }, function(data){
+      if(data.success){
         $(`.marca-${index}`).val(data.marca || '');
         $(`.modelo-${index}`).val(data.modelo || '');
         $(`.ubicacion-${index}`).val(data.ubicacion || '');
         $(`.voltaje-${index}`).val(data.voltaje || '');
       }
     });
+  });
 });
 
-});
 </script>
 </body>
 </html>
