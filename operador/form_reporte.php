@@ -10,6 +10,7 @@ require_once __DIR__ . '/../config/db.php';
 $id = $_GET['id'] ?? null;
 if (!$id) die('ID no proporcionado');
 
+// --- obtener mantenimiento con cliente ---
 $stmt = $pdo->prepare("
   SELECT m.*, c.cliente, c.direccion, c.responsable, c.telefono
   FROM mantenimientos m
@@ -20,15 +21,24 @@ $stmt->execute([$id]);
 $m = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$m) die('Mantenimiento no encontrado');
 
-// Traer datos de inventario para los equipos (mapa id => datos)
+// si ya tiene reporte generado, no permitir editar
+if ($m['reporte_generado'] == 1) {
+    header("Location: ver_reporte.php?id=" . $m['id']);
+    exit;
+}
+
+// --- inventario para equipos vinculados ---
 $inventarioRows = $pdo->query("SELECT id, nombre, marca, modelo, serie, gas, codigo FROM inventario")->fetchAll(PDO::FETCH_UNIQUE);
 
-// Armar array de equipos vinculados al mantenimiento
+// --- equipos ya vinculados al mantenimiento ---
 $equipos = [];
 for ($i = 1; $i <= 7; $i++) {
     $eqId = $m["equipo$i"];
     if ($eqId && isset($inventarioRows[$eqId])) $equipos[] = $inventarioRows[$eqId];
 }
+
+// lista de códigos de equipos disponibles
+$equiposList = $pdo->query("SELECT Identificador FROM equipos ORDER BY Identificador")->fetchAll(PDO::FETCH_COLUMN);
 ?>
 <!doctype html>
 <html lang="es">
@@ -54,11 +64,9 @@ for ($i = 1; $i <= 7; $i++) {
   <div class="card mb-3 p-3">
     <div><strong>CLIENTE:</strong> <?=htmlspecialchars($m['cliente'] ?? '-')?></div>
     <div><strong>DIRECCIÓN:</strong> <?=htmlspecialchars($m['direccion'] ?? '-')?></div>
-    <div><strong>LOCAL:</strong> <?=htmlspecialchars($m['cliente'] ?? '-')?></div>
-    <div><strong># eQUIPOS:</strong> <?=htmlspecialchars($m['cliente'] ?? '-')?></div>
     <div><strong>RESPONSABLE:</strong> <?=htmlspecialchars($m['responsable'] ?? '-')?></div>
+    <div><strong>TELÉFONO:</strong> <?=htmlspecialchars($m['telefono'] ?? '-')?></div>
     <div><strong>FECHA:</strong> <?=htmlspecialchars($m['fecha'] ?? date('Y-m-d'))?></div>
-
   </div>
 
   <form id="formReporte" method="post" action="guardar_reporte.php" enctype="multipart/form-data" class="mb-5">
@@ -90,12 +98,9 @@ for ($i = 1; $i <= 7; $i++) {
             <td>
               <select class="form-select form-select-sm equipo-select" name="equipos[<?= $i ?>][codigo]" data-index="<?= $i ?>">
                 <option value="">-- Seleccione --</option>
-                <?php
-                  $equiposList = $pdo->query("SELECT Identificador FROM equipos ORDER BY Identificador")->fetchAll(PDO::FETCH_COLUMN);
-                  foreach($equiposList as $ident){
-                    echo "<option value='".htmlspecialchars($ident)."'>".htmlspecialchars($ident)."</option>";
-                  }
-                ?>
+                <?php foreach($equiposList as $ident): ?>
+                  <option value="<?=htmlspecialchars($ident)?>"><?=htmlspecialchars($ident)?></option>
+                <?php endforeach; ?>
               </select>
             </td>
           </tr>
@@ -103,7 +108,6 @@ for ($i = 1; $i <= 7; $i++) {
         </tbody>
       </table>
     </div>
-
 
     <h6>PARÁMETROS DE FUNCIONAMIENTO (Antes / Después)</h6>
     <div class="table-responsive mb-3">
@@ -161,34 +165,26 @@ for ($i = 1; $i <= 7; $i++) {
     <div class="row g-3">
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Cliente</label>
-        <div class="firma-box" id="firmaClienteBox"><canvas id="firmaClienteCanvas"></canvas></div>
-        <div class="mt-1 d-flex gap-2">
-          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearFirma('cliente')">Limpiar</button>
-        </div>
+        <div class="firma-box"><canvas id="firmaClienteCanvas"></canvas></div>
+        <button type="button" class="btn btn-sm btn-outline-secondary mt-1" onclick="clearFirma('cliente')">Limpiar</button>
         <input type="hidden" name="firma_cliente" id="firma_cliente_input">
       </div>
-
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Supervisor</label>
-        <div class="firma-box" id="firmaSupervisorBox"><canvas id="firmaSupervisorCanvas"></canvas></div>
-        <div class="mt-1 d-flex gap-2">
-          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearFirma('supervisor')">Limpiar</button>
-        </div>
+        <div class="firma-box"><canvas id="firmaSupervisorCanvas"></canvas></div>
+        <button type="button" class="btn btn-sm btn-outline-secondary mt-1" onclick="clearFirma('supervisor')">Limpiar</button>
         <input type="hidden" name="firma_supervisor" id="firma_supervisor_input">
       </div>
-
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Técnico</label>
-        <div class="firma-box" id="firmaTecnicoBox"><canvas id="firmaTecnicoCanvas"></canvas></div>
-        <div class="mt-1 d-flex gap-2">
-          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearFirma('tecnico')">Limpiar</button>
-        </div>
+        <div class="firma-box"><canvas id="firmaTecnicoCanvas"></canvas></div>
+        <button type="button" class="btn btn-sm btn-outline-secondary mt-1" onclick="clearFirma('tecnico')">Limpiar</button>
         <input type="hidden" name="firma_tecnico" id="firma_tecnico_input">
       </div>
     </div>
 
     <div class="text-center mt-4">
-      <button type="submit" class="btn btn-success btn-lg" id="btnGuardar">Guardar y Generar Reporte (PDF)</button>
+      <button type="submit" class="btn btn-success btn-lg">Guardar y Generar Reporte (PDF)</button>
     </div>
   </form>
 </div>
@@ -196,9 +192,7 @@ for ($i = 1; $i <= 7; $i++) {
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<!-- signature_pad -->
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <script>
 const sigCliente = new SignaturePad(document.getElementById('firmaClienteCanvas'), { backgroundColor: 'rgba(255,255,255,1)' });
@@ -206,14 +200,13 @@ const sigSupervisor = new SignaturePad(document.getElementById('firmaSupervisorC
 const sigTecnico = new SignaturePad(document.getElementById('firmaTecnicoCanvas'), { backgroundColor: 'rgba(255,255,255,1)' });
 
 function resizeCanvases() {
-  [ 'firmaClienteCanvas','firmaSupervisorCanvas','firmaTecnicoCanvas' ].forEach(id=>{
+  ['firmaClienteCanvas','firmaSupervisorCanvas','firmaTecnicoCanvas'].forEach(id=>{
     const canvas = document.getElementById(id);
     const ratio = Math.max(window.devicePixelRatio || 1, 1);
     const w = canvas.clientWidth;
     canvas.width = w * ratio;
     canvas.height = 150 * ratio;
-    const ctx = canvas.getContext("2d");
-    ctx.scale(ratio, ratio);
+    canvas.getContext("2d").scale(ratio, ratio);
   });
   sigCliente.clear(); sigSupervisor.clear(); sigTecnico.clear();
 }
@@ -226,44 +219,28 @@ function clearFirma(tipo){
   if(tipo==='tecnico') sigTecnico.clear();
 }
 
-document.getElementById('formReporte').addEventListener('submit', function(e){
-  // enviar firmas como base64 en hidden inputs
-  if (!sigCliente.isEmpty()) {
-    document.getElementById('firma_cliente_input').value = sigCliente.toDataURL('image/png');
-  }
-  if (!sigSupervisor.isEmpty()) {
-    document.getElementById('firma_supervisor_input').value = sigSupervisor.toDataURL('image/png');
-  }
-  if (!sigTecnico.isEmpty()) {
-    document.getElementById('firma_tecnico_input').value = sigTecnico.toDataURL('image/png');
-  }
-  // dejar que el form se envíe (multipart/form-data) con los campos y los base64 en hidden inputs
+document.getElementById('formReporte').addEventListener('submit', function(){
+  if (!sigCliente.isEmpty()) document.getElementById('firma_cliente_input').value = sigCliente.toDataURL('image/png');
+  if (!sigSupervisor.isEmpty()) document.getElementById('firma_supervisor_input').value = sigSupervisor.toDataURL('image/png');
+  if (!sigTecnico.isEmpty()) document.getElementById('firma_tecnico_input').value = sigTecnico.toDataURL('image/png');
 });
 
-$(document).ready(function(){
-  $('.equipo-select').select2({
-    placeholder: "Buscar equipo...",
-    allowClear: true,
-    width: '100%'
-  });
-
+$(function(){
+  $('.equipo-select').select2({ placeholder:"Buscar equipo...", allowClear:true, width:'100%' });
   $('.equipo-select').on('change', function(){
-    let codigo = $(this).val();
-    let index = $(this).data('index');
+    let codigo = $(this).val(), index = $(this).data('index');
     if(!codigo) return;
-
     $.getJSON('/operador/ajax_get_equipo.php', { codigo }, function(data){
       if(data){
-        $(`[name="equipos[${index}][tipo]"]`).val(data.tipo || '');
-        $(`[name="equipos[${index}][marca]"]`).val(data.marca || '');
-        $(`[name="equipos[${index}][modelo]"]`).val(data.modelo || '');
-        $(`[name="equipos[${index}][ubicacion]"]`).val(data.ubicacion || '');
-        $(`[name="equipos[${index}][gas]"]`).val(data.gas || '');
+        $(`[name="equipos[${index}][tipo]"]`).val(data.tipo||'');
+        $(`[name="equipos[${index}][marca]"]`).val(data.marca||'');
+        $(`[name="equipos[${index}][modelo]"]`).val(data.modelo||'');
+        $(`[name="equipos[${index}][ubicacion]"]`).val(data.ubicacion||'');
+        $(`[name="equipos[${index}][gas]"]`).val(data.gas||'');
       }
     });
   });
 });
-
 </script>
 </body>
 </html>
