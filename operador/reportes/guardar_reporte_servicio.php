@@ -9,8 +9,8 @@ if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
     exit;
 }
 
-require_once __DIR__ . '/../../config/db.php';
-require_once __DIR__ . '/../../lib/fpdf.php';
+require_once __DIR__ . '../../../config/db.php';
+require_once __DIR__ . '../../../lib/fpdf.php';
 
 // =======================
 // Capturar datos del form
@@ -56,7 +56,7 @@ if (!empty($_FILES['fotos']['tmp_name'][0])) {
 class PDF extends FPDF {
     function Header() {
         // Logo
-        $this->Image(__DIR__.'/../../public/logo.png', 10, 6, 30);
+        $this->Image(__DIR__.'../../../lib/refriservissac_logo.jpeg', 10, 6, 30);
         // Título
         $this->SetFont('Arial','B',12);
         $this->Cell(0,10,'REPORTE DE SERVICIO TECNICO',0,1,'C');
