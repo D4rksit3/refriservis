@@ -89,7 +89,7 @@ $mapaReportes = [
               <h6 class="card-title text-primary"><?= htmlspecialchars($r['titulo']) ?></h6>
               <p class="card-text mb-1"><b>Categoría:</b> <?= htmlspecialchars($r['categoria'] ?? '-') ?></p>
               <p class="card-text mb-1"><b>Cliente:</b> <?= htmlspecialchars($r['cliente'] ?? '-') ?></p>
-              <p class="card-text mb-1"><b>Inventario:</b> <?= htmlspecialchars($r['inventario'] ?? '-') ?></p>
+              
               <p class="card-text mb-1"><b>Digitador:</b> <?= htmlspecialchars($r['digitador'] ?? '-') ?></p>
               <p class="card-text mb-1"><b>Fecha:</b> <?= $r['fecha'] ?></p>
               <p class="card-text mb-2"><b>Estado:</b> <?= ucfirst($r['estado']) ?></p>
