@@ -71,7 +71,7 @@ for ($i = 1; $i <= 7; $i++) {
     <div><strong>FECHA:</strong> <?=htmlspecialchars($m['fecha'] ?? date('Y-m-d'))?></div>
   </div>
 
-  <form id="formReporte" method="post" action="guardar_reporte.php" enctype="multipart/form-data" class="mb-5">
+  <form id="formReporte" method="post" action="guardar_reporte_servicio.php" enctype="multipart/form-data" class="mb-5">
     <input type="hidden" name="mantenimiento_id" value="<?=htmlspecialchars($m['id'])?>">
 
     <h6>DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS A INTERVENIR</h6>
