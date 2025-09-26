@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../../config/db.php';
 
 $codigo = $_GET['codigo'] ?? '';
 if(!$codigo){ echo json_encode([]); exit; }
