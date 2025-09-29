@@ -1,187 +1,191 @@
 <?php
-require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../lib/fpdf.php';
+require_once __DIR__ . '/../../config/db.php';
 
-function generarPDF($id, $pdo) {
-    // Obtener mantenimiento
-    $stmt = $pdo->prepare("SELECT * FROM mantenimientos WHERE id = ?");
-    $stmt->execute([$id]);
-    $m = $stmt->fetch(PDO::FETCH_ASSOC);
-    if(!$m) throw new Exception("No se encontró el mantenimiento");
-
-    // Obtener equipos relacionados
-    $equiposIds = [];
-    for ($i=1; $i<=7; $i++) {
-        if (!empty($m["equipo$i"])) $equiposIds[] = $m["equipo$i"];
-    }
-
-    $equiposData = [];
-    if ($equiposIds) {
-        $in = str_repeat('?,', count($equiposIds)-1) . '?';
-        $stmt = $pdo->prepare("
-            SELECT e.Identificador, e.marca, e.modelo, e.ubicacion, inv.nombre AS tipo, inv.gas
-            FROM equipos e
-            LEFT JOIN inventario inv ON e.Identificador = inv.codigo
-            WHERE e.Identificador IN ($in)
-        ");
-        $stmt->execute($equiposIds);
-        $equiposData = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    // Decodificar parámetros
-    $parametros = json_decode($m['parametros'], true) ?: [];
-
-    // Decodificar fotos
-    $fotos = json_decode($m['fotos'], true) ?: [];
-
-    // Crear PDF
-    $pdf = new FPDF();
-    $pdf->AddPage();
-    $pdf->SetFont('Arial','B',14);
-
-    // Logo
-    if(file_exists(__DIR__ . '/../../lib/logo.jpeg')){
-        $pdf->Image(__DIR__ . '/../../lib/logo.jpeg',10,10,30);
-    }
-    $pdf->Cell(0,10,utf8_decode("REPORTE DE MANTENIMIENTO"),0,1,'C');
-    $pdf->Ln(10);
-
-    // --- Datos de Identificación de los Equipos ---
-    $pdf->SetFont('Arial','B',12);
-    $pdf->Cell(0,8,"Datos de Identificación de los Equipos",1,1,'C');
-    $pdf->SetFont('Arial','B',9);
-    $pdf->Cell(30,8,"ID",1);
-    $pdf->Cell(40,8,"Tipo",1);
-    $pdf->Cell(30,8,"Marca",1);
-    $pdf->Cell(30,8,"Modelo",1);
-    $pdf->Cell(30,8,"Ubicación",1);
-    $pdf->Cell(30,8,"Gas",1);
-    $pdf->Ln();
-
-    $pdf->SetFont('Arial','',9);
-    foreach($equiposData as $eq){
-        $pdf->Cell(30,8,$eq['Identificador'],1);
-        $pdf->Cell(40,8,utf8_decode($eq['tipo']),1);
-        $pdf->Cell(30,8,$eq['marca'],1);
-        $pdf->Cell(30,8,$eq['modelo'],1);
-        $pdf->Cell(30,8,$eq['ubicacion'],1);
-        $pdf->Cell(30,8,$eq['gas'],1);
-        $pdf->Ln();
-    }
-    $pdf->Ln(5);
-
-    // --- Parámetros de Funcionamiento ---
-    $pdf->SetFont('Arial','B',12);
-    $pdf->Cell(0,8,"Parámetros de Funcionamiento (Antes / Después)",1,1,'C');
-
-    $pdf->SetFont('Arial','B',9);
-    $pdf->Cell(50,8,"Parámetro",1);
-    $pdf->Cell(40,8,"Equipo",1);
-    $pdf->Cell(40,8,"Antes",1);
-    $pdf->Cell(40,8,"Después",1);
-    $pdf->Ln();
-
-    $pdf->SetFont('Arial','',9);
-    foreach($parametros as $nombre=>$data){
-        foreach($data as $equipo=>$valores){
-            $pdf->Cell(50,8,utf8_decode($nombre),1);
-            $pdf->Cell(40,8,$equipo,1);
-            $pdf->Cell(40,8,$valores['antes'] ?? '',1);
-            $pdf->Cell(40,8,$valores['despues'] ?? '',1);
-            $pdf->Ln();
-        }
-    }
-    $pdf->Ln(5);
-
-    // --- Trabajos Realizados ---
-    $pdf->SetFont('Arial','B',12);
-    $pdf->Cell(0,8,"Trabajos Realizados",1,1,'C');
-    $pdf->SetFont('Arial','',9);
-    $pdf->MultiCell(0,6,utf8_decode($m['trabajos']),1);
-    $pdf->Ln(5);
-
-    // --- Observaciones ---
-    $pdf->SetFont('Arial','B',12);
-    $pdf->Cell(0,8,"Observaciones y Recomendaciones",1,1,'C');
-    $pdf->SetFont('Arial','',9);
-    $pdf->MultiCell(0,6,utf8_decode($m['observaciones']),1);
-    $pdf->Ln(5);
-
-    // --- Fotos ---
-    if($fotos){
-        $pdf->SetFont('Arial','B',12);
-        $pdf->Cell(0,8,"Registro Fotográfico",1,1,'C');
-        $pdf->Ln(3);
-
-        $x = 10; $y = $pdf->GetY();
-        $count = 0;
-        foreach($fotos as $foto){
-            $path = __DIR__ . "/../../uploads/fotos/".$foto;
-            if(file_exists($path)){
-                $pdf->Image($path,$x,$y,60,45);
-                $x += 65;
-                $count++;
-                if($count % 3 == 0){ $x=10; $y += 50; }
-            }
-        }
-        $pdf->Ln(60);
-    }
-
-    // --- Firmas ---
-    $pdf->SetFont('Arial','B',12);
-    $pdf->Cell(0,8,"Firmas",1,1,'C');
-    $pdf->Ln(10);
-
-    $y = $pdf->GetY();
-    $pdf->SetFont('Arial','',9);
-
-    // Cliente
-    if(!empty($m['firma_cliente'])){
-        $path = __DIR__ . "/../../uploads/firmas/".$m['firma_cliente'];
-        if(file_exists($path)){
-            $pdf->Image($path,20,$y,40,25);
-            $pdf->SetXY(20,$y+30);
-            $pdf->Cell(40,6,"Cliente",0,0,'C');
-        }
-    }
-
-    // Supervisor
-    if(!empty($m['firma_supervisor'])){
-        $path = __DIR__ . "/../../uploads/firmas/".$m['firma_supervisor'];
-        if(file_exists($path)){
-            $pdf->Image($path,85,$y,40,25);
-            $pdf->SetXY(85,$y+30);
-            $pdf->Cell(40,6,"Supervisor",0,0,'C');
-        }
-    }
-
-    // Técnico
-    if(!empty($m['firma_tecnico'])){
-        $path = __DIR__ . "/../../uploads/firmas/".$m['firma_tecnico'];
-        if(file_exists($path)){
-            $pdf->Image($path,150,$y,40,25);
-            $pdf->SetXY(150,$y+30);
-            $pdf->Cell(40,6,"Técnico",0,0,'C');
-        }
-    }
-
-    // Guardar archivo
-    $fileName = "reporte_servicio_{$m['id']}.pdf";
-    $savePath = __DIR__ . "/../../uploads/reportes/".$fileName;
-    $pdf->Output('F',$savePath);
-
-    return $fileName;
-}
-
-// Ejecutar
 $id = $_GET['id'] ?? null;
-if(!$id){
-    die("Acceso inválido.");
+if(!$id) die("ID no proporcionado");
+
+// ================= CONSULTAR DATOS =================
+$stmt = $pdo->prepare("
+  SELECT m.*, c.cliente, c.direccion, c.responsable, c.telefono
+  FROM mantenimientos m
+  LEFT JOIN clientes c ON c.id = m.cliente_id
+  WHERE m.id = ?
+");
+$stmt->execute([$id]);
+$m = $stmt->fetch(PDO::FETCH_ASSOC);
+if(!$m) die("Mantenimiento no encontrado");
+
+// Equipos asociados (hasta 7)
+$equipos = [];
+for($i=1;$i<=7;$i++){
+    if(!empty($m["equipo$i"])){
+        $stmtEq = $pdo->prepare("SELECT * FROM equipos WHERE id_equipo=? LIMIT 1");
+        $stmtEq->execute([$m["equipo$i"]]);
+        if($row = $stmtEq->fetch(PDO::FETCH_ASSOC)){
+            $equipos[] = $row;
+        }
+    }
 }
 
-try {
-    $file = generarPDF($id,$pdo);
-    echo "Reporte generado correctamente: ".$file;
-} catch(Exception $e){
-    echo "Error: ".$e->getMessage();
+// Parámetros (JSON)
+$parametros = [];
+if(!empty($m['parametros'])){
+    $parametros = json_decode($m['parametros'], true);
 }
+
+// Fotos (JSON o base64)
+$fotos = [];
+if(!empty($m['fotos'])){
+    $fotos = json_decode($m['fotos'], true);
+    if(!is_array($fotos)) $fotos = [];
+}
+
+// Función para tildes
+function txt($s){ return mb_convert_encoding($s, 'ISO-8859-1', 'UTF-8'); }
+
+// ================= CLASE PDF =================
+class PDF extends FPDF {
+    function Header(){
+        global $m, $id;
+
+        $this->SetFont('Arial','',9);
+
+        // Logo
+        $this->Cell(40,25,$this->Image(__DIR__.'/../../lib/logo.jpeg',12,12,20),1,0,'C');
+
+        // Título
+        $this->SetFont('Arial','B',10);
+        $this->Cell(110,7,txt("FORMATO DE CALIDAD"),1,0,'C',true);
+        $this->Ln(7);
+        $this->SetX(50);
+        $this->SetFont('Arial','B',11);
+        $this->Cell(110,10,txt("REPORTE DE SERVICIO TÉCNICO"),1,0,'C');
+        $this->Ln(10);
+        $this->SetX(50);
+        $this->SetFont('Arial','',8);
+        $this->Cell(110,8,txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"),1,0,'C');
+
+        // Número
+        $this->SetXY(160,12);
+        $this->SetFont('Arial','',9);
+        $this->Cell(40,25,"001-N°".str_pad($id,6,"0",STR_PAD_LEFT),1,1,'C');
+        $this->Ln(5);
+    }
+}
+
+// ================= CREAR PDF =================
+$pdf = new PDF();
+$pdf->AliasNbPages();
+$pdf->AddPage();
+$pdf->SetFont('Arial','',9);
+
+// ===== CLIENTE =====
+$pdf->Cell(0,7,txt("Datos del Cliente"),1,1,'C');
+$pdf->Cell(40,7,txt("Cliente:"),1,0);
+$pdf->Cell(150,7,txt($m['cliente']),1,1);
+$pdf->Cell(40,7,txt("Dirección:"),1,0);
+$pdf->Cell(150,7,txt($m['direccion']),1,1);
+$pdf->Cell(40,7,txt("Responsable:"),1,0);
+$pdf->Cell(70,7,txt($m['responsable']),1,0);
+$pdf->Cell(40,7,txt("Teléfono:"),1,0);
+$pdf->Cell(40,7,txt($m['telefono']),1,1);
+$pdf->Ln(4);
+
+// ===== EQUIPOS =====
+$pdf->Cell(0,7,txt("Datos de Identificación de los Equipos"),1,1,'C');
+$pdf->SetFont('Arial','B',8);
+$pdf->Cell(10,7,"#",1,0,'C');
+$pdf->Cell(35,7,txt("Identificador"),1,0,'C');
+$pdf->Cell(35,7,txt("Marca"),1,0,'C');
+$pdf->Cell(35,7,txt("Modelo"),1,0,'C');
+$pdf->Cell(35,7,txt("Ubicación"),1,0,'C');
+$pdf->Cell(40,7,txt("Voltaje"),1,1,'C');
+$pdf->SetFont('Arial','',8);
+
+$index = 1;
+foreach($equipos as $eq){
+    $pdf->Cell(10,7,$index++,1,0,'C');
+    $pdf->Cell(35,7,txt($eq['Identificador']),1,0);
+    $pdf->Cell(35,7,txt($eq['marca']),1,0);
+    $pdf->Cell(35,7,txt($eq['modelo']),1,0);
+    $pdf->Cell(35,7,txt($eq['ubicacion']),1,0);
+    $pdf->Cell(40,7,txt($eq['voltaje']),1,1);
+}
+// Rellenar filas vacías si son menos de 7
+for($i=$index; $i<=7; $i++){
+    $pdf->Cell(10,7,$i,1,0,'C');
+    $pdf->Cell(35,7,"",1,0);
+    $pdf->Cell(35,7,"",1,0);
+    $pdf->Cell(35,7,"",1,0);
+    $pdf->Cell(35,7,"",1,0);
+    $pdf->Cell(40,7,"",1,1);
+}
+$pdf->Ln(4);
+
+// ===== PARÁMETROS =====
+$pdf->Cell(0,7,txt("Parámetros de Funcionamiento (Antes / Después)"),1,1,'C');
+$labels = [
+  'Corriente eléctrica L1','Corriente L2','Corriente L3',
+  'Tensión eléctrica V1','Tensión V2','Tensión V3',
+  'Presión descarga (PSI)','Presión succión (PSI)'
+];
+$pdf->SetFont('Arial','B',7);
+$pdf->Cell(40,7,"Medida",1,0,'C');
+for($i=1;$i<=7;$i++){
+    $pdf->Cell(14,7,"Eq$i A",1,0,'C');
+    $pdf->Cell(14,7,"Eq$i D",1,0,'C');
+}
+$pdf->Ln();
+$pdf->SetFont('Arial','',7);
+
+foreach($labels as $p){
+    $pdf->Cell(40,7,txt($p),1,0);
+    for($i=1;$i<=7;$i++){
+        $valA = $parametros[$p]["Eq{$i}_A"] ?? "";
+        $valD = $parametros[$p]["Eq{$i}_D"] ?? "";
+        $pdf->Cell(14,7,txt($valA),1,0);
+        $pdf->Cell(14,7,txt($valD),1,0);
+    }
+    $pdf->Ln();
+}
+$pdf->Ln(4);
+
+// ===== TRABAJOS =====
+$pdf->MultiCell(0,7,txt("Trabajos Realizados:\n".$m['trabajos']."\n\n"),1);
+$pdf->Ln(2);
+
+// ===== OBSERVACIONES =====
+$pdf->MultiCell(0,7,txt("Observaciones y Recomendaciones:\n".$m['observaciones']."\n\n"),1);
+$pdf->Ln(2);
+
+// ===== FOTOS =====
+if(!empty($fotos)){
+    $pdf->Cell(0,7,txt("Fotos del Servicio"),1,1,'C');
+    $col = 0;
+    foreach($fotos as $foto){
+        if(file_exists(__DIR__."/../../uploads/fotos/".$foto)){
+            $pdf->Cell(63,50,$pdf->Image(__DIR__."/../../uploads/fotos/".$foto,$pdf->GetX()+5,$pdf->GetY()+5,50),1,0,'C');
+        }else{
+            $pdf->Cell(63,50,"[No encontrada]",1,0,'C');
+        }
+        $col++;
+        if($col==3){ $col=0; $pdf->Ln(50); }
+    }
+    if($col>0) $pdf->Ln(50);
+    $pdf->Ln(5);
+}
+
+// ===== FIRMAS =====
+$pdf->Cell(63,7,"Firma Cliente",1,0,'C');
+$pdf->Cell(63,7,"Firma Supervisor",1,0,'C');
+$pdf->Cell(64,7,"Firma Técnico",1,1,'C');
+
+$pdf->Cell(63,30,"",1,0,'C');
+$pdf->Cell(63,30,"",1,0,'C');
+$pdf->Cell(64,30,"",1,1,'C');
+
+// ================= DESCARGAR =================
+$fileName = "reporte_servicio_{$m['id']}.pdf";
+$pdf->Output('D',$fileName);
+exit;
