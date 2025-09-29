@@ -5,7 +5,9 @@ require_once __DIR__ . '/../../config/db.php';
 $id = $_GET['id'] ?? null;
 if(!$id) die("ID no proporcionado");
 
-// Consultar datos
+// =======================
+// CONSULTA PRINCIPAL
+// =======================
 $stmt = $pdo->prepare("
   SELECT m.*, c.cliente, c.direccion, c.responsable, c.telefono
   FROM mantenimientos m
@@ -16,15 +18,33 @@ $stmt->execute([$id]);
 $m = $stmt->fetch(PDO::FETCH_ASSOC);
 if(!$m) die("Mantenimiento no encontrado");
 
-// Función para codificar tildes
+// =======================
+// CONSULTA EQUIPOS
+// =======================
+$equipos = [];
+for($i=1;$i<=7;$i++){
+    if(!empty($m["equipo$i"])){
+        $stmtEq = $pdo->prepare("SELECT * FROM equipos WHERE id_equipo=?");
+        $stmtEq->execute([$m["equipo$i"]]);
+        $equipos[$i] = $stmtEq->fetch(PDO::FETCH_ASSOC);
+    } else {
+        $equipos[$i] = null;
+    }
+}
+
+// =======================
+// PARÁMETROS
+// =======================
+$parametrosGuardados = json_decode($m['parametros'] ?? "{}", true);
+
+// =======================
+// FUNCIONES
+// =======================
 function txt($s){ return mb_convert_encoding($s, 'ISO-8859-1', 'UTF-8'); }
 
 class PDF extends FPDF {
     function Header(){
-        global $m, $id;
-
-        // Tabla de cabecera
-        $this->SetFont('Arial','',9);
+        global $id;
 
         // Logo
         $this->Cell(40,25,$this->Image(__DIR__.'/../../lib/logo.jpeg',12,12,20),1,0,'C');
@@ -41,7 +61,7 @@ class PDF extends FPDF {
         $this->SetFont('Arial','',8);
         $this->Cell(110,8,txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"),1,0,'C');
 
-        // Número
+        // Número de reporte
         $this->SetXY(160,12);
         $this->SetFont('Arial','',9);
         $this->Cell(40,25,"001-N°".str_pad($id,6,"0",STR_PAD_LEFT),1,1,'C');
@@ -49,6 +69,9 @@ class PDF extends FPDF {
     }
 }
 
+// =======================
+// GENERAR PDF
+// =======================
 $pdf = new PDF();
 $pdf->AliasNbPages();
 $pdf->AddPage();
@@ -78,12 +101,13 @@ $pdf->Cell(40,7,txt("Voltaje"),1,1,'C');
 $pdf->SetFont('Arial','',8);
 
 for($i=1;$i<=7;$i++){
+    $eq = $equipos[$i];
     $pdf->Cell(10,7,$i,1,0,'C');
-    $pdf->Cell(35,7,"",1,0);
-    $pdf->Cell(35,7,"",1,0);
-    $pdf->Cell(35,7,"",1,0);
-    $pdf->Cell(35,7,"",1,0);
-    $pdf->Cell(40,7,"",1,1);
+    $pdf->Cell(35,7,txt($eq['Identificador'] ?? ""),1,0);
+    $pdf->Cell(35,7,txt($eq['Marca'] ?? ""),1,0);
+    $pdf->Cell(35,7,txt($eq['Modelo'] ?? ""),1,0);
+    $pdf->Cell(35,7,txt($eq['Ubicacion'] ?? ""),1,0);
+    $pdf->Cell(40,7,txt($eq['Voltaje'] ?? ""),1,1);
 }
 $pdf->Ln(4);
 
@@ -105,24 +129,49 @@ $pdf->SetFont('Arial','',7);
 foreach($parametros as $p){
     $pdf->Cell(40,7,txt($p),1,0);
     for($i=1;$i<=7;$i++){
-        $pdf->Cell(14,7,"",1,0);
-        $pdf->Cell(14,7,"",1,0);
+        $antes = $parametrosGuardados[md5($p)][$i]['antes'] ?? '';
+        $despues = $parametrosGuardados[md5($p)][$i]['despues'] ?? '';
+        $pdf->Cell(14,7,txt($antes),1,0,'C');
+        $pdf->Cell(14,7,txt($despues),1,0,'C');
     }
     $pdf->Ln();
 }
 $pdf->Ln(4);
 
 // ===== TRABAJOS =====
-$pdf->MultiCell(0,7,txt("Trabajos Realizados:\n\n\n\n"),1);
+$pdf->MultiCell(0,7,txt("Trabajos Realizados:\n".$m['trabajos']),1);
 $pdf->Ln(2);
 
 // ===== OBSERVACIONES =====
-$pdf->MultiCell(0,7,txt("Observaciones y Recomendaciones:\n\n\n\n"),1);
+$pdf->MultiCell(0,7,txt("Observaciones y Recomendaciones:\n".$m['observaciones']),1);
 $pdf->Ln(2);
+
+// ===== FOTOS =====
+$fotos = json_decode($m['fotos'] ?? "[]", true);
+if($fotos){
+    $pdf->Cell(0,7,txt("Fotos de Equipos"),1,1,'C');
+    foreach($fotos as $f){
+        $ruta = __DIR__."/../../uploads/fotos/".$f;
+        if(file_exists($ruta)){
+            $pdf->Image($ruta, null, null, 60, 40);
+            $pdf->Ln(42);
+        }
+    }
+}
 
 // ===== FIRMAS =====
 $pdf->Cell(63,20,"Firma Cliente",1,0,'C');
 $pdf->Cell(63,20,"Firma Supervisor",1,0,'C');
 $pdf->Cell(64,20,"Firma Técnico",1,1,'C');
+
+if($m['firma_cliente']){
+    $pdf->Image(__DIR__.'/../../uploads/firmas/'.$m['firma_cliente'], 15, $pdf->GetY()-20, 40, 20);
+}
+if($m['firma_supervisor']){
+    $pdf->Image(__DIR__.'/../../uploads/firmas/'.$m['firma_supervisor'], 80, $pdf->GetY()-20, 40, 20);
+}
+if($m['firma_tecnico']){
+    $pdf->Image(__DIR__.'/../../uploads/firmas/'.$m['firma_tecnico'], 145, $pdf->GetY()-20, 40, 20);
+}
 
 $pdf->Output("I","reporte_$id.pdf");
