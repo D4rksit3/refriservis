@@ -5,12 +5,12 @@ error_reporting(E_ALL);
 
 session_start();
 if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
-    header('Location: /../index.php');
+    header('Location: /index.php');
     exit;
 }
 
 require_once __DIR__ . '/../../config/db.php';
-require_once __DIR__ . '/../../lib/fpdf.php'; // 🚩 usa tu librería fpdf
+require_once __DIR__ . '/../../lib/fpdf.php'; // 🚩 tu librería fpdf
 
 // 🚩 Función para guardar firma en disco
 function saveSignature($dataUrl, $name) {
@@ -20,9 +20,9 @@ function saveSignature($dataUrl, $name) {
     $decoded = base64_decode($data[1]);
     $dir = __DIR__ . "/../../uploads/firmas/";
     if (!is_dir($dir)) mkdir($dir, 0777, true);
-    $file = $dir . "{$name}_" . time() . ".png";
-    file_put_contents($file, $decoded);
-    return $file; // ruta completa
+    $fileName = "{$name}_" . time() . ".png";
+    file_put_contents($dir . $fileName, $decoded);
+    return $fileName; // 🔹 solo basename
 }
 
 // 🚩 Si viene un POST → Guardar datos y generar PDF
@@ -43,9 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!is_dir($dir)) mkdir($dir, 0777, true);
         foreach ($_FILES['fotos']['tmp_name'] as $k => $tmp) {
             if (is_uploaded_file($tmp)) {
-                $nombre = time() . "_" . $_FILES['fotos']['name'][$k];
+                $nombre = time() . "_" . basename($_FILES['fotos']['name'][$k]);
                 move_uploaded_file($tmp, $dir . $nombre);
-                $fotos_guardadas[] = $dir . $nombre;
+                $fotos_guardadas[] = $nombre; // 🔹 solo basename
             }
         }
     }
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $firma_supervisor,
         $firma_tecnico,
         json_encode($fotos_guardadas),
-        $_SESSION['usuario_id'], // 🚩 guarda el usuario que generó
+        $_SESSION['usuario_id'],
         $mantenimiento_id
     ]);
 
@@ -84,7 +84,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ============================
     class PDF extends FPDF {
         function Header() {
-            $this->Image(__DIR__.'/../../lib/logo.jpeg',10,6,30);
+            if(file_exists(__DIR__.'/../../lib/logo.jpeg')){
+                $this->Image(__DIR__.'/../../lib/logo.jpeg',10,6,30);
+            }
             $this->SetFont('Arial','B',14);
             $this->Cell(80);
             $this->Cell(30,10,'Reporte de Servicio Técnico',0,0,'C');
@@ -139,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach($params as $param => $equipos){
         $pdf->Cell(0,6, $param,0,1);
         foreach($equipos as $eq=>$vals){
-            $pdf->Cell(0,6,"Equipo $eq → Antes: ".$vals['antes']." | Después: ".$vals['despues'],0,1);
+            $pdf->Cell(0,6,"Equipo $eq → Antes: ".($vals['antes'] ?? '')." | Después: ".($vals['despues'] ?? ''),0,1);
         }
         $pdf->Ln(1);
     }
@@ -150,19 +152,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pdf->Cell(0,6,"Firmas:",0,1);
     $pdf->Ln(5);
 
-    if($m['firma_cliente']) $pdf->Image($m['firma_cliente'],20,$pdf->GetY(),40,20);
-    if($m['firma_supervisor']) $pdf->Image($m['firma_supervisor'],80,$pdf->GetY(),40,20);
-    if($m['firma_tecnico']) $pdf->Image($m['firma_tecnico'],150,$pdf->GetY(),40,20);
+    $baseFirmas = __DIR__ . "/../../uploads/firmas/";
+    if($m['firma_cliente'] && file_exists($baseFirmas.$m['firma_cliente']))
+        $pdf->Image($baseFirmas.$m['firma_cliente'],20,$pdf->GetY(),40,20);
+    if($m['firma_supervisor'] && file_exists($baseFirmas.$m['firma_supervisor']))
+        $pdf->Image($baseFirmas.$m['firma_supervisor'],80,$pdf->GetY(),40,20);
+    if($m['firma_tecnico'] && file_exists($baseFirmas.$m['firma_tecnico']))
+        $pdf->Image($baseFirmas.$m['firma_tecnico'],150,$pdf->GetY(),40,20);
     $pdf->Ln(30);
 
     // Fotos
     $fotos = json_decode($m['fotos'],true) ?? [];
+    $baseFotos = __DIR__ . "/../../uploads/fotos/";
     if($fotos){
         $pdf->SetFont('Arial','B',11);
         $pdf->Cell(0,6,"Fotos:",0,1);
         foreach($fotos as $foto){
-            if(file_exists($foto)){
-                $pdf->Image($foto, null, null, 60, 40);
+            if(file_exists($baseFotos.$foto)){
+                $pdf->Image($baseFotos.$foto, null, null, 60, 40);
                 $pdf->Ln(45);
             }
         }
@@ -173,5 +180,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// 🚩 Si llega aquí por error
-die("Acceso inválido.");
+// 🚩 Si viene por GET → mostrar mensaje
+echo "Accede a este archivo solo mediante el formulario de reporte.";
