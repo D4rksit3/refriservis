@@ -154,7 +154,11 @@ for ($i = 1; $i <= 7; $i++) {
      
     <td width="20%" align="center" style="font-size: 12px;">
         <div style="background:#cfe2f3; padding:2px; margin-bottom:3px;">FORMATO DE CALIDAD</div>
+        <br>
+        <br>
       001-N°<?php echo str_pad($id, 6, "0", STR_PAD_LEFT); ?>
+      <br>
+      <br>
     </td>
   </tr>
 </table>
