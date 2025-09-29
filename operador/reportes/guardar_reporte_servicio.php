@@ -10,17 +10,87 @@ if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
 }
 
 require_once __DIR__ . '/../../config/db.php';
-require_once __DIR__ . '/../../lib/fpdf.php';
+require_once __DIR__ . '/../../lib/fpdf.php'; // 🚩 tu librería fpdf
 
-function generarPDF($pdo, $mantenimiento_id) {
+// 🚩 Función para guardar firma en disco
+function saveSignature($dataUrl, $name) {
+    if (!$dataUrl) return null;
+    $data = explode(',', $dataUrl);
+    if (count($data) !== 2) return null;
+    $decoded = base64_decode($data[1]);
+    $dir = __DIR__ . "/../../uploads/firmas/";
+    if (!is_dir($dir)) mkdir($dir, 0777, true);
+    $fileName = "{$name}_" . time() . ".png";
+    file_put_contents($dir . $fileName, $decoded);
+    return $fileName; // 🔹 solo basename
+}
+
+// 🚩 Si viene un POST → Guardar datos y generar PDF
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $mantenimiento_id = $_POST['mantenimiento_id'];
+    $trabajos = $_POST['trabajos'] ?? '';
+    $observaciones = $_POST['observaciones'] ?? '';
+
+    // Guardar firmas
+    $firma_cliente = saveSignature($_POST['firma_cliente'] ?? '', 'cliente');
+    $firma_supervisor = saveSignature($_POST['firma_supervisor'] ?? '', 'supervisor');
+    $firma_tecnico = saveSignature($_POST['firma_tecnico'] ?? '', 'tecnico');
+
+    // Guardar fotos
+    $fotos_guardadas = [];
+    if (!empty($_FILES['fotos']['name'][0])) {
+        $dir = __DIR__ . "/../../uploads/fotos/";
+        if (!is_dir($dir)) mkdir($dir, 0777, true);
+        foreach ($_FILES['fotos']['tmp_name'] as $k => $tmp) {
+            if (is_uploaded_file($tmp)) {
+                $nombre = time() . "_" . basename($_FILES['fotos']['name'][$k]);
+                move_uploaded_file($tmp, $dir . $nombre);
+                $fotos_guardadas[] = $nombre; // 🔹 solo basename
+            }
+        }
+    }
+
+    // Guardar parámetros en JSON
+    $parametros = $_POST['parametros'] ?? [];
+    $parametros_json = json_encode($parametros);
+
+    // Actualizar en la tabla mantenimientos
+    $stmt = $pdo->prepare("UPDATE mantenimientos SET 
+        trabajos = ?, 
+        observaciones = ?, 
+        parametros = ?, 
+        firma_cliente = ?, 
+        firma_supervisor = ?, 
+        firma_tecnico = ?, 
+        fotos = ?, 
+        reporte_generado = 1,
+        modificado_en = NOW(),
+        modificado_por = ?
+        WHERE id = ?");
+    $stmt->execute([
+        $trabajos,
+        $observaciones,
+        $parametros_json,
+        $firma_cliente,
+        $firma_supervisor,
+        $firma_tecnico,
+        json_encode($fotos_guardadas),
+        $_SESSION['usuario_id'],
+        $mantenimiento_id
+    ]);
+
+    // ============================
+    // GENERAR PDF
+    // ============================
     class PDF extends FPDF {
         function Header() {
             if(file_exists(__DIR__.'/../../lib/logo.jpeg')){
-                $this->Image(__DIR__.'/../../lib/logo.jpeg',10,6,25);
+                $this->Image(__DIR__.'/../../lib/logo.jpeg',10,6,30);
             }
             $this->SetFont('Arial','B',14);
-            $this->Cell(0,10,'Reporte de Servicio Técnico',0,1,'C');
-            $this->Ln(3);
+            $this->Cell(80);
+            $this->Cell(30,10,'Reporte de Servicio Técnico',0,0,'C');
+            $this->Ln(20);
         }
         function Footer() {
             $this->SetY(-15);
@@ -29,6 +99,7 @@ function generarPDF($pdo, $mantenimiento_id) {
         }
     }
 
+    // Datos del mantenimiento
     $stmt = $pdo->prepare("SELECT m.*, c.cliente, c.direccion, c.responsable, c.telefono 
                            FROM mantenimientos m
                            LEFT JOIN clientes c ON c.id = m.cliente_id
@@ -36,113 +107,78 @@ function generarPDF($pdo, $mantenimiento_id) {
     $stmt->execute([$mantenimiento_id]);
     $m = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if(!$m){
-        header("HTTP/1.1 404 Not Found");
-        exit("No existe el mantenimiento con ID: $mantenimiento_id");
-    }
-
     $pdf = new PDF();
     $pdf->AliasNbPages();
     $pdf->AddPage();
     $pdf->SetFont('Arial','',10);
 
-    // 📌 Info Cliente
-    $pdf->SetFont('Arial','B',11);
-    $pdf->Cell(0,7,"Datos del Cliente",1,1,'C');
-    $pdf->SetFont('Arial','',10);
-    $pdf->Cell(95,7,"Cliente: ".$m['cliente'],1,0);
-    $pdf->Cell(95,7,"Responsable: ".$m['responsable'],1,1);
-    $pdf->Cell(95,7,"Direccion: ".$m['direccion'],1,0);
-    $pdf->Cell(95,7,"Telefono: ".$m['telefono'],1,1);
-    $pdf->Cell(95,7,"Fecha: ".$m['fecha'],1,0);
-    $pdf->Cell(95,7,"ID Mantenimiento: ".$mantenimiento_id,1,1);
+    // Cabecera cliente
+    $pdf->Cell(0,6,"Cliente: ".$m['cliente'],0,1);
+    $pdf->Cell(0,6,"Direccion: ".$m['direccion'],0,1);
+    $pdf->Cell(0,6,"Responsable: ".$m['responsable'],0,1);
+    $pdf->Cell(0,6,"Fecha: ".$m['fecha'],0,1);
     $pdf->Ln(5);
 
-    // 📌 Trabajos
+    // Trabajos
     $pdf->SetFont('Arial','B',11);
-    $pdf->Cell(0,7,"Trabajos Realizados",1,1,'C');
+    $pdf->Cell(0,6,"Trabajos Realizados:",0,1);
     $pdf->SetFont('Arial','',10);
-    $pdf->MultiCell(0,7,$m['trabajos'],1);
+    $pdf->MultiCell(0,6,$m['trabajos']);
     $pdf->Ln(3);
 
-    // 📌 Observaciones
+    // Observaciones
     $pdf->SetFont('Arial','B',11);
-    $pdf->Cell(0,7,"Observaciones",1,1,'C');
+    $pdf->Cell(0,6,"Observaciones:",0,1);
     $pdf->SetFont('Arial','',10);
-    $pdf->MultiCell(0,7,$m['observaciones'],1);
+    $pdf->MultiCell(0,6,$m['observaciones']);
     $pdf->Ln(5);
 
-    // 📌 Parámetros
+    // Parámetros
     $pdf->SetFont('Arial','B',11);
-    $pdf->Cell(0,7,"Parámetros de Funcionamiento",1,1,'C');
+    $pdf->Cell(0,6,"Parametros de Funcionamiento:",0,1);
     $pdf->SetFont('Arial','',9);
-
     $params = json_decode($m['parametros'],true) ?? [];
-    if($params){
-        foreach($params as $param => $equipos){
-            $pdf->Cell(0,7,"➤ ".$param,1,1,'L');
-            foreach($equipos as $eq=>$vals){
-                $line = "Equipo $eq | Antes: ".($vals['antes'] ?? '')." | Después: ".($vals['despues'] ?? '');
-                $pdf->Cell(0,7,$line,1,1);
-            }
+    foreach($params as $param => $equipos){
+        $pdf->Cell(0,6, $param,0,1);
+        foreach($equipos as $eq=>$vals){
+            $pdf->Cell(0,6,"Equipo $eq → Antes: ".($vals['antes'] ?? '')." | Después: ".($vals['despues'] ?? ''),0,1);
         }
-    } else {
-        $pdf->Cell(0,7,"Sin parámetros registrados",1,1,'C');
+        $pdf->Ln(1);
     }
-    $pdf->Ln(5);
 
-    // 📌 Firmas
+    // Firmas
+    $pdf->Ln(10);
     $pdf->SetFont('Arial','B',11);
-    $pdf->Cell(0,7,"Firmas",1,1,'C');
-    $pdf->Ln(3);
+    $pdf->Cell(0,6,"Firmas:",0,1);
+    $pdf->Ln(5);
 
     $baseFirmas = __DIR__ . "/../../uploads/firmas/";
-    $yStart = $pdf->GetY();
-
     if($m['firma_cliente'] && file_exists($baseFirmas.$m['firma_cliente']))
-        $pdf->Image($baseFirmas.$m['firma_cliente'],20,$yStart,40,20);
-    $pdf->SetXY(20,$yStart+22);
-    $pdf->Cell(40,7,"Cliente",1,0,'C');
-
+        $pdf->Image($baseFirmas.$m['firma_cliente'],20,$pdf->GetY(),40,20);
     if($m['firma_supervisor'] && file_exists($baseFirmas.$m['firma_supervisor']))
-        $pdf->Image($baseFirmas.$m['firma_supervisor'],85,$yStart,40,20);
-    $pdf->SetXY(85,$yStart+22);
-    $pdf->Cell(40,7,"Supervisor",1,0,'C');
-
+        $pdf->Image($baseFirmas.$m['firma_supervisor'],80,$pdf->GetY(),40,20);
     if($m['firma_tecnico'] && file_exists($baseFirmas.$m['firma_tecnico']))
-        $pdf->Image($baseFirmas.$m['firma_tecnico'],150,$yStart,40,20);
-    $pdf->SetXY(150,$yStart+22);
-    $pdf->Cell(40,7,"Técnico",1,0,'C');
+        $pdf->Image($baseFirmas.$m['firma_tecnico'],150,$pdf->GetY(),40,20);
+    $pdf->Ln(30);
 
-    $pdf->Ln(35);
-
-    // 📌 Fotos
+    // Fotos
     $fotos = json_decode($m['fotos'],true) ?? [];
     $baseFotos = __DIR__ . "/../../uploads/fotos/";
     if($fotos){
         $pdf->SetFont('Arial','B',11);
-        $pdf->Cell(0,7,"Fotos del Servicio",1,1,'C');
+        $pdf->Cell(0,6,"Fotos:",0,1);
         foreach($fotos as $foto){
             if(file_exists($baseFotos.$foto)){
-                $pdf->Image($baseFotos.$foto, $pdf->GetX()+10, $pdf->GetY()+5, 80, 60);
-                $pdf->Ln(65);
+                $pdf->Image($baseFotos.$foto, null, null, 60, 40);
+                $pdf->Ln(45);
             }
         }
     }
 
-    ob_end_clean(); // 🔥 Limpia cualquier salida previa
+    // Descargar
     $pdf->Output("D","Reporte_Mantenimiento_{$mantenimiento_id}.pdf");
     exit;
 }
 
-// 🚩 POST (guardar y generar)
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // tu lógica de guardado...
-    generarPDF($pdo, $mantenimiento_id);
-}
-
-// 🚩 GET (descargar PDF directo)
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
-    $mantenimiento_id = intval($_GET['id']);
-    generarPDF($pdo, $mantenimiento_id);
-}
+// 🚩 Si viene por GET → mostrar mensaje
+echo "Accede a este archivo solo mediante el formulario de reporte.";
