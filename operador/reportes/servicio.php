@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ]);
 
     // Redirigir a PDF
-    header("Location: reporte_pdf.php?id=$mantenimiento_id");
+    header("Location: guardar_reporte_servicio.php?id=$mantenimiento_id");
     exit;
 }
 
