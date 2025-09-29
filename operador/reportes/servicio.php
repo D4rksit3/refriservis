@@ -9,10 +9,82 @@ if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
 }
 require_once __DIR__ . '/../../config/db.php';
 
+// 🚩 Si viene un POST → Guardar reporte en BD
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $mantenimiento_id = $_POST['mantenimiento_id'];
+    $trabajos = $_POST['trabajos'] ?? '';
+    $observaciones = $_POST['observaciones'] ?? '';
+
+    // Guardar firmas (Base64 → PNG)
+    function saveSignature($dataUrl, $name) {
+        if (!$dataUrl) return null;
+        $data = explode(',', $dataUrl);
+        if (count($data) !== 2) return null;
+        $decoded = base64_decode($data[1]);
+        $dir = __DIR__ . "/../../uploads/firmas/";
+        if (!is_dir($dir)) mkdir($dir, 0777, true);
+        $file = $dir . "{$name}_" . time() . ".png";
+        file_put_contents($file, $decoded);
+        return basename($file);
+    }
+    $firma_cliente = saveSignature($_POST['firma_cliente'] ?? '', 'cliente');
+    $firma_supervisor = saveSignature($_POST['firma_supervisor'] ?? '', 'supervisor');
+    $firma_tecnico = saveSignature($_POST['firma_tecnico'] ?? '', 'tecnico');
+
+    // Guardar fotos
+    $fotos_guardadas = [];
+    if (!empty($_FILES['fotos']['name'][0])) {
+        $dir = __DIR__ . "/../../uploads/fotos/";
+        if (!is_dir($dir)) mkdir($dir, 0777, true);
+        foreach ($_FILES['fotos']['tmp_name'] as $k => $tmp) {
+            if (is_uploaded_file($tmp)) {
+                $nombre = time() . "_" . $_FILES['fotos']['name'][$k];
+                move_uploaded_file($tmp, $dir . $nombre);
+                $fotos_guardadas[] = $nombre;
+            }
+        }
+    }
+
+    // Insertar reporte de servicio
+    $stmt = $pdo->prepare("INSERT INTO reportes_servicio 
+        (mantenimiento_id, trabajos, observaciones, firma_cliente, firma_supervisor, firma_tecnico, fotos, creado_en) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+    $stmt->execute([
+        $mantenimiento_id,
+        $trabajos,
+        $observaciones,
+        $firma_cliente,
+        $firma_supervisor,
+        $firma_tecnico,
+        json_encode($fotos_guardadas)
+    ]);
+    $id_reporte = $pdo->lastInsertId();
+
+    // Guardar parámetros
+    if (!empty($_POST['parametros'])) {
+        foreach ($_POST['parametros'] as $paramKey => $equipos) {
+            foreach ($equipos as $i => $valores) {
+                $antes = $valores['antes'] ?? null;
+                $despues = $valores['despues'] ?? null;
+                if ($antes !== null || $despues !== null) {
+                    $stmt = $pdo->prepare("INSERT INTO parametros_reporte 
+                        (reporte_id, parametro, equipo_num, antes, despues) 
+                        VALUES (?, ?, ?, ?, ?)");
+                    $stmt->execute([$id_reporte, $paramKey, $i, $antes, $despues]);
+                }
+            }
+        }
+    }
+
+    // 🔹 Redirigir a PDF
+    header("Location: guardar_reporte_servicio.php?id=$id_reporte");
+    exit;
+}
+
+// 🚩 Si es GET → Mostrar formulario
 $id = $_GET['id'] ?? null;
 if (!$id) die('ID no proporcionado');
 
-// Traer datos del mantenimiento + cliente
 $stmt = $pdo->prepare("
   SELECT m.*, c.cliente, c.direccion, c.responsable, c.telefono
   FROM mantenimientos m
@@ -27,7 +99,7 @@ if (!$m) die('Mantenimiento no encontrado');
 $equiposList = $pdo->query("SELECT id_equipo AS id_equipo, Identificador, Marca, Modelo, Ubicacion, Voltaje 
                             FROM equipos ORDER BY Identificador ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-// Preparar array con equipos del mantenimiento (equipo1..equipo7)
+// Preparar equipos del mantenimiento
 $equiposMantenimiento = [];
 for ($i = 1; $i <= 7; $i++) {
     $eqId = $m["equipo$i"] ?? null;
@@ -71,9 +143,10 @@ for ($i = 1; $i <= 7; $i++) {
     <div><strong>FECHA:</strong> <?=htmlspecialchars($m['fecha'] ?? date('Y-m-d'))?></div>
   </div>
 
-  <form id="formReporte" method="post" action="guardar_reporte_servicio.php" enctype="multipart/form-data" class="mb-5">
+  <form id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
     <input type="hidden" name="mantenimiento_id" value="<?=htmlspecialchars($m['id'])?>">
 
+    <!-- TABLA DE EQUIPOS -->
     <h6>DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS A INTERVENIR</h6>
     <div class="table-responsive mb-3">
       <table class="table table-bordered align-middle text-center">
@@ -115,6 +188,7 @@ for ($i = 1; $i <= 7; $i++) {
       </table>
     </div>
 
+    <!-- TABLA DE PARÁMETROS -->
     <h6>PARÁMETROS DE FUNCIONAMIENTO (Antes / Después)</h6>
     <div class="table-responsive mb-3">
       <table class="table table-bordered table-sm">
@@ -153,6 +227,7 @@ for ($i = 1; $i <= 7; $i++) {
       </table>
     </div>
 
+    <!-- TRABAJOS / OBSERVACIONES -->
     <div class="mb-3">
       <label>Trabajos realizados</label>
       <textarea class="form-control" name="trabajos" rows="4"></textarea>
@@ -163,11 +238,13 @@ for ($i = 1; $i <= 7; $i++) {
       <textarea class="form-control" name="observaciones" rows="3"></textarea>
     </div>
 
+    <!-- FOTOS -->
     <div class="mb-3">
       <label>Fotos del/los equipos (múltiples)</label>
       <input type="file" class="form-control" name="fotos[]" accept="image/*" multiple>
     </div>
 
+    <!-- FIRMAS -->
     <h6>Firmas</h6>
     <div class="row g-3">
       <div class="col-12 col-md-4">
@@ -213,7 +290,7 @@ document.getElementById('formReporte').addEventListener('submit', function(){
 $(document).ready(function(){
   $('.equipo-select').select2({ placeholder:"Buscar equipo...", allowClear:true, width:'100%' });
 
-  // 🔹 Al cargar la página, rellenar los datos de los equipos ya seleccionados
+  // Cargar datos de equipos seleccionados
   $('.equipo-select').each(function(){
     let id = $(this).val();
     let index = $(this).data('index');
@@ -229,7 +306,7 @@ $(document).ready(function(){
     }
   });
 
-  // 🔹 Cuando se cambia un identificador
+  // Cuando cambia un equipo
   $('.equipo-select').on('change', function(){
     let id = $(this).val();
     let index = $(this).data('index');
@@ -247,7 +324,6 @@ $(document).ready(function(){
     });
   });
 });
-
 </script>
 </body>
 </html>
