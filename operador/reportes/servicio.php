@@ -132,6 +132,33 @@ for ($i = 1; $i <= 7; $i++) {
     <a class="btn btn-secondary btn-sm" href="/operador/mis_mantenimientos.php">Volver</a>
   </div>
 
+<table border="1" cellspacing="0" cellpadding="4" width="100%" style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;">
+  <tr>
+    <!-- Logo -->
+    <td width="20%" align="center">
+      <img src="lib/logo.jpeg" alt="Logo" style="max-height:60px;">
+    </td>
+    
+    <!-- Título y datos -->
+    <td width="60%" align="center" style="font-weight: bold; font-size: 13px;">
+      <div style="background:#cfe2f3; padding:2px; margin-bottom:3px;">FORMATO DE CALIDAD</div>
+      REPORTE DE SERVICIO TECNICO <br>
+      <span style="font-weight: normal;">
+        Oficina: (01) 6557907 <br>
+        Emergencias: +51 943 048 606 <br>
+        ventas@refriservissac.com
+      </span>
+    </td>
+    
+    <!-- Número de reporte -->
+    <td width="20%" align="center" style="font-size: 12px;">
+      001-N°<?php echo str_pad($id, 6, "0", STR_PAD_LEFT); ?>
+    </td>
+  </tr>
+</table>
+
+
+
   <div class="card mb-3 p-3">
     <div><strong>CLIENTE:</strong> <?=htmlspecialchars($m['cliente'] ?? '-')?></div>
     <div><strong>DIRECCIÓN:</strong> <?=htmlspecialchars($m['direccion'] ?? '-')?></div>
