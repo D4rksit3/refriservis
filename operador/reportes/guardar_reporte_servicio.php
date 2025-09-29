@@ -10,7 +10,7 @@ if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
 }
 
 require_once __DIR__ . '/../../config/db.php';
-require_once __DIR__ . '/../../lib/fpdf/fpdf.php'; // 🚩 usa tu librería fpdf
+require_once __DIR__ . '/../../lib/fpdf.php'; // 🚩 usa tu librería fpdf
 
 // 🚩 Función para guardar firma en disco
 function saveSignature($dataUrl, $name) {
