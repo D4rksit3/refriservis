@@ -136,7 +136,7 @@ for ($i = 1; $i <= 7; $i++) {
   <tr>
     <!-- Logo -->
     <td width="20%" align="center">
-      <img src="lib/logo.jpeg" alt="Logo" style="max-height:60px;">
+      <img src="/../../lib/logo.jpeg" alt="Logo" style="max-height:60px;">
     </td>
     
     <!-- Título y datos -->
