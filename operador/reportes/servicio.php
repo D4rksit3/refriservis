@@ -159,7 +159,7 @@ for ($i = 1; $i <= 7; $i++) {
       001-N°<?php echo str_pad($id, 6, "0", STR_PAD_LEFT); ?>
       <br>
       <br>
-      <br>
+      
     </td>
   </tr>
 </table>
