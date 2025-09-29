@@ -201,12 +201,14 @@ function generarPDF(PDO $pdo, int $id) {
     ];
 
     // Layout compacto para que entre en A4: labelWidth + 7*(2*colW) <= ancho_util
-    $leftMargin = $pdf->lMargin;
-    $rightMargin = $pdf->rMargin;
-    $pageWidth = $pdf->GetPageWidth();
+    $margins = $pdf->GetMargins();  // ✅ método público
+    $leftMargin  = $margins['left'];
+    $rightMargin = $margins['right'];
+    $pageWidth   = $pdf->GetPageWidth();
+
     $usableW = $pageWidth - $leftMargin - $rightMargin;
-    $labelW = 50;
-    $colW = floor(($usableW - $labelW) / (7 * 2)); // ancho para Antes/Desp por equipo
+    $labelW  = 50;
+    $colW    = floor(($usableW - $labelW) / (7 * 2)); // ancho para Antes/Desp por equipo
 
     $pdf->SetFont('Arial','B',7);
     $pdf->Cell($labelW,7, txt("Medida"), 1, 0, 'C');
