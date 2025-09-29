@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Insertar reporte de servicio
-    $stmt = $pdo->prepare("INSERT INTO reportes_servicio 
+    $stmt = $pdo->prepare("INSERT INTO mantenimientos
         (mantenimiento_id, trabajos, observaciones, firma_cliente, firma_supervisor, firma_tecnico, fotos, creado_en) 
         VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
     $stmt->execute([
