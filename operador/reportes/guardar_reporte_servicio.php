@@ -5,9 +5,7 @@ require_once __DIR__ . '/../../config/db.php';
 $id = $_GET['id'] ?? null;
 if(!$id) die("ID no proporcionado");
 
-// =======================
-// CONSULTA PRINCIPAL
-// =======================
+// ================== CONSULTA PRINCIPAL ==================
 $stmt = $pdo->prepare("
   SELECT m.*, c.cliente, c.direccion, c.responsable, c.telefono
   FROM mantenimientos m
@@ -18,33 +16,27 @@ $stmt->execute([$id]);
 $m = $stmt->fetch(PDO::FETCH_ASSOC);
 if(!$m) die("Mantenimiento no encontrado");
 
-// =======================
-// CONSULTA EQUIPOS
-// =======================
-$equipos = [];
+// ================== FUNCIÓN PARA TILDES ==================
+function txt($s){ return mb_convert_encoding($s ?? '', 'ISO-8859-1', 'UTF-8'); }
+
+// ================== TRAER EQUIPOS ==================
+$equipos_ids = [];
 for($i=1;$i<=7;$i++){
-    if(!empty($m["equipo$i"])){
-        $stmtEq = $pdo->prepare("SELECT * FROM equipos WHERE id_equipo=?");
-        $stmtEq->execute([$m["equipo$i"]]);
-        $equipos[$i] = $stmtEq->fetch(PDO::FETCH_ASSOC);
-    } else {
-        $equipos[$i] = null;
-    }
+    if(!empty($m["equipo$i"])) $equipos_ids[] = $m["equipo$i"];
+}
+$equipos = [];
+if($equipos_ids){
+    $in = str_repeat('?,', count($equipos_ids)-1) . '?';
+    $stmt = $pdo->prepare("SELECT * FROM equipos WHERE id_equipo IN ($in)");
+    $stmt->execute($equipos_ids);
+    $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// =======================
-// PARÁMETROS
-// =======================
-$parametrosGuardados = json_decode($m['parametros'] ?? "{}", true);
-
-// =======================
-// FUNCIONES
-// =======================
-function txt($s){ return mb_convert_encoding($s, 'ISO-8859-1', 'UTF-8'); }
-
+// ================== CLASE PDF ==================
 class PDF extends FPDF {
     function Header(){
-        global $id;
+        global $m, $id;
+        $this->SetFont('Arial','',9);
 
         // Logo
         $this->Cell(40,25,$this->Image(__DIR__.'/../../lib/logo.jpeg',12,12,20),1,0,'C');
@@ -61,7 +53,7 @@ class PDF extends FPDF {
         $this->SetFont('Arial','',8);
         $this->Cell(110,8,txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"),1,0,'C');
 
-        // Número de reporte
+        // Número
         $this->SetXY(160,12);
         $this->SetFont('Arial','',9);
         $this->Cell(40,25,"001-N°".str_pad($id,6,"0",STR_PAD_LEFT),1,1,'C');
@@ -69,9 +61,7 @@ class PDF extends FPDF {
     }
 }
 
-// =======================
-// GENERAR PDF
-// =======================
+// ================== PDF ==================
 $pdf = new PDF();
 $pdf->AliasNbPages();
 $pdf->AddPage();
@@ -100,14 +90,24 @@ $pdf->Cell(35,7,txt("Ubicación"),1,0,'C');
 $pdf->Cell(40,7,txt("Voltaje"),1,1,'C');
 $pdf->SetFont('Arial','',8);
 
-for($i=1;$i<=7;$i++){
-    $eq = $equipos[$i];
+$i=1;
+foreach($equipos as $eq){
     $pdf->Cell(10,7,$i,1,0,'C');
-    $pdf->Cell(35,7,txt($eq['Identificador'] ?? ""),1,0);
-    $pdf->Cell(35,7,txt($eq['Marca'] ?? ""),1,0);
-    $pdf->Cell(35,7,txt($eq['Modelo'] ?? ""),1,0);
-    $pdf->Cell(35,7,txt($eq['Ubicacion'] ?? ""),1,0);
-    $pdf->Cell(40,7,txt($eq['Voltaje'] ?? ""),1,1);
+    $pdf->Cell(35,7,txt($eq['Identificador']),1,0);
+    $pdf->Cell(35,7,txt($eq['marca']),1,0);
+    $pdf->Cell(35,7,txt($eq['modelo']),1,0);
+    $pdf->Cell(35,7,txt($eq['ubicacion']),1,0);
+    $pdf->Cell(40,7,txt($eq['voltaje']),1,1);
+    $i++;
+}
+while($i<=7){ // completar filas vacías
+    $pdf->Cell(10,7,$i,1,0,'C');
+    $pdf->Cell(35,7,"",1,0);
+    $pdf->Cell(35,7,"",1,0);
+    $pdf->Cell(35,7,"",1,0);
+    $pdf->Cell(35,7,"",1,0);
+    $pdf->Cell(40,7,"",1,1);
+    $i++;
 }
 $pdf->Ln(4);
 
@@ -129,49 +129,64 @@ $pdf->SetFont('Arial','',7);
 foreach($parametros as $p){
     $pdf->Cell(40,7,txt($p),1,0);
     for($i=1;$i<=7;$i++){
-        $antes = $parametrosGuardados[md5($p)][$i]['antes'] ?? '';
-        $despues = $parametrosGuardados[md5($p)][$i]['despues'] ?? '';
-        $pdf->Cell(14,7,txt($antes),1,0,'C');
-        $pdf->Cell(14,7,txt($despues),1,0,'C');
+        $pdf->Cell(14,7,"",1,0);
+        $pdf->Cell(14,7,"",1,0);
     }
     $pdf->Ln();
 }
 $pdf->Ln(4);
 
 // ===== TRABAJOS =====
-$pdf->MultiCell(0,7,txt("Trabajos Realizados:\n".$m['trabajos']),1);
+$pdf->MultiCell(0,7,txt("Trabajos Realizados:\n".$m['trabajos']."\n\n"),1);
 $pdf->Ln(2);
 
 // ===== OBSERVACIONES =====
-$pdf->MultiCell(0,7,txt("Observaciones y Recomendaciones:\n".$m['observaciones']),1);
+$pdf->MultiCell(0,7,txt("Observaciones y Recomendaciones:\n".$m['observaciones']."\n\n"),1);
 $pdf->Ln(2);
 
 // ===== FOTOS =====
-$fotos = json_decode($m['fotos'] ?? "[]", true);
-if($fotos){
-    $pdf->Cell(0,7,txt("Fotos de Equipos"),1,1,'C');
-    foreach($fotos as $f){
-        $ruta = __DIR__."/../../uploads/fotos/".$f;
-        if(file_exists($ruta)){
-            $pdf->Image($ruta, null, null, 60, 40);
-            $pdf->Ln(42);
+if(!empty($m['fotos'])){
+    $fotos = json_decode($m['fotos'], true);
+    if(is_array($fotos) && count($fotos)>0){
+        $pdf->Cell(0,7,txt("Fotos de Equipos"),1,1,'C');
+        $x = $pdf->GetX();
+        $y = $pdf->GetY();
+        $count = 0;
+        foreach($fotos as $foto){
+            if(file_exists(__DIR__."/../../".$foto)){
+                $pdf->Image(__DIR__."/../../".$foto, $pdf->GetX()+5, $pdf->GetY()+5, 55, 40);
+                $pdf->Cell(65,50,"",1,0); // marco
+                $count++;
+                if($count % 3 == 0){
+                    $pdf->Ln(50);
+                }
+            }
         }
+        if($count % 3 != 0) $pdf->Ln(50);
+        $pdf->Ln(5);
     }
 }
 
 // ===== FIRMAS =====
-$pdf->Cell(63,20,"Firma Cliente",1,0,'C');
-$pdf->Cell(63,20,"Firma Supervisor",1,0,'C');
-$pdf->Cell(64,20,"Firma Técnico",1,1,'C');
+$pdf->Cell(63,30,"",1,0,'C'); // cuadro
+$pdf->Cell(63,30,"",1,0,'C');
+$pdf->Cell(64,30,"",1,1,'C');
 
-if($m['firma_cliente']){
-    $pdf->Image(__DIR__.'/../../uploads/firmas/'.$m['firma_cliente'], 15, $pdf->GetY()-20, 40, 20);
+$y = $pdf->GetY() - 30;
+if(!empty($m['firma_cliente']) && file_exists(__DIR__."/../../".$m['firma_cliente'])){
+    $pdf->Image(__DIR__."/../../".$m['firma_cliente'],15,$y+2,40,20);
 }
-if($m['firma_supervisor']){
-    $pdf->Image(__DIR__.'/../../uploads/firmas/'.$m['firma_supervisor'], 80, $pdf->GetY()-20, 40, 20);
+if(!empty($m['firma_supervisor']) && file_exists(__DIR__."/../../".$m['firma_supervisor'])){
+    $pdf->Image(__DIR__."/../../".$m['firma_supervisor'],80,$y+2,40,20);
 }
-if($m['firma_tecnico']){
-    $pdf->Image(__DIR__.'/../../uploads/firmas/'.$m['firma_tecnico'], 145, $pdf->GetY()-20, 40, 20);
+if(!empty($m['firma_tecnico']) && file_exists(__DIR__."/../../".$m['firma_tecnico'])){
+    $pdf->Image(__DIR__."/../../".$m['firma_tecnico'],145,$y+2,40,20);
 }
 
+$pdf->SetY($y+25);
+$pdf->Cell(63,5,"Firma Cliente",0,0,'C');
+$pdf->Cell(63,5,"Firma Supervisor",0,0,'C');
+$pdf->Cell(64,5,"Firma Técnico",0,1,'C');
+
+// ===== SALIDA =====
 $pdf->Output("I","reporte_$id.pdf");
