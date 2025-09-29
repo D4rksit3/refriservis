@@ -128,7 +128,7 @@ for ($i = 1; $i <= 7; $i++) {
 <body class="bg-light">
 <div class="container py-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h5>Reporte de Servicio Técnico — Mantenimiento #<?=htmlspecialchars($m['id'])?></h5>
+    <!-- <h5>Reporte de Servicio Técnico — Mantenimiento #<?=htmlspecialchars($m['id'])?></h5> -->
     <a class="btn btn-secondary btn-sm" href="/operador/mis_mantenimientos.php">Volver</a>
   </div>
 
