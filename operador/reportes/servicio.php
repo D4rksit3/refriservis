@@ -139,7 +139,7 @@ for ($i = 1; $i <= 7; $i++) {
     <div><strong>FECHA:</strong> <?=htmlspecialchars($m['fecha'] ?? date('Y-m-d'))?></div>
   </div>
 
-  <form id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
+  <form action="servicio.php"  id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
     <input type="hidden" name="mantenimiento_id" value="<?=htmlspecialchars($m['id'])?>">
 
     <!-- TABLA DE EQUIPOS -->
