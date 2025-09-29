@@ -14,8 +14,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mantenimiento_id = $_POST['mantenimiento_id'];
     $trabajos = $_POST['trabajos'] ?? '';
     $observaciones = $_POST['observaciones'] ?? '';
+    $parametros = $_POST['parametros'] ?? [];
 
-    // Guardar firmas (Base64 → PNG)
+    // Guardar firmas
     function saveSignature($dataUrl, $name) {
         if (!$dataUrl) return null;
         $data = explode(',', $dataUrl);
@@ -43,54 +44,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $fotos_guardadas[] = $nombre;
             }
         }
-        
-
-    // Insertar reporte de servicio
-    $stmt = $pdo->prepare("UPDATE mantenimientos SET 
-    trabajos = ?, 
-    observaciones = ?, 
-    parametros = ?, 
-    firma_cliente = ?, 
-    firma_supervisor = ?, 
-    firma_tecnico = ?, 
-    fotos = ?, 
-    reporte_generado = 1,
-    modificado_en = NOW(),
-    modificado_por = ?
-    WHERE id = ?");
-$stmt->execute([
-    $trabajos,
-    $observaciones,
-    json_encode($parametros ?? []),
-    $firma_cliente,
-    $firma_supervisor,
-    $firma_tecnico,
-    json_encode($fotos_guardadas),
-    $_SESSION['usuario_id'], // el operador que generó el reporte
-    $mantenimiento_id        // el mantenimiento al que pertenece
-]);
-    $id_reporte = $pdo->lastInsertId();
-
-    // Guardar parámetros
-    if (!empty($_POST['parametros'])) {
-        foreach ($_POST['parametros'] as $paramKey => $equipos) {
-            foreach ($equipos as $i => $valores) {
-                $antes = $valores['antes'] ?? null;
-                $despues = $valores['despues'] ?? null;
-                if ($antes !== null || $despues !== null) {
-                    $stmt = $pdo->prepare("INSERT INTO parametros_reporte 
-                        (reporte_id, parametro, equipo_num, antes, despues) 
-                        VALUES (?, ?, ?, ?, ?)");
-                    $stmt->execute([$id_reporte, $paramKey, $i, $antes, $despues]);
-                }
-            }
-        }
     }
 
-    // 🔹 Redirigir a PDF
-    header("Location: guardar_reporte_servicio.php?id=$id_reporte");
+    // ✅ UPDATE en la tabla mantenimientos
+    $stmt = $pdo->prepare("UPDATE mantenimientos SET 
+        trabajos = ?, 
+        observaciones = ?, 
+        parametros = ?, 
+        firma_cliente = ?, 
+        firma_supervisor = ?, 
+        firma_tecnico = ?, 
+        fotos = ?, 
+        reporte_generado = 1,
+        modificado_en = NOW(),
+        modificado_por = ?
+        WHERE id = ?");
+    $stmt->execute([
+        $trabajos,
+        $observaciones,
+        json_encode($parametros),
+        $firma_cliente,
+        $firma_supervisor,
+        $firma_tecnico,
+        json_encode($fotos_guardadas),
+        $_SESSION['usuario_id'],
+        $mantenimiento_id
+    ]);
+
+    // Redirigir a PDF
+    header("Location: reporte_pdf.php?id=$mantenimiento_id");
     exit;
 }
+
 
 // 🚩 Si es GET → Mostrar formulario
 $id = $_GET['id'] ?? null;
