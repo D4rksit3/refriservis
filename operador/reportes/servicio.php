@@ -43,21 +43,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $fotos_guardadas[] = $nombre;
             }
         }
-    }
+        
 
     // Insertar reporte de servicio
-    $stmt = $pdo->prepare("INSERT INTO mantenimientos
-        (mantenimiento_id, trabajos, observaciones, firma_cliente, firma_supervisor, firma_tecnico, fotos, creado_en) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
-    $stmt->execute([
-        $mantenimiento_id,
-        $trabajos,
-        $observaciones,
-        $firma_cliente,
-        $firma_supervisor,
-        $firma_tecnico,
-        json_encode($fotos_guardadas)
-    ]);
+    $stmt = $pdo->prepare("UPDATE mantenimientos SET 
+    trabajos = ?, 
+    observaciones = ?, 
+    parametros = ?, 
+    firma_cliente = ?, 
+    firma_supervisor = ?, 
+    firma_tecnico = ?, 
+    fotos = ?, 
+    reporte_generado = 1,
+    modificado_en = NOW(),
+    modificado_por = ?
+    WHERE id = ?");
+$stmt->execute([
+    $trabajos,
+    $observaciones,
+    json_encode($parametros ?? []),
+    $firma_cliente,
+    $firma_supervisor,
+    $firma_tecnico,
+    json_encode($fotos_guardadas),
+    $_SESSION['usuario_id'], // el operador que generó el reporte
+    $mantenimiento_id        // el mantenimiento al que pertenece
+]);
     $id_reporte = $pdo->lastInsertId();
 
     // Guardar parámetros
