@@ -19,13 +19,13 @@ function generarPDF($pdo, $mantenimiento_id) {
                 $this->Image(__DIR__.'/../../lib/logo.jpeg',10,6,25);
             }
             $this->SetFont('Arial','B',14);
-            $this->Cell(0,10,utf8_decode('Reporte de Servicio Técnico'),0,1,'C');
+            $this->Cell(0,10,'Reporte de Servicio Técnico',0,1,'C');
             $this->Ln(3);
         }
         function Footer() {
             $this->SetY(-15);
             $this->SetFont('Arial','I',8);
-            $this->Cell(0,10,utf8_decode('Página ').$this->PageNo().'/{nb}',0,0,'C');
+            $this->Cell(0,10,'Página '.$this->PageNo().'/{nb}',0,0,'C');
         }
     }
 
@@ -37,8 +37,8 @@ function generarPDF($pdo, $mantenimiento_id) {
     $m = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if(!$m){
-        echo "No existe el mantenimiento con ID: $mantenimiento_id";
-        exit;
+        header("HTTP/1.1 404 Not Found");
+        exit("No existe el mantenimiento con ID: $mantenimiento_id");
     }
 
     $pdf = new PDF();
@@ -46,54 +46,54 @@ function generarPDF($pdo, $mantenimiento_id) {
     $pdf->AddPage();
     $pdf->SetFont('Arial','',10);
 
-    // 📌 Info Cliente en cuadro
+    // 📌 Info Cliente
     $pdf->SetFont('Arial','B',11);
-    $pdf->Cell(0,7,utf8_decode("Datos del Cliente"),1,1,'C');
+    $pdf->Cell(0,7,"Datos del Cliente",1,1,'C');
     $pdf->SetFont('Arial','',10);
-    $pdf->Cell(95,7,utf8_decode("Cliente: ".$m['cliente']),1,0);
-    $pdf->Cell(95,7,utf8_decode("Responsable: ".$m['responsable']),1,1);
-    $pdf->Cell(95,7,utf8_decode("Dirección: ".$m['direccion']),1,0);
-    $pdf->Cell(95,7,utf8_decode("Teléfono: ".$m['telefono']),1,1);
-    $pdf->Cell(95,7,utf8_decode("Fecha: ".$m['fecha']),1,0);
-    $pdf->Cell(95,7,utf8_decode("ID Mantenimiento: ".$mantenimiento_id),1,1);
+    $pdf->Cell(95,7,"Cliente: ".$m['cliente'],1,0);
+    $pdf->Cell(95,7,"Responsable: ".$m['responsable'],1,1);
+    $pdf->Cell(95,7,"Direccion: ".$m['direccion'],1,0);
+    $pdf->Cell(95,7,"Telefono: ".$m['telefono'],1,1);
+    $pdf->Cell(95,7,"Fecha: ".$m['fecha'],1,0);
+    $pdf->Cell(95,7,"ID Mantenimiento: ".$mantenimiento_id,1,1);
     $pdf->Ln(5);
 
     // 📌 Trabajos
     $pdf->SetFont('Arial','B',11);
-    $pdf->Cell(0,7,utf8_decode("Trabajos Realizados"),1,1,'C');
+    $pdf->Cell(0,7,"Trabajos Realizados",1,1,'C');
     $pdf->SetFont('Arial','',10);
-    $pdf->MultiCell(0,7,utf8_decode($m['trabajos']),1);
+    $pdf->MultiCell(0,7,$m['trabajos'],1);
     $pdf->Ln(3);
 
     // 📌 Observaciones
     $pdf->SetFont('Arial','B',11);
-    $pdf->Cell(0,7,utf8_decode("Observaciones"),1,1,'C');
+    $pdf->Cell(0,7,"Observaciones",1,1,'C');
     $pdf->SetFont('Arial','',10);
-    $pdf->MultiCell(0,7,utf8_decode($m['observaciones']),1);
+    $pdf->MultiCell(0,7,$m['observaciones'],1);
     $pdf->Ln(5);
 
     // 📌 Parámetros
     $pdf->SetFont('Arial','B',11);
-    $pdf->Cell(0,7,utf8_decode("Parámetros de Funcionamiento"),1,1,'C');
+    $pdf->Cell(0,7,"Parámetros de Funcionamiento",1,1,'C');
     $pdf->SetFont('Arial','',9);
 
     $params = json_decode($m['parametros'],true) ?? [];
     if($params){
         foreach($params as $param => $equipos){
-            $pdf->Cell(0,7,utf8_decode("➤ ".$param),1,1,'L');
+            $pdf->Cell(0,7,"➤ ".$param,1,1,'L');
             foreach($equipos as $eq=>$vals){
                 $line = "Equipo $eq | Antes: ".($vals['antes'] ?? '')." | Después: ".($vals['despues'] ?? '');
-                $pdf->Cell(0,7,utf8_decode($line),1,1);
+                $pdf->Cell(0,7,$line,1,1);
             }
         }
     } else {
-        $pdf->Cell(0,7,utf8_decode("Sin parámetros registrados"),1,1,'C');
+        $pdf->Cell(0,7,"Sin parámetros registrados",1,1,'C');
     }
     $pdf->Ln(5);
 
     // 📌 Firmas
     $pdf->SetFont('Arial','B',11);
-    $pdf->Cell(0,7,utf8_decode("Firmas"),1,1,'C');
+    $pdf->Cell(0,7,"Firmas",1,1,'C');
     $pdf->Ln(3);
 
     $baseFirmas = __DIR__ . "/../../uploads/firmas/";
@@ -121,7 +121,7 @@ function generarPDF($pdo, $mantenimiento_id) {
     $baseFotos = __DIR__ . "/../../uploads/fotos/";
     if($fotos){
         $pdf->SetFont('Arial','B',11);
-        $pdf->Cell(0,7,utf8_decode("Fotos del Servicio"),1,1,'C');
+        $pdf->Cell(0,7,"Fotos del Servicio",1,1,'C');
         foreach($fotos as $foto){
             if(file_exists($baseFotos.$foto)){
                 $pdf->Image($baseFotos.$foto, $pdf->GetX()+10, $pdf->GetY()+5, 80, 60);
@@ -130,20 +130,19 @@ function generarPDF($pdo, $mantenimiento_id) {
         }
     }
 
+    ob_end_clean(); // 🔥 Limpia cualquier salida previa
     $pdf->Output("D","Reporte_Mantenimiento_{$mantenimiento_id}.pdf");
     exit;
 }
 
-// 🚩 Si viene por POST → guardar datos y generar PDF
+// 🚩 POST (guardar y generar)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Tu lógica de guardado aquí...
+    // tu lógica de guardado...
     generarPDF($pdo, $mantenimiento_id);
 }
 
-// 🚩 Si viene por GET → generar PDF directamente
+// 🚩 GET (descargar PDF directo)
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
     $mantenimiento_id = intval($_GET['id']);
     generarPDF($pdo, $mantenimiento_id);
 }
-
-echo "Accede mediante formulario o con ?id= en GET.";
