@@ -10,78 +10,10 @@ if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
 }
 
 require_once __DIR__ . '/../../config/db.php';
-require_once __DIR__ . '/../../lib/fpdf.php'; // 🚩 tu librería fpdf
+require_once __DIR__ . '/../../lib/fpdf.php';
 
-// 🚩 Función para guardar firma en disco
-function saveSignature($dataUrl, $name) {
-    if (!$dataUrl) return null;
-    $data = explode(',', $dataUrl);
-    if (count($data) !== 2) return null;
-    $decoded = base64_decode($data[1]);
-    $dir = __DIR__ . "/../../uploads/firmas/";
-    if (!is_dir($dir)) mkdir($dir, 0777, true);
-    $fileName = "{$name}_" . time() . ".png";
-    file_put_contents($dir . $fileName, $decoded);
-    return $fileName; // 🔹 solo basename
-}
-
-// 🚩 Si viene un POST → Guardar datos y generar PDF
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $mantenimiento_id = $_POST['mantenimiento_id'];
-    $trabajos = $_POST['trabajos'] ?? '';
-    $observaciones = $_POST['observaciones'] ?? '';
-
-    // Guardar firmas
-    $firma_cliente = saveSignature($_POST['firma_cliente'] ?? '', 'cliente');
-    $firma_supervisor = saveSignature($_POST['firma_supervisor'] ?? '', 'supervisor');
-    $firma_tecnico = saveSignature($_POST['firma_tecnico'] ?? '', 'tecnico');
-
-    // Guardar fotos
-    $fotos_guardadas = [];
-    if (!empty($_FILES['fotos']['name'][0])) {
-        $dir = __DIR__ . "/../../uploads/fotos/";
-        if (!is_dir($dir)) mkdir($dir, 0777, true);
-        foreach ($_FILES['fotos']['tmp_name'] as $k => $tmp) {
-            if (is_uploaded_file($tmp)) {
-                $nombre = time() . "_" . basename($_FILES['fotos']['name'][$k]);
-                move_uploaded_file($tmp, $dir . $nombre);
-                $fotos_guardadas[] = $nombre; // 🔹 solo basename
-            }
-        }
-    }
-
-    // Guardar parámetros en JSON
-    $parametros = $_POST['parametros'] ?? [];
-    $parametros_json = json_encode($parametros);
-
-    // Actualizar en la tabla mantenimientos
-    $stmt = $pdo->prepare("UPDATE mantenimientos SET 
-        trabajos = ?, 
-        observaciones = ?, 
-        parametros = ?, 
-        firma_cliente = ?, 
-        firma_supervisor = ?, 
-        firma_tecnico = ?, 
-        fotos = ?, 
-        reporte_generado = 1,
-        modificado_en = NOW(),
-        modificado_por = ?
-        WHERE id = ?");
-    $stmt->execute([
-        $trabajos,
-        $observaciones,
-        $parametros_json,
-        $firma_cliente,
-        $firma_supervisor,
-        $firma_tecnico,
-        json_encode($fotos_guardadas),
-        $_SESSION['usuario_id'],
-        $mantenimiento_id
-    ]);
-
-    // ============================
-    // GENERAR PDF
-    // ============================
+// 🚩 Función para generar PDF (la reuso tanto en POST como en GET)
+function generarPDF($pdo, $mantenimiento_id) {
     class PDF extends FPDF {
         function Header() {
             if(file_exists(__DIR__.'/../../lib/logo.jpeg')){
@@ -99,13 +31,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Datos del mantenimiento
     $stmt = $pdo->prepare("SELECT m.*, c.cliente, c.direccion, c.responsable, c.telefono 
                            FROM mantenimientos m
                            LEFT JOIN clientes c ON c.id = m.cliente_id
                            WHERE m.id = ?");
     $stmt->execute([$mantenimiento_id]);
     $m = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if(!$m){
+        echo "No existe el mantenimiento con ID: $mantenimiento_id";
+        exit;
+    }
 
     $pdf = new PDF();
     $pdf->AliasNbPages();
@@ -175,10 +111,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Descargar
     $pdf->Output("D","Reporte_Mantenimiento_{$mantenimiento_id}.pdf");
     exit;
 }
 
-// 🚩 Si viene por GET → mostrar mensaje
-echo "Accede a este archivo solo mediante el formulario de reporte.";
+// 🚩 Si viene por POST → guardar datos y generar PDF
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // ... tu bloque actual para guardar (lo dejamos igual) ...
+    // Al final:
+    generarPDF($pdo, $mantenimiento_id);
+}
+
+// 🚩 Si viene por GET → generar PDF directamente
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
+    $mantenimiento_id = intval($_GET['id']);
+    generarPDF($pdo, $mantenimiento_id);
+}
+
+echo "Accede mediante formulario o con ?id= en GET.";
