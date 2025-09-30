@@ -55,44 +55,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
     // ✅ UPDATE en la tabla mantenimientos
-      $stmt = $pdo->prepare("UPDATE mantenimientos SET 
-      trabajos = ?, 
-      observaciones = ?, 
-      parametros = ?, 
-      firma_cliente = ?, 
-      firma_supervisor = ?, 
-      firma_tecnico = ?, 
-      fotos = ?, 
-      equipo1 = ?, 
-      equipo2 = ?, 
-      equipo3 = ?, 
-      equipo4 = ?, 
-      equipo5 = ?, 
-      equipo6 = ?, 
-      equipo7 = ?, 
-      reporte_generado = 1,
-      modificado_en = NOW(),
-      modificado_por = ?,
-      estado = 'finalizado'
-      WHERE id = ?");
-  $stmt->execute([
-      $trabajos,
-      $observaciones,
-      json_encode($parametros),
-      $firma_cliente,
-      $firma_supervisor,
-      $firma_tecnico,
-      json_encode($fotos_guardadas),
-      $equiposGuardados[1],
-      $equiposGuardados[2],
-      $equiposGuardados[3],
-      $equiposGuardados[4],
-      $equiposGuardados[5],
-      $equiposGuardados[6],
-      $equiposGuardados[7],
-      $_SESSION['usuario_id'],
-      $mantenimiento_id
-  ]);
+    $actividades = $_POST['actividades'] ?? [];
+    $stmt = $pdo->prepare("UPDATE mantenimientos SET 
+    trabajos = ?, 
+    observaciones = ?, 
+    parametros = ?, 
+    actividades = ?, 
+    firma_cliente = ?, 
+    firma_supervisor = ?, 
+    firma_tecnico = ?, 
+    fotos = ?, 
+    equipo1 = ?, 
+    equipo2 = ?, 
+    equipo3 = ?, 
+    equipo4 = ?, 
+    equipo5 = ?, 
+    equipo6 = ?, 
+    equipo7 = ?, 
+    reporte_generado = 1,
+    modificado_en = NOW(),
+    modificado_por = ?,
+    estado = 'finalizado'
+    WHERE id = ?");
+$stmt->execute([
+    $trabajos,
+    $observaciones,
+    json_encode($parametros),
+    json_encode($actividades),
+    $firma_cliente,
+    $firma_supervisor,
+    $firma_tecnico,
+    json_encode($fotos_guardadas),
+    $equiposGuardados[1],
+    $equiposGuardados[2],
+    $equiposGuardados[3],
+    $equiposGuardados[4],
+    $equiposGuardados[5],
+    $equiposGuardados[6],
+    $equiposGuardados[7],
+    $_SESSION['usuario_id'],
+    $mantenimiento_id
+]);
 
 
     // Si confirmación viene por POST, redirige al dashboard
@@ -287,7 +290,7 @@ for ($i = 1; $i <= 7; $i++) {
     </div>
 
 
-    
+
 <!-- ACTIVIDADES A REALIZAR -->
 <h6>ACTIVIDADES A REALIZAR</h6>
 <div class="table-responsive mb-3">

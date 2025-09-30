@@ -1,5 +1,5 @@
 <?php
-// guardar_reporte_servicio.php
+// guardar_reporte_bombas.php
 // --- Descarga inmediata del PDF con diseño de "FORMATO DE CALIDAD" ---
 // Debe colocarse sin ningún output previo (sin espacios antes de <?php)
 
@@ -242,6 +242,70 @@ CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA"), 1, 1, 'C'
     $pdf->MultiCell(0,7, txt("Observaciones y Recomendaciones:\n" . ($m['observaciones'] ?? '')), 1);
     $pdf->Ln(4);
 
+      // ---------- PARÁMETROS ----------
+   /*  $pdf->SetFont('Arial','B',9);
+    $pdf->Cell(0,7,txt("Parámetros"),1,1,'C');
+    $pdf->SetFont('Arial','',9);
+    foreach($parametros as $k=>$v) {
+        $pdf->Cell(0,6,txt("$k: $v"),1,1);
+    }
+    $pdf->Ln(3); */
+
+    // ---------- ACTIVIDADES A REALIZAR ----------
+    $pdf->SetFont('Arial','B',9);
+    $pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
+
+    // Cabecera
+    $pdf->SetFont('Arial','B',7);
+    $pdf->Cell(80,7, txt("Actividad"), 1, 0, 'C');
+    for ($i=1;$i<=7;$i++) {
+        $pdf->Cell(10,7, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
+    }
+    $pdf->Cell(8,7,"B",1,0,'C');
+    $pdf->Cell(8,7,"T",1,0,'C');
+    $pdf->Cell(8,7,"S",1,0,'C');
+    $pdf->Cell(8,7,"A",1,1,'C');
+
+    $pdf->SetFont('Arial','',7);
+    $actividadesList = [
+        "Revisión de Presión de Aceite",
+        "Revisión de Presión de Descarga y Succión de cada unidad",
+        "Ajuste y revisión de la operación de las válvulas de capacidad del equipo",
+        "Revisión del estado operativo de motores eléctricos y componentes mecánicos",
+        "Ajustes de válvulas reguladoras de presión",
+        "Revisión de fugas en el sistema",
+        "Revisión de Niveles de Refrigerante",
+        "Revisión de Gases no Condensables en el Sistema",
+        "Revisión del estado físico de tuberías de Refrigerante",
+        "Revisión de válvula de expansión termostáticas detectadas con falla en el sistema",
+        "Ajuste de la operación de los controles eléctricos del sistema",
+        "Revisión de Contactores y ajuste de componentes eléctricos",
+        "Revisión/Limpieza de componentes electrónicos",
+        "Revisión de la operación de los instrumentos de control del sistema",
+        "Lubricación de componentes mecánicos exteriores",
+        "Análisis de Vibraciones",
+        "Lubricación de componentes mecánicos interiores",
+        "Análisis de Acidez en el aceite",
+        "Megado de motores",
+        "Lavado químico de intercambiador"
+    ];
+
+    foreach ($actividadesList as $idx => $nombre) {
+        $pdf->Cell(80,7, txt($nombre), 1, 0);
+        for ($i=1;$i<=7;$i++) {
+            $marca = !empty($actividades[$idx]['dias'][$i]) ? "✔" : "";
+            $pdf->Cell(10,7, txt($marca), 1, 0, 'C');
+        }
+        foreach (["B","T","S","A"] as $f) {
+            $marca = (isset($actividades[$idx]['frecuencia']) && $actividades[$idx]['frecuencia']==$f) ? "✔" : "";
+            $pdf->Cell(8,7, txt($marca), 1, 0, 'C');
+        }
+        $pdf->Ln();
+    }
+    $pdf->Ln(3);
+
+
+
     // ---------- FOTOS ----------
     if (!empty($fotos)) {
         $pdf->AddPage();
@@ -335,6 +399,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $trabajos = $_POST['trabajos'] ?? '';
     $observaciones = $_POST['observaciones'] ?? '';
     $parametros = $_POST['parametros'] ?? [];
+    $actividades    = $_POST['actividades'] ?? [];
 
     $firma_cliente = saveSignatureFile($_POST['firma_cliente'] ?? '', "cliente");
     $firma_supervisor = saveSignatureFile($_POST['firma_supervisor'] ?? '', "supervisor");
@@ -358,9 +423,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    $update = $pdo->prepare("UPDATE mantenimientos SET trabajos=?, observaciones=?, estado='finalizado' , parametros=?, firma_cliente=COALESCE(?,firma_cliente), firma_supervisor=COALESCE(?,firma_supervisor), firma_tecnico=COALESCE(?,firma_tecnico), fotos=? WHERE id=?");
+    $update = $pdo->prepare("UPDATE mantenimientos SET trabajos=?, actividades=?, observaciones=?, estado='finalizado' , parametros=?, firma_cliente=COALESCE(?,firma_cliente), firma_supervisor=COALESCE(?,firma_supervisor), firma_tecnico=COALESCE(?,firma_tecnico), fotos=? WHERE id=?");
     $update->execute([
         $trabajos,
+        json_encode($actividades),
         $observaciones,
         json_encode($parametros),
         $firma_cliente,
