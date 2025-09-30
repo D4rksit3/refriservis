@@ -56,6 +56,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // ✅ UPDATE en la tabla mantenimientos
     $actividades = $_POST['actividades'] ?? [];
+    $actividadesLimpias = [];
+
+    foreach ($actividades as $idx => $act) {
+        $dias = $act['dias'] ?? [];
+        $frecuencia = $act['frecuencia'] ?? null;
+
+        $actividadesLimpias[$idx] = [
+            'dias' => array_keys($dias), // guardamos solo índices marcados
+            'frecuencia' => $frecuencia
+        ];
+    }
+
+
+
+
+
     $stmt = $pdo->prepare("UPDATE mantenimientos SET 
     trabajos = ?, 
     observaciones = ?, 
@@ -81,7 +97,7 @@ $stmt->execute([
     $trabajos,
     $observaciones,
     json_encode($parametros),
-    json_encode($actividades),
+    json_encode($actividadesLimpias, JSON_UNESCAPED_UNICODE),
     $firma_cliente,
     $firma_supervisor,
     $firma_tecnico,
