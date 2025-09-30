@@ -97,86 +97,88 @@ function generarPDF(PDO $pdo, int $id) {
             $left = $this->GetX();
             $top = $this->GetY();
 
-              // -------------------------------
-        // Logo
         // -------------------------------
-        $cellW = 40; 
-        $cellH = 25;
-        $this->Rect($left, $top, $cellW, $cellH); // Marco logo
+// Logo (columna izquierda)
+// -------------------------------
+$cellW = 40; 
+$cellH = 33; // altura estándar de todo el bloque (ajustado)
+$this->Rect($left, $top, $cellW, $cellH); // Marco logo
 
-        if (file_exists(__DIR__ . '/../../lib/logo.jpeg')) {
-            $imgW = 30; 
-            $imgH = 18;
-            $imgX = $left + ($cellW - $imgW) / 2;
-            $imgY = $top + ($cellH - $imgH) / 2;
-            $this->Image(__DIR__ . '/../../lib/logo.jpeg', $imgX, $imgY, $imgW, $imgH);
-        }
+if (file_exists(__DIR__ . '/../../lib/logo.jpeg')) {
+    $imgW = 30; 
+    $imgH = 18;
+    $imgX = $left + ($cellW - $imgW) / 2;
+    $imgY = $top + ($cellH - $imgH) / 2;
+    $this->Image(__DIR__ . '/../../lib/logo.jpeg', $imgX, $imgY, $imgW, $imgH);
+}
 
-        // -------------------------------
-        // Bloque central: título y subtítulo
-        // -------------------------------
-        $this->SetXY($left + $cellW + 2, $top);
+// -------------------------------
+// Bloque central: título y subtítulo
+// -------------------------------
+$midW = 110;
+$this->SetXY($left + $cellW + 2, $top);
 
-        // Línea 1: Título principal
-        $this->SetFont('Arial', 'B', 10);
-        $this->SetFillColor(207, 226, 243);
-        $this->Cell(110, 7, txt("FORMATO DE CALIDAD"), 1, 1, 'C', true);
+// Línea 1: Título principal
+$this->SetFont('Arial', 'B', 10);
+$this->SetFillColor(207, 226, 243);
+$this->Cell($midW, 7, txt("FORMATO DE CALIDAD"), 1, 1, 'C', true);
 
-        // Línea 2-3: Subtítulo (multilínea)
-        $this->SetX($left + $cellW + 2);
-        $this->SetFont('Arial','B',12);
-        $this->MultiCell(
-            110, // ancho
-            8,   // alto por línea
-            txt("FORMATO DE CALIDAD\nCHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA"),
-            1,   // borde
-            'C'  // alineación centrada
-        );
+// Línea 2-3: Subtítulo (multilínea)
+$this->SetX($left + $cellW + 2);
+$this->SetFont('Arial','B',12);
+$this->MultiCell(
+    $midW,
+    8,
+    txt("FORMATO DE CALIDAD\nCHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA"),
+    1,
+    'C'
+);
 
-        // Línea 4: Contacto
-        $this->SetX($left + $cellW + 2);
-        $this->SetFont('Arial','',8);
-        $this->Cell(
-            110,
-            8,
-            txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"),
-            1,
-            0,
-            'C'
-        );
+// Línea 4: Contacto
+$this->SetX($left + $cellW + 2);
+$this->SetFont('Arial','',8);
+$this->Cell(
+    $midW,
+    8,
+    txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"),
+    1,
+    0,
+    'C'
+);
 
-        // -------------------------------
-        // Número (columna derecha)
-        // -------------------------------
-        $numCellW = 40; 
-        $numCellH = 25;
-        $this->SetXY($left + $cellW + 2 + 110 + 4, $top);
-        $this->Rect($this->GetX(), $this->GetY(), $numCellW, $numCellH);
-        
-        $this->SetFont('Arial','',9);
-        $this->SetXY($this->GetX(), $this->GetY() + 6);
-        $this->Cell(
-            $numCellW, 
-            6, 
-            "001-N" . chr(176) . str_pad($this->mantenimientoId ?? '', 6, "0", STR_PAD_LEFT), 
-            0, 
-            1, 
-            'C'
-        );
+// -------------------------------
+// Número (columna derecha)
+// -------------------------------
+$numCellW = 40; 
+$numCellH = $cellH; // misma altura que logo
+$this->SetXY($left + $cellW + 2 + $midW + 2, $top);
+$this->Rect($this->GetX(), $this->GetY(), $numCellW, $numCellH);
 
-        // -------------------------------
-        // Espaciado después del header
-        // -------------------------------
-        $this->Ln(6);
-        $this->SetY($top + $cellH + 20);
-    }
+$this->SetFont('Arial','',9);
+$this->SetXY($this->GetX(), $this->GetY() + ($numCellH / 2) - 3);
+$this->Cell(
+    $numCellW, 
+    6, 
+    "001-N" . chr(176) . str_pad($this->mantenimientoId ?? '', 6, "0", STR_PAD_LEFT), 
+    0, 
+    1, 
+    'C'
+);
+
+// -------------------------------
+// Espaciado después del header
+// -------------------------------
+$this->Ln(6);
+$this->SetY($top + $cellH + 10);
 
     function Footer() {
         $this->SetY(-15);
         $this->SetFont('Arial','I',8);
         $this->Cell(0,10,'Página '.$this->PageNo().'/{nb}',0,0,'C');
     }
-    
+
+
+
     }
 
     // Construir PDF
