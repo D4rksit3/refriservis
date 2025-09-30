@@ -92,7 +92,7 @@ function generarPDF(PDO $pdo, int $id) {
         public function getRightMargin() { return $this->rMargin; }
             
             
-       public function Header() {
+    public function Header() {
     $left = 10; 
     $top  = 10;
 
@@ -101,22 +101,18 @@ function generarPDF(PDO $pdo, int $id) {
     $centerW = 110;
     $numW    = 40;
 
-    // -------------------------------
-    // Texto central (para calcular altura)
-    // -------------------------------
+    // Texto central
     $this->SetFont('Arial','B',12);
     $text = txt("FORMATO DE CALIDAD\nCHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA");
 
     // Altura de línea
     $lineH = 6;
-    $nbLines = substr_count($text, "\n") + 1; // cuántas líneas ocupará
-    $centerH = 7 + ($nbLines * $lineH) + 8;   // título principal (7) + subtítulo (multilínea) + contacto (8)
-
-    // Altura máxima de la fila
-    $cellH = max(25, $centerH);
+    $nbLines = substr_count($text, "\n") + 1;
+    $centerH = 7 + ($nbLines * $lineH) + 8;   // titulo + subtitulo + contacto
+    $cellH = max(35, $centerH);
 
     // -------------------------------
-    // Marco del Logo
+    // Logo
     // -------------------------------
     $this->Rect($left, $top, $logoW, $cellH);
     if (file_exists(__DIR__ . '/../../lib/logo.jpeg')) {
@@ -136,23 +132,24 @@ function generarPDF(PDO $pdo, int $id) {
     $this->SetFillColor(207, 226, 243);
     $this->Cell($centerW, 7, txt("FORMATO DE CALIDAD"), 1, 2, 'C', true);
 
-    // Subtítulo (multilínea dentro del marco)
+    // Subtítulo
     $this->SetFont('Arial','B',12);
-    $this->MultiCell($centerW, $lineH, $text, 1, 'C');
+    $this->MultiCell($centerW, $lineH, $text, 0, 'C');
 
-    // Contacto
+    // Guardar altura usada hasta aquí
+    $yAfterTitle = $this->GetY();
+
+    // Contacto en la parte inferior del cuadro central
+    $contacto = txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com");
+    $this->SetXY($left + $logoW, $top + $cellH - 8);
     $this->SetFont('Arial','',8);
-    $this->Cell($centerW, 8, txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"), 1, 2, 'C');
+    $this->Cell($centerW, 8, $contacto, 1, 2, 'C');
 
-    // Ajustar altura si quedó más bajo que el logo o número
-    $yEnd = $this->GetY();
-    $centerUsedH = $yEnd - $top;
-    if ($centerUsedH < $cellH) {
-        $this->Rect($left + $logoW, $top, $centerW, $cellH); // marco completo
-    }
+    // Dibujar marco completo central
+    $this->Rect($left + $logoW, $top, $centerW, $cellH);
 
     // -------------------------------
-    // Cuadro de número
+    // Número
     // -------------------------------
     $this->SetXY($left + $logoW + $centerW, $top);
     $this->Rect($this->GetX(), $this->GetY(), $numW, $cellH);
@@ -162,11 +159,12 @@ function generarPDF(PDO $pdo, int $id) {
     $this->Cell($numW, 6, "001-N" . chr(176) . str_pad($this->mantenimientoId ?? '', 6, "0", STR_PAD_LEFT), 0, 1, 'C');
 
     // -------------------------------
-    // Espaciado después del header
+    // Espaciado
     // -------------------------------
     $this->Ln(6);
     $this->SetY($top + $cellH + 10);
 }
+
 
 
 
