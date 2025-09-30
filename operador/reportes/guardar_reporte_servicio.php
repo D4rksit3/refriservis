@@ -125,7 +125,7 @@ function generarPDF(PDO $pdo, int $id) {
             $numCellW = 40; $numCellH = 25;
             $this->Rect($this->GetX(), $this->GetY(), $numCellW, $numCellH);
             $this->SetXY($this->GetX(), $this->GetY() + 6);
-            $this->Cell($numCellW, 6, "001-N°" . str_pad($this->mantenimientoId ?? '', 6, "0", STR_PAD_LEFT), 0, 1, 'C');
+            $this->Cell($numCellW, 6, "001-N" . chr(176) . str_pad($this->mantenimientoId ?? '', 6, "0", STR_PAD_LEFT), 0, 1, 'C');
 
             $this->Ln(6);
 
