@@ -46,30 +46,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    
+
+
     // ✅ UPDATE en la tabla mantenimientos
-    $stmt = $pdo->prepare("UPDATE mantenimientos SET 
-        trabajos = ?, 
-        observaciones = ?, 
-        parametros = ?, 
-        firma_cliente = ?, 
-        firma_supervisor = ?, 
-        firma_tecnico = ?, 
-        fotos = ?, 
-        reporte_generado = 1,
-        modificado_en = NOW(),
-        modificado_por = ?
-        WHERE id = ?");
-    $stmt->execute([
-        $trabajos,
-        $observaciones,
-        json_encode($parametros),
-        $firma_cliente,
-        $firma_supervisor,
-        $firma_tecnico,
-        json_encode($fotos_guardadas),
-        $_SESSION['usuario_id'],
-        $mantenimiento_id
-    ]);
+      $stmt = $pdo->prepare("UPDATE mantenimientos SET 
+      trabajos = ?, 
+      observaciones = ?, 
+      parametros = ?, 
+      firma_cliente = ?, 
+      firma_supervisor = ?, 
+      firma_tecnico = ?, 
+      fotos = ?, 
+      equipo1 = ?, 
+      equipo2 = ?, 
+      equipo3 = ?, 
+      equipo4 = ?, 
+      equipo5 = ?, 
+      equipo6 = ?, 
+      equipo7 = ?, 
+      reporte_generado = 1,
+      modificado_en = NOW(),
+      modificado_por = ?
+      WHERE id = ?");
+  $stmt->execute([
+      $trabajos,
+      $observaciones,
+      json_encode($parametros),
+      $firma_cliente,
+      $firma_supervisor,
+      $firma_tecnico,
+      json_encode($fotos_guardadas),
+      $equiposGuardados[1],
+      $equiposGuardados[2],
+      $equiposGuardados[3],
+      $equiposGuardados[4],
+      $equiposGuardados[5],
+      $equiposGuardados[6],
+      $equiposGuardados[7],
+      $_SESSION['usuario_id'],
+      $mantenimiento_id
+  ]);
+
 
     // Redirigir a PDF
     header("Location: guardar_reporte_servicio.php?id=$mantenimiento_id");
