@@ -103,7 +103,7 @@ $stmt->execute([
     if($confirmado === 'si'){
         header("Location: https://refriservis.seguricloud.com/operador/mis_mantenimientos.php");
     } else {
-        header("Location: guardar_reporte_servicio.php?id=$mantenimiento_id");
+        header("Location: guardar_reporte_bombas.php?id=$mantenimiento_id");
     }
     exit;
 }
