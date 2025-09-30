@@ -285,77 +285,83 @@ for ($i = 1; $i <= 7; $i++) {
         </tbody>
       </table>
     </div>
-    <!-- ACTIVIDADES A REALIZAR -->
-    <h6>ACTIVIDADES A REALIZAR</h6>
-    <div class="table-responsive mb-3">
-      <table class="table table-bordered table-sm text-center">
-        <thead class="table-light">
-          <tr>
-            <th>Actividad</th>
-            <?php for($i=1;$i<=7;$i++): ?>
-              <th><?= str_pad($i, 2, "0", STR_PAD_LEFT) ?></th>
-            <?php endfor; ?>
-            <th>Frecuencia</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php
-          $actividades = [
-            "Inspección ocular del equipo en funcionamiento",
-            "Verificación del estado de superficies y aseo general del equipo",
-            "Medición y registro de parámetros de operación (amperaje, voltaje, potencia)",
-            "Inspección de estado del sello mecánico",
-            "Inspección de manómetros y termómetros",
-            "Inspección de rodamientos de motor y bomba centrífuga",
-            "Inspección del acoplamiento y ajuste de prisioneros",
-            "Medición y registro de consumos eléctricos",
-            "Ajuste de conexiones eléctricas del motor",
-            "Revisión de variador de velocidad",
-            "Lubricación de rodamientos de acuerdo a recomendaciones del fabricante",
-            "Revisión de los pernos de la base y motor (requiere uso de torquímetro)",
-            "Pintado externo del motor y bomba manteniendo color original (dieléctrica)",
-            "Prueba de funcionamiento y verificación de condiciones operativas",
-            "Lubricación y engrase de la bomba",
-            "Revisión y Ajuste de la prensa estopa y/o sello mecánico",
-            "Revisión y/o cambio de empaquetaduras de O-rings",
-            "Revisión y cambio de borneras eléctricas",
-            "Cambio de empaquetaduras, sellos y rodamientos en caso se requiera",
-            "Pintado de las válvulas y de las tuberías de distribución si lo requiere",
-            "Megar y registrar el estado del aislamiento del motor eléctrico"
-          ];
 
-          // opciones de frecuencia estándar
-          $frecuencias = ["Diaria", "Semanal", "Mensual", "Trimestral", "Semestral", "Anual", "Cuando se requiera"];
 
-          foreach($actividades as $index => $act):
-            // Recupera frecuencia guardada si existe
-            $frecuenciaSel = isset($m["act_{$index}_freq"]) ? $m["act_{$index}_freq"] : "";
-          ?>
-          <tr>
-            <td class="text-start"><?= htmlspecialchars($act) ?></td>
-            <?php for($i=1;$i<=7;$i++): ?>
-              <td>
-                <input type="checkbox" 
-                  name="actividades[<?= $index ?>][dias][<?= $i ?>]" 
-                  value="1" 
-                  <?= isset($m["act_{$index}_$i"]) && $m["act_{$index}_$i"]==1 ? 'checked' : '' ?>>
-              </td>
-            <?php endfor; ?>
-            <td>
-              <select name="actividades[<?= $index ?>][frecuencia]" class="form-select form-select-sm">
-                <option value="">--</option>
-                <?php foreach($frecuencias as $f): ?>
-                  <option value="<?= $f ?>" <?= $frecuenciaSel==$f ? 'selected' : '' ?>>
-                    <?= $f ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </td>
-          </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
-    </div>
+    
+<!-- ACTIVIDADES A REALIZAR -->
+<h6>ACTIVIDADES A REALIZAR</h6>
+<div class="table-responsive mb-3">
+  <table class="table table-bordered table-sm text-center align-middle">
+    <thead class="table-primary">
+      <tr>
+        <th rowspan="2" class="align-middle">ACTIVIDADES A REALIZAR</th>
+        <th colspan="7"> </th>
+        <th colspan="4">Frecuencia</th>
+      </tr>
+      <tr>
+        <?php for($i=1;$i<=7;$i++): ?>
+          <th><?= str_pad($i, 2, "0", STR_PAD_LEFT) ?></th>
+        <?php endfor; ?>
+        <th>B.</th>
+        <th>T.</th>
+        <th>S.</th>
+        <th>A.</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php
+      $actividades = [
+        "Revisión de Presión de Aceite",
+        "Revisión de Presión de Descarga y Succión de cada unidad",
+        "Ajuste y revisión de la operación de las válvulas de capacidad del equipo",
+        "Revisión del estado operativo de motores eléctricos y componentes mecánicos",
+        "Ajustes de válvulas reguladoras de presión",
+        "Revisión de fugas en el sistema",
+        "Revisión de Niveles de Refrigerante",
+        "Revisión de Gases no Condensables en el Sistema",
+        "Revisión del estado físico de tuberías de Refrigerante",
+        "Revisión de válvula de expansión termostáticas detectadas con falla en el sistema",
+        "Ajuste de la operación de los controles eléctricos del sistema",
+        "Revisión de Contactores y ajuste de componentes eléctricos",
+        "Revisión/Limpieza de componentes electrónicos",
+        "Revisión de la operación de los instrumentos de control del sistema",
+        "Lubricación de componentes mecánicos exteriores",
+        "Análisis de Vibraciones",
+        "Lubricación de componentes mecánicos interiores",
+        "Análisis de Acidez en el aceite",
+        "Megado de motores",
+        "Lavado químico de intercambiador"
+      ];
+
+      foreach($actividades as $index => $act):
+      ?>
+      <tr>
+        <td class="text-start"><?= htmlspecialchars($act) ?></td>
+
+        <!-- Columnas 01-07 -->
+        <?php for($i=1;$i<=7;$i++): ?>
+          <td>
+            <input type="checkbox" 
+              name="actividades[<?= $index ?>][dias][<?= $i ?>]" 
+              value="1"
+              <?= isset($m["act_{$index}_$i"]) && $m["act_{$index}_$i"]==1 ? 'checked' : '' ?>>
+          </td>
+        <?php endfor; ?>
+
+        <!-- Frecuencias -->
+        <?php foreach(["B","T","S","A"] as $f): ?>
+          <td>
+            <input type="radio" 
+              name="actividades[<?= $index ?>][frecuencia]" 
+              value="<?= $f ?>"
+              <?= isset($m["act_{$index}_freq"]) && $m["act_{$index}_freq"]==$f ? 'checked' : '' ?>>
+          </td>
+        <?php endforeach; ?>
+      </tr>
+      <?php endforeach; ?>
+    </tbody>
+  </table>
+</div>
 
 
 
