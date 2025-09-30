@@ -86,6 +86,12 @@ function generarPDF(PDO $pdo, int $id) {
     // Clase PDF (header y footer)
     class PDF extends FPDF {
         public $mantenimientoId;
+        
+        // Getter para márgenes
+        public function getLeftMargin() { return $this->lMargin; }
+        public function getRightMargin() { return $this->rMargin; }
+            
+            
         public function Header() {
             global $m;
             $left = $this->GetX();
@@ -194,10 +200,9 @@ function generarPDF(PDO $pdo, int $id) {
     ];
 
     $pageWidth   = $pdf->GetPageWidth();
-    $leftMargin  = $pdf->lMargin;
-    $rightMargin = $pdf->rMargin;
-
-    $usableW = $pageWidth - $leftMargin - $rightMargin;
+    $leftMargin  = $pdf->getLeftMargin();
+    $rightMargin = $pdf->getRightMargin();
+    $usableW     = $pageWidth - $leftMargin - $rightMargin;
     $labelW  = 50;
     $colW    = floor(($usableW - $labelW) / (7 * 2));
 
