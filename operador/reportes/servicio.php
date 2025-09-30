@@ -95,8 +95,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   ]);
 
 
-    // Redirigir a PDF
-    header("Location: guardar_reporte_servicio.php?id=$mantenimiento_id");
+    // Si confirmación viene por POST, redirige al dashboard
+    $confirmado = $_POST['confirmado'] ?? 'no';
+    if($confirmado === 'si'){
+        header("Location: https://refriservis.seguricloud.com/operador/mis_mantenimientos.php");
+    } else {
+        header("Location: guardar_reporte_servicio.php?id=$mantenimiento_id");
+    }
     exit;
 }
 
@@ -342,13 +347,15 @@ document.getElementById('formReporte').addEventListener('submit', function(){
 
 
    // Preguntar antes de guardar
-    if (confirm("¿Estás seguro de guardar el reporte?")) {
-        // Redirigir al guardar y luego a mis_mantenimientos
-        this.action = "servicio.php"; // mantiene la acción
-        this.submit(); // enviar formulario
-        // Después de guardar, redirigir en PHP o en el header
-        // Si quieres redirigir aquí directamente, puedes usar:
-        window.location.href = "https://refriservis.seguricloud.com/operador/mis_mantenimientos.php";
+    if(confirm("¿Estás seguro de guardar el reporte?")){
+        // añadir un campo oculto para indicar confirmación
+        let input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'confirmado';
+        input.value = 'si';
+        this.appendChild(input);
+
+        this.submit();
     }
 });
 
