@@ -97,88 +97,47 @@ function generarPDF(PDO $pdo, int $id) {
             $left = $this->GetX();
             $top = $this->GetY();
 
-        // -------------------------------
-// Logo (columna izquierda)
-// -------------------------------
-$cellW = 40; 
-$cellH = 33; // altura estándar de todo el bloque (ajustado)
-$this->Rect($left, $top, $cellW, $cellH); // Marco logo
+            // Logo
+            $cellW = 40; $cellH = 25;
+            $this->Rect($left, $top, $cellW, $cellH);
+            if (file_exists(__DIR__ . '/../../lib/logo.jpeg')) {
+                $imgW = 30; $imgH = 18;
+                $imgX = $left + ($cellW - $imgW) / 2;
+                $imgY = $top + ($cellH - $imgH) / 2;
+                $this->Image(__DIR__ . '/../../lib/logo.jpeg', $imgX, $imgY, $imgW, $imgH);
+            }
+            $this->SetXY($left + $cellW + 2, $top);
 
-if (file_exists(__DIR__ . '/../../lib/logo.jpeg')) {
-    $imgW = 30; 
-    $imgH = 18;
-    $imgX = $left + ($cellW - $imgW) / 2;
-    $imgY = $top + ($cellH - $imgH) / 2;
-    $this->Image(__DIR__ . '/../../lib/logo.jpeg', $imgX, $imgY, $imgW, $imgH);
-}
+            // Título
+            $this->SetFont('Arial', 'B', 10);
+            $this->SetFillColor(207, 226, 243);
+            $this->Cell(110, 7, txt("FORMATO DE CALIDAD"), 1, 1, 'C', true);
+            $this->SetX($left + $cellW + 2);
+            $this->SetFont('Arial','B',12);
+            $this->Cell(110, 10, txt("FORMATO DE CALIDAD
+CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA"), 1, 1, 'C');
+            $this->SetX($left + $cellW + 2);
+            $this->SetFont('Arial','',8);
+            $this->Cell(110, 8, txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"), 1, 0, 'C');
 
-// -------------------------------
-// Bloque central: título y subtítulo
-// -------------------------------
-$midW = 110;
-$this->SetXY($left + $cellW + 2, $top);
+            // Número
+            $this->SetXY($left + $cellW + 2 + 110 + 4, $top);
+            $this->SetFont('Arial','',9);
+            $numCellW = 40; $numCellH = 25;
+            $this->Rect($this->GetX(), $this->GetY(), $numCellW, $numCellH);
+            $this->SetXY($this->GetX(), $this->GetY() + 6);
+            $this->Cell($numCellW, 6, "001-N" . chr(176) . str_pad($this->mantenimientoId ?? '', 6, "0", STR_PAD_LEFT), 0, 1, 'C');
 
-// Línea 1: Título principal
-$this->SetFont('Arial', 'B', 10);
-$this->SetFillColor(207, 226, 243);
-$this->Cell($midW, 7, txt("FORMATO DE CALIDAD"), 1, 1, 'C', true);
+            $this->Ln(6);
 
-// Línea 2-3: Subtítulo (multilínea)
-$this->SetX($left + $cellW + 2);
-$this->SetFont('Arial','B',12);
-$this->MultiCell(
-    $midW,
-    8,
-    txt("FORMATO DE CALIDAD\nCHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA"),
-    1,
-    'C'
-);
-
-// Línea 4: Contacto
-$this->SetX($left + $cellW + 2);
-$this->SetFont('Arial','',8);
-$this->Cell(
-    $midW,
-    8,
-    txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"),
-    1,
-    0,
-    'C'
-);
-
-// -------------------------------
-// Número (columna derecha)
-// -------------------------------
-$numCellW = 40; 
-$numCellH = $cellH; // misma altura que logo
-$this->SetXY($left + $cellW + 2 + $midW + 2, $top);
-$this->Rect($this->GetX(), $this->GetY(), $numCellW, $numCellH);
-
-$this->SetFont('Arial','',9);
-$this->SetXY($this->GetX(), $this->GetY() + ($numCellH / 2) - 3);
-$this->Cell(
-    $numCellW, 
-    6, 
-    "001-N" . chr(176) . str_pad($this->mantenimientoId ?? '', 6, "0", STR_PAD_LEFT), 
-    0, 
-    1, 
-    'C'
-);
-
-// -------------------------------
-// Espaciado después del header
-// -------------------------------
-$this->Ln(6);
-$this->SetY($top + $cellH + 10);
-
-    function Footer() {
-        $this->SetY(-15);
-        $this->SetFont('Arial','I',8);
-        $this->Cell(0,10,'Página '.$this->PageNo().'/{nb}',0,0,'C');
-    }
-
-
-
+            // 👉 ESTA LÍNEA ES CLAVE: baja el cursor debajo del header
+            $this->SetY($top + $cellH + 15);
+        }
+        public function Footer() {
+            $this->SetY(-15);
+            $this->SetFont('Arial','I',8);
+            $this->Cell(0,10,'Página '.$this->PageNo().'/{nb}',0,0,'C');
+        }
     }
 
     // Construir PDF
