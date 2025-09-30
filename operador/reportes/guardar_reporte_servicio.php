@@ -202,8 +202,9 @@ function generarPDF(PDO $pdo, int $id) {
 
     // Layout compacto para que entre en A4: labelWidth + 7*(2*colW) <= ancho_util
     $pageWidth   = $pdf->GetPageWidth();
-    $leftMargin  = $pdf->GetMargins()['left'];
-    $rightMargin = $pdf->GetMargins()['right'];
+    $margins     = $pdf->GetMargins();
+    $leftMargin  = $margins['left'];
+    $rightMargin = $margins['right'];
 
     $usableW = $pageWidth - $leftMargin - $rightMargin;
     $labelW  = 50;
