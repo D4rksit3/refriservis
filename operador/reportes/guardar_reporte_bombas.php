@@ -140,9 +140,10 @@ function generarPDF(PDO $pdo, int $id) {
     $this->SetFont('Arial','B',12);
     $this->MultiCell($centerW, $lineH, $text, 1, 'C');
 
-    // Contacto
+    // Contacto (multi-line para que no se desborde)
     $this->SetFont('Arial','',8);
-    $this->Cell($centerW, 8, txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"), 1, 0, 'C');
+    $contacto = txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com");
+    $this->MultiCell($centerW, 5, $contacto, 1, 'C');
 
     // Ajustar altura si quedó más bajo que el logo o número
     $yEnd = $this->GetY();
@@ -150,6 +151,7 @@ function generarPDF(PDO $pdo, int $id) {
     if ($centerUsedH < $cellH) {
         $this->Rect($left + $logoW, $top, $centerW, $cellH); // marco completo
     }
+
 
     // -------------------------------
     // Cuadro de número
