@@ -48,9 +48,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $equiposGuardados = [];
     for ($i = 1; $i <= 7; $i++) {
-        $equiposGuardados[$i] = $equipos[$i]['id_equipo'] ?? null;
+        $val = $equipos[$i]['id_equipo'] ?? null;
+        $equiposGuardados[$i] = ($val === '' ? null : $val); // si es '', guardamos NULL
     }
-    
+        
 
 
     // ✅ UPDATE en la tabla mantenimientos
