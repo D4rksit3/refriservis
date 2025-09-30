@@ -243,6 +243,7 @@ function generarPDF(PDO $pdo, int $id) {
 
     // ---------- FOTOS ----------
     if (!empty($fotos)) {
+        $pdf->AddPage();
         $pdf->SetFont('Arial','B',9);
         $pdf->Cell(0,7, txt("Fotos del Servicio"), 1, 1, 'C');
         $pdf->Ln(2);
