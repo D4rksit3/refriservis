@@ -360,10 +360,10 @@ for ($i = 1; $i <= 7; $i++) {
         <!-- Columnas 01-07 -->
         <?php for($i=1;$i<=7;$i++): ?>
           <td>
-            <input type="checkbox" 
-              name="actividades[<?= $index ?>][dias][<?= $i ?>]" 
-              value="1"
-              <?= isset($m["act_{$index}_$i"]) && $m["act_{$index}_$i"]==1 ? 'checked' : '' ?>>
+            <input type="checkbox"
+            name="actividades[<?= $index ?>][dias][<?= $i ?>]" 
+            value="1"
+            <?= (isset($actividadesGuardadas[$index]['dias']) && in_array($i, $actividadesGuardadas[$index]['dias'])) ? 'checked' : '' ?>>
           </td>
         <?php endfor; ?>
 
@@ -371,9 +371,10 @@ for ($i = 1; $i <= 7; $i++) {
         <?php foreach(["B","T","S","A"] as $f): ?>
           <td>
             <input type="radio" 
-              name="actividades[<?= $index ?>][frecuencia]" 
-              value="<?= $f ?>"
-              <?= isset($m["act_{$index}_freq"]) && $m["act_{$index}_freq"]==$f ? 'checked' : '' ?>>
+            name="actividades[<?= $index ?>][frecuencia]" 
+            value="<?= $f ?>"
+            <?= (isset($actividadesGuardadas[$index]['frecuencia']) && $actividadesGuardadas[$index]['frecuencia'] == $f) ? 'checked' : '' ?>>
+
           </td>
         <?php endforeach; ?>
       </tr>
