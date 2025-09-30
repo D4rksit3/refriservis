@@ -100,18 +100,21 @@ $mapaReportes = [
                   $urlReporte = $mapaReportes[$categoria] ?? '/operador/form_reporte.php';
                 ?>
 
-                <?php if ($r['reporte_generado']): ?>
+                <?php if ($r['reporte_generado'] && $r['estado'] !== 'finalizado'): ?>
                   <a href="<?= $urlReporte ?>?id=<?= $r['id'] ?>" 
-                     class="btn btn-secondary btn-sm w-100">Ver Reporte</a>
+                    class="btn btn-secondary btn-sm w-100">Ver / Editar Reporte</a>
 
                 <?php elseif ($r['estado'] === 'pendiente' || $r['estado'] === 'en proceso'): ?>
                   <a href="<?= $urlReporte ?>?id=<?= $r['id'] ?>" 
-                     class="btn btn-outline-success btn-sm w-100">
-                     Generar Reporte
+                    class="btn btn-outline-success btn-sm w-100">
+                    Generar Reporte
                   </a>
 
                 <?php elseif ($r['estado'] === 'finalizado'): ?>
-                  <span class="badge bg-secondary w-100 py-2">Reporte cerrado</span>
+                  <a href="<?= $urlDescarga ?>" 
+                    class="btn btn-primary btn-sm w-100" target="_blank">
+                    Descargar Reporte
+                  </a>
                 <?php endif; ?>
               </div>
             </div>
