@@ -92,52 +92,84 @@ function generarPDF(PDO $pdo, int $id) {
         public function getRightMargin() { return $this->rMargin; }
             
             
-        public function Header() {
-            global $m;
-            $left = $this->GetX();
-            $top = $this->GetY();
+       public function Header() {
+    $left = 10; 
+    $top  = 10;
 
-            // Logo
-            $cellW = 40; $cellH = 25;
-            $this->Rect($left, $top, $cellW, $cellH);
-            if (file_exists(__DIR__ . '/../../lib/logo.jpeg')) {
-                $imgW = 30; $imgH = 18;
-                $imgX = $left + ($cellW - $imgW) / 2;
-                $imgY = $top + ($cellH - $imgH) / 2;
-                $this->Image(__DIR__ . '/../../lib/logo.jpeg', $imgX, $imgY, $imgW, $imgH);
-            }
-            $this->SetXY($left + $cellW + 2, $top);
+    // Configuración de anchos
+    $logoW   = 40;
+    $centerW = 110;
+    $numW    = 40;
 
-            // Título
-            $this->SetFont('Arial', 'B', 10);
-            $this->SetFillColor(207, 226, 243);
-            $this->Cell(110, 7, txt("FORMATO DE CALIDAD"), 1, 1, 'C', true);
-            $this->SetX($left + $cellW + 2);
-            $this->SetFont('Arial','B',12);
-            $this->Cell(110, 10, txt("FORMATO DE CALIDAD
-CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA"), 1, 1, 'C');
-            $this->SetX($left + $cellW + 2);
-            $this->SetFont('Arial','',8);
-            $this->Cell(110, 8, txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"), 1, 0, 'C');
+    // -------------------------------
+    // Texto central (para calcular altura)
+    // -------------------------------
+    $this->SetFont('Arial','B',12);
+    $text = txt("FORMATO DE CALIDAD\nCHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA");
 
-            // Número
-            $this->SetXY($left + $cellW + 2 + 110 + 4, $top);
-            $this->SetFont('Arial','',9);
-            $numCellW = 40; $numCellH = 25;
-            $this->Rect($this->GetX(), $this->GetY(), $numCellW, $numCellH);
-            $this->SetXY($this->GetX(), $this->GetY() + 6);
-            $this->Cell($numCellW, 6, "001-N" . chr(176) . str_pad($this->mantenimientoId ?? '', 6, "0", STR_PAD_LEFT), 0, 1, 'C');
+    // Altura de línea
+    $lineH = 6;
+    $nbLines = substr_count($text, "\n") + 1; // cuántas líneas ocupará
+    $centerH = 7 + ($nbLines * $lineH) + 8;   // título principal (7) + subtítulo (multilínea) + contacto (8)
 
-            $this->Ln(6);
+    // Altura máxima de la fila
+    $cellH = max(25, $centerH);
 
-            // 👉 ESTA LÍNEA ES CLAVE: baja el cursor debajo del header
-            $this->SetY($top + $cellH + 15);
-        }
-        public function Footer() {
-            $this->SetY(-15);
-            $this->SetFont('Arial','I',8);
-            $this->Cell(0,10,'Página '.$this->PageNo().'/{nb}',0,0,'C');
-        }
+    // -------------------------------
+    // Marco del Logo
+    // -------------------------------
+    $this->Rect($left, $top, $logoW, $cellH);
+    if (file_exists(__DIR__ . '/../../lib/logo.jpeg')) {
+        $imgW = 30; $imgH = 18;
+        $imgX = $left + ($logoW - $imgW) / 2;
+        $imgY = $top + ($cellH - $imgH) / 2;
+        $this->Image(__DIR__ . '/../../lib/logo.jpeg', $imgX, $imgY, $imgW, $imgH);
+    }
+
+    // -------------------------------
+    // Bloque central
+    // -------------------------------
+    $this->SetXY($left + $logoW, $top);
+
+    // Título principal
+    $this->SetFont('Arial', 'B', 10);
+    $this->SetFillColor(207, 226, 243);
+    $this->Cell($centerW, 7, txt("FORMATO DE CALIDAD"), 1, 2, 'C', true);
+
+    // Subtítulo (multilínea dentro del marco)
+    $this->SetFont('Arial','B',12);
+    $this->MultiCell($centerW, $lineH, $text, 1, 'C');
+
+    // Contacto
+    $this->SetFont('Arial','',8);
+    $this->Cell($centerW, 8, txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"), 1, 0, 'C');
+
+    // Ajustar altura si quedó más bajo que el logo o número
+    $yEnd = $this->GetY();
+    $centerUsedH = $yEnd - $top;
+    if ($centerUsedH < $cellH) {
+        $this->Rect($left + $logoW, $top, $centerW, $cellH); // marco completo
+    }
+
+    // -------------------------------
+    // Cuadro de número
+    // -------------------------------
+    $this->SetXY($left + $logoW + $centerW, $top);
+    $this->Rect($this->GetX(), $this->GetY(), $numW, $cellH);
+
+    $this->SetFont('Arial','',9);
+    $this->SetXY($this->GetX(), $this->GetY() + ($cellH/2) - 3);
+    $this->Cell($numW, 6, "001-N" . chr(176) . str_pad($this->mantenimientoId ?? '', 6, "0", STR_PAD_LEFT), 0, 1, 'C');
+
+    // -------------------------------
+    // Espaciado después del header
+    // -------------------------------
+    $this->Ln(6);
+    $this->SetY($top + $cellH + 10);
+}
+
+
+
     }
 
     // Construir PDF
