@@ -128,6 +128,9 @@ function generarPDF(PDO $pdo, int $id) {
             $this->Cell($numCellW, 6, "001-N°" . str_pad($this->mantenimientoId ?? '', 6, "0", STR_PAD_LEFT), 0, 1, 'C');
 
             $this->Ln(6);
+
+            // 👉 ESTA LÍNEA ES CLAVE: baja el cursor debajo del header
+            $this->SetY($top + $cellH + 15);
         }
         public function Footer() {
             $this->SetY(-15);
