@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $trabajos = $_POST['trabajos'] ?? '';
     $observaciones = $_POST['observaciones'] ?? '';
     $parametros = $_POST['parametros'] ?? [];
+    $equipos = $_POST['equipos'] ?? []; 
 
     // Guardar firmas
     function saveSignature($dataUrl, $name) {
@@ -45,7 +46,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
-
+    $equiposGuardados = [];
+    for ($i = 1; $i <= 7; $i++) {
+        $equiposGuardados[$i] = $equipos[$i]['id_equipo'] ?? null;
+    }
     
 
 
