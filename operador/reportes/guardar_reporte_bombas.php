@@ -142,7 +142,7 @@ function generarPDF(PDO $pdo, int $id) {
 
     // Contacto
     $this->SetFont('Arial','',8);
-    $this->Cell($centerW, 8, txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"), 1, 0, 'C');
+    $this->Cell($centerW, 8, txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"), 1, 2, 'C');
 
     // Ajustar altura si quedó más bajo que el logo o número
     $yEnd = $this->GetY();
