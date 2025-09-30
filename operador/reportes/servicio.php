@@ -339,6 +339,17 @@ document.getElementById('formReporte').addEventListener('submit', function(){
   if (!sigCliente.isEmpty()) document.getElementById('firma_cliente_input').value = sigCliente.toDataURL();
   if (!sigSupervisor.isEmpty()) document.getElementById('firma_supervisor_input').value = sigSupervisor.toDataURL();
   if (!sigTecnico.isEmpty()) document.getElementById('firma_tecnico_input').value = sigTecnico.toDataURL();
+
+
+   // Preguntar antes de guardar
+    if (confirm("¿Estás seguro de guardar el reporte?")) {
+        // Redirigir al guardar y luego a mis_mantenimientos
+        this.action = "servicio.php"; // mantiene la acción
+        this.submit(); // enviar formulario
+        // Después de guardar, redirigir en PHP o en el header
+        // Si quieres redirigir aquí directamente, puedes usar:
+        window.location.href = "https://refriservis.seguricloud.com/operador/mis_mantenimientos.php";
+    }
 });
 
 $(document).ready(function(){
