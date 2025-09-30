@@ -285,7 +285,6 @@ for ($i = 1; $i <= 7; $i++) {
         </tbody>
       </table>
     </div>
-
     <!-- ACTIVIDADES A REALIZAR -->
     <h6>ACTIVIDADES A REALIZAR</h6>
     <div class="table-responsive mb-3">
@@ -325,22 +324,39 @@ for ($i = 1; $i <= 7; $i++) {
             "Megar y registrar el estado del aislamiento del motor eléctrico"
           ];
 
+          // opciones de frecuencia estándar
+          $frecuencias = ["Diaria", "Semanal", "Mensual", "Trimestral", "Semestral", "Anual", "Cuando se requiera"];
+
           foreach($actividades as $index => $act):
+            // Recupera frecuencia guardada si existe
+            $frecuenciaSel = isset($m["act_{$index}_freq"]) ? $m["act_{$index}_freq"] : "";
           ?>
           <tr>
             <td class="text-start"><?= htmlspecialchars($act) ?></td>
             <?php for($i=1;$i<=7;$i++): ?>
               <td>
-                <input type="checkbox" name="actividades[<?= $index ?>][<?= $i ?>]" value="1" 
-                <?= isset($m["act_{$index}_$i"]) && $m["act_{$index}_$i"]==1 ? 'checked' : '' ?>>
+                <input type="checkbox" 
+                  name="actividades[<?= $index ?>][dias][<?= $i ?>]" 
+                  value="1" 
+                  <?= isset($m["act_{$index}_$i"]) && $m["act_{$index}_$i"]==1 ? 'checked' : '' ?>>
               </td>
             <?php endfor; ?>
-            <td><!-- Frecuencia (puedes llenar manual o dinámico) --></td>
+            <td>
+              <select name="actividades[<?= $index ?>][frecuencia]" class="form-select form-select-sm">
+                <option value="">--</option>
+                <?php foreach($frecuencias as $f): ?>
+                  <option value="<?= $f ?>" <?= $frecuenciaSel==$f ? 'selected' : '' ?>>
+                    <?= $f ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </td>
           </tr>
           <?php endforeach; ?>
         </tbody>
       </table>
     </div>
+
 
 
 
