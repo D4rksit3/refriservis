@@ -286,6 +286,67 @@ for ($i = 1; $i <= 7; $i++) {
       </table>
     </div>
 
+    <!-- ACTIVIDADES A REALIZAR -->
+    <h6>ACTIVIDADES A REALIZAR</h6>
+    <div class="table-responsive mb-3">
+      <table class="table table-bordered table-sm text-center">
+        <thead class="table-light">
+          <tr>
+            <th>Actividad</th>
+            <?php for($i=1;$i<=7;$i++): ?>
+              <th><?= str_pad($i, 2, "0", STR_PAD_LEFT) ?></th>
+            <?php endfor; ?>
+            <th>Frecuencia</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php
+          $actividades = [
+            "Inspección ocular del equipo en funcionamiento",
+            "Verificación del estado de superficies y aseo general del equipo",
+            "Medición y registro de parámetros de operación (amperaje, voltaje, potencia)",
+            "Inspección de estado del sello mecánico",
+            "Inspección de manómetros y termómetros",
+            "Inspección de rodamientos de motor y bomba centrífuga",
+            "Inspección del acoplamiento y ajuste de prisioneros",
+            "Medición y registro de consumos eléctricos",
+            "Ajuste de conexiones eléctricas del motor",
+            "Revisión de variador de velocidad",
+            "Lubricación de rodamientos de acuerdo a recomendaciones del fabricante",
+            "Revisión de los pernos de la base y motor (requiere uso de torquímetro)",
+            "Pintado externo del motor y bomba manteniendo color original (dieléctrica)",
+            "Prueba de funcionamiento y verificación de condiciones operativas",
+            "Lubricación y engrase de la bomba",
+            "Revisión y Ajuste de la prensa estopa y/o sello mecánico",
+            "Revisión y/o cambio de empaquetaduras de O-rings",
+            "Revisión y cambio de borneras eléctricas",
+            "Cambio de empaquetaduras, sellos y rodamientos en caso se requiera",
+            "Pintado de las válvulas y de las tuberías de distribución si lo requiere",
+            "Megar y registrar el estado del aislamiento del motor eléctrico"
+          ];
+
+          foreach($actividades as $index => $act):
+          ?>
+          <tr>
+            <td class="text-start"><?= htmlspecialchars($act) ?></td>
+            <?php for($i=1;$i<=7;$i++): ?>
+              <td>
+                <input type="checkbox" name="actividades[<?= $index ?>][<?= $i ?>]" value="1" 
+                <?= isset($m["act_{$index}_$i"]) && $m["act_{$index}_$i"]==1 ? 'checked' : '' ?>>
+              </td>
+            <?php endfor; ?>
+            <td><!-- Frecuencia (puedes llenar manual o dinámico) --></td>
+          </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+
+
+
+
+
+
     <!-- TRABAJOS / OBSERVACIONES -->
     <div class="mb-3">
       <label>Trabajos realizados</label>
