@@ -60,14 +60,13 @@ function generarPDF(PDO $pdo, int $id) {
             $stmtEq = $pdo->prepare("SELECT * FROM equipos WHERE id_equipo = ? LIMIT 1");
             $stmtEq->execute([$eqId]);
             $row = $stmtEq->fetch(PDO::FETCH_ASSOC);
-            if ($row) $equipos[$i] = $row;
-            else $equipos[$i] = null;
+            $equipos[$i] = $row ?: null;
         } else {
             $equipos[$i] = null;
         }
     }
 
-    // parámetros (esperamos JSON con la estructura generada por el formulario)
+    // parámetros (JSON)
     $parametrosStored = [];
     if (!empty($m['parametros'])) {
         $decoded = json_decode($m['parametros'], true);
@@ -89,15 +88,13 @@ function generarPDF(PDO $pdo, int $id) {
         public $mantenimientoId;
         public function Header() {
             global $m;
-            // Mantener bordes y estilo similar al HTML-proporcionado
             $left = $this->GetX();
             $top = $this->GetY();
 
-            // Logo con celda bordeada
+            // Logo
             $cellW = 40; $cellH = 25;
-            $this->Rect($left, $top, $cellW, $cellH); // borde del recuadro
+            $this->Rect($left, $top, $cellW, $cellH);
             if (file_exists(__DIR__ . '/../../lib/logo.jpeg')) {
-                // Imagen centrada dentro del recuadro
                 $imgW = 30; $imgH = 18;
                 $imgX = $left + ($cellW - $imgW) / 2;
                 $imgY = $top + ($cellH - $imgH) / 2;
@@ -105,21 +102,19 @@ function generarPDF(PDO $pdo, int $id) {
             }
             $this->SetXY($left + $cellW + 2, $top);
 
-            // Título en dos filas con fondo (imitando el diseño)
+            // Título
             $this->SetFont('Arial', 'B', 10);
             $this->SetFillColor(207, 226, 243);
             $this->Cell(110, 7, txt("FORMATO DE CALIDAD"), 1, 1, 'C', true);
-            // Título principal
             $this->SetX($left + $cellW + 2);
             $this->SetFont('Arial','B',12);
             $this->Cell(110, 10, txt("REPORTE DE SERVICIO TÉCNICO"), 1, 1, 'C');
-            // Contacto fila
             $this->SetX($left + $cellW + 2);
             $this->SetFont('Arial','',8);
             $this->Cell(110, 8, txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"), 1, 0, 'C');
 
-            // Número del reporte a la derecha
-            $this->SetXY($left + $cellW + 2 + 110 + 4, $top); // algo a la derecha
+            // Número
+            $this->SetXY($left + $cellW + 2 + 110 + 4, $top);
             $this->SetFont('Arial','',9);
             $numCellW = 40; $numCellH = 25;
             $this->Rect($this->GetX(), $this->GetY(), $numCellW, $numCellH);
@@ -128,7 +123,6 @@ function generarPDF(PDO $pdo, int $id) {
 
             $this->Ln(6);
         }
-
         public function Footer() {
             $this->SetY(-15);
             $this->SetFont('Arial','I',8);
@@ -192,7 +186,6 @@ function generarPDF(PDO $pdo, int $id) {
     $pdf->SetFont('Arial','B',9);
     $pdf->Cell(0,7, txt("Parámetros de Funcionamiento (Antes / Después)"), 1, 1, 'C');
 
-    // Etiquetas (mismas que el formulario)
     $labels = [
         'Corriente eléctrica nominal (Amperios) L1',
         'Corriente L2','Corriente L3',
@@ -200,19 +193,13 @@ function generarPDF(PDO $pdo, int $id) {
         'Presión de descarga (PSI)','Presión de succión (PSI)'
     ];
 
-    // Layout compacto para que entre en A4: labelWidth + 7*(2*colW) <= ancho_util
     $pageWidth   = $pdf->GetPageWidth();
-    $margins     = $pdf->GetMargins();
-    $leftMargin  = $margins['left'];
-    $rightMargin = $margins['right'];
+    $leftMargin  = $pdf->lMargin;
+    $rightMargin = $pdf->rMargin;
 
     $usableW = $pageWidth - $leftMargin - $rightMargin;
     $labelW  = 50;
-    $colW    = floor(($usableW - $labelW) / (7 * 2)); // ancho para Antes/Desp por equipo
-
-
-
-
+    $colW    = floor(($usableW - $labelW) / (7 * 2));
 
     $pdf->SetFont('Arial','B',7);
     $pdf->Cell($labelW,7, txt("Medida"), 1, 0, 'C');
@@ -229,7 +216,6 @@ function generarPDF(PDO $pdo, int $id) {
         for ($i = 1; $i <= 7; $i++) {
             $antes = $parametrosStored[$hash][$i]['antes'] ?? ($parametrosStored[$label][$i]['antes'] ?? "");
             $desp  = $parametrosStored[$hash][$i]['despues'] ?? ($parametrosStored[$label][$i]['despues'] ?? "");
-            // Normalizar a string
             $pdf->Cell($colW,7, txt((string)$antes), 1, 0);
             $pdf->Cell($colW,7, txt((string)$desp), 1, 0);
         }
@@ -254,17 +240,15 @@ function generarPDF(PDO $pdo, int $id) {
         $pdf->Ln(2);
 
         $colsPerRow = 3;
-        $imgCellW = ($usableW - 4) / $colsPerRow; // espacio para 3 por fila
+        $imgCellW = ($usableW - 4) / $colsPerRow;
         $imgCellH = 50;
         $colCounter = 0;
         foreach ($fotos as $foto) {
             $x = $pdf->GetX();
             $y = $pdf->GetY();
-            // dibujar borde del "recuadro" imagen
             $pdf->Rect($x, $y, $imgCellW, $imgCellH);
             $fpath = __DIR__ . "/../../uploads/fotos/" . $foto;
             if (file_exists($fpath)) {
-                // insertar imagen centrada dentro del recuadro (reduciendo margen)
                 $maxW = $imgCellW - 6;
                 $maxH = $imgCellH - 6;
                 list($iw, $ih) = getimagesize($fpath);
@@ -278,7 +262,6 @@ function generarPDF(PDO $pdo, int $id) {
                 $pdf->SetXY($x, $y + ($imgCellH/2) - 3);
                 $pdf->Cell($imgCellW, 6, txt("[No encontrada]"), 0, 0, 'C');
             }
-            // avanzar X
             $pdf->SetXY($x + $imgCellW + 2, $y);
             $colCounter++;
             if ($colCounter >= $colsPerRow) {
@@ -289,12 +272,11 @@ function generarPDF(PDO $pdo, int $id) {
         if ($colCounter > 0) $pdf->Ln($imgCellH + 4);
     }
 
-    // ---------- FIRMAS (imágenes arriba y texto debajo) ----------
+    // ---------- FIRMAS ----------
     $pdf->Ln(4);
     $pdf->SetFont('Arial','',9);
 
     $firmaBase = __DIR__ . "/../../uploads/firmas/";
-    // Primero fila de imágenes (si existen) con altura 30
     $sigW = ($usableW - 4) / 3;
     $sigH = 30;
     $sigFiles = [
@@ -302,11 +284,10 @@ function generarPDF(PDO $pdo, int $id) {
         $m['firma_supervisor'] ?? null,
         $m['firma_tecnico'] ?? null
     ];
-    // Imagenes (centradas en celdas)
-    foreach ($sigFiles as $idx => $sfile) {
+    foreach ($sigFiles as $sfile) {
         $x = $pdf->GetX();
         $y = $pdf->GetY();
-        $pdf->Rect($x, $y, $sigW, $sigH); // borde
+        $pdf->Rect($x, $y, $sigW, $sigH);
         if ($sfile && file_exists($firmaBase . $sfile)) {
             list($iw, $ih) = getimagesize($firmaBase . $sfile);
             $ratio = min(($sigW - 6) / $iw, ($sigH - 6) / $ih, 1);
@@ -320,13 +301,11 @@ function generarPDF(PDO $pdo, int $id) {
     }
     $pdf->Ln($sigH + 2);
 
-    // Etiquetas debajo
     $pdf->Cell($sigW, 8, txt("Firma Cliente"), 1, 0, 'C');
     $pdf->Cell($sigW, 8, txt("Firma Supervisor"), 1, 0, 'C');
     $pdf->Cell($sigW, 8, txt("Firma Técnico"), 1, 1, 'C');
 
     // ----------------- Forzar descarga -----------------
-    // Limpiar buffer por si acaso (previene el error "Some data has already been output")
     if (ob_get_length()) {
         @ob_end_clean();
     }
@@ -337,77 +316,55 @@ function generarPDF(PDO $pdo, int $id) {
 
 // ----- FLUJO: POST guarda y genera, GET solo genera -----
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Guardar los datos enviados y luego generar PDF
     $mantenimiento_id = intval($_POST['mantenimiento_id'] ?? 0);
     if (!$mantenimiento_id) {
         http_response_code(400);
         exit("ID de mantenimiento no proporcionado en POST.");
     }
 
-    // Trabajos / observaciones / parámetros
     $trabajos = $_POST['trabajos'] ?? '';
     $observaciones = $_POST['observaciones'] ?? '';
     $parametros = $_POST['parametros'] ?? [];
 
-    // Guardar firmas (devuelve basename o null)
-    $firma_cliente = saveSignatureFile($_POST['firma_cliente'] ?? '', 'cliente');
-    $firma_supervisor = saveSignatureFile($_POST['firma_supervisor'] ?? '', 'supervisor');
-    $firma_tecnico = saveSignatureFile($_POST['firma_tecnico'] ?? '', 'tecnico');
+    $firma_cliente = saveSignatureFile($_POST['firma_cliente'] ?? '', "cliente");
+    $firma_supervisor = saveSignatureFile($_POST['firma_supervisor'] ?? '', "supervisor");
+    $firma_tecnico = saveSignatureFile($_POST['firma_tecnico'] ?? '', "tecnico");
 
-    // Guardar fotos
-    $fotos_guardadas = [];
+    $stmt = $pdo->prepare("SELECT fotos FROM mantenimientos WHERE id=?");
+    $stmt->execute([$mantenimiento_id]);
+    $fotosExist = $stmt->fetchColumn();
+    $fotosExistArr = $fotosExist ? json_decode($fotosExist, true) : [];
+    if (!is_array($fotosExistArr)) $fotosExistArr = [];
+
     if (!empty($_FILES['fotos']['name'][0])) {
         $dir = __DIR__ . "/../../uploads/fotos/";
-        if (!is_dir($dir)) mkdir($dir, 0777, true);
+        if (!is_dir($dir)) mkdir($dir,0777,true);
         foreach ($_FILES['fotos']['tmp_name'] as $k => $tmp) {
             if (is_uploaded_file($tmp)) {
-                $original = basename($_FILES['fotos']['name'][$k]);
-                $fileName = time() . "_" . bin2hex(random_bytes(4)) . "_" . $original;
-                move_uploaded_file($tmp, $dir . $fileName);
-                $fotos_guardadas[] = $fileName;
+                $base = time()."_".bin2hex(random_bytes(4))."_".basename($_FILES['fotos']['name'][$k]);
+                move_uploaded_file($tmp, $dir.$base);
+                $fotosExistArr[] = $base;
             }
         }
     }
 
-    // Guardar JSON de parámetros (tal como viene del form)
-    $paramJson = json_encode($parametros);
-
-    // Actualizar la fila en mantenimientos
-    $stmt = $pdo->prepare("UPDATE mantenimientos SET 
-        trabajos = ?, 
-        observaciones = ?, 
-        parametros = ?, 
-        firma_cliente = ?, 
-        firma_supervisor = ?, 
-        firma_tecnico = ?, 
-        fotos = ?, 
-        reporte_generado = 1,
-        modificado_en = NOW(),
-        modificado_por = ?
-        WHERE id = ?");
-    $stmt->execute([
+    $update = $pdo->prepare("UPDATE mantenimientos SET trabajos=?, observaciones=?, parametros=?, firma_cliente=COALESCE(?,firma_cliente), firma_supervisor=COALESCE(?,firma_supervisor), firma_tecnico=COALESCE(?,firma_tecnico), fotos=? WHERE id=?");
+    $update->execute([
         $trabajos,
         $observaciones,
-        $paramJson,
+        json_encode($parametros),
         $firma_cliente,
         $firma_supervisor,
         $firma_tecnico,
-        json_encode($fotos_guardadas),
-        $_SESSION['usuario_id'] ?? null,
+        json_encode($fotosExistArr),
         $mantenimiento_id
     ]);
 
-    // Generar PDF y ofrecer descarga
     generarPDF($pdo, $mantenimiento_id);
 
 } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
-    $mantenimiento_id = intval($_GET['id']);
-    if (!$mantenimiento_id) {
-        http_response_code(400);
-        exit("ID inválido.");
-    }
-    generarPDF($pdo, $mantenimiento_id);
+    generarPDF($pdo, intval($_GET['id']));
 } else {
-    // Si se accede sin parámetros mostramos un mensaje simple (no se usa para descarga)
-    echo "Accede a este archivo mediante el formulario de reporte (POST) o con ?id= (GET).";
+    http_response_code(400);
+    echo "Método inválido.";
 }
