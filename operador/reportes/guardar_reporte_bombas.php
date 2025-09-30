@@ -108,17 +108,33 @@ function generarPDF(PDO $pdo, int $id) {
             }
             $this->SetXY($left + $cellW + 2, $top);
 
-            // Título
+            // Título principal
             $this->SetFont('Arial', 'B', 10);
             $this->SetFillColor(207, 226, 243);
             $this->Cell(110, 7, txt("FORMATO DE CALIDAD"), 1, 1, 'C', true);
+
+            // Subtítulo (dos líneas con MultiCell)
             $this->SetX($left + $cellW + 2);
             $this->SetFont('Arial','B',12);
-            $this->Cell(110, 10, txt("FORMATO DE CALIDAD
-CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA"), 1, 1, 'C');
+            $this->MultiCell(
+                110, // ancho
+                8,   // alto por línea
+                txt("FORMATO DE CALIDAD\nCHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA"),
+                1,   // borde
+                'C'  // alineación centrada
+            );
+
+            // Línea de contacto
             $this->SetX($left + $cellW + 2);
             $this->SetFont('Arial','',8);
-            $this->Cell(110, 8, txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"), 1, 0, 'C');
+            $this->Cell(
+                110,
+                8,
+                txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"),
+                1,
+                0,
+                'C'
+            );
 
             // Número
             $this->SetXY($left + $cellW + 2 + 110 + 4, $top);
