@@ -95,27 +95,24 @@ $mapaReportes = [
               <p class="card-text mb-2"><b>Estado:</b> <?= ucfirst($r['estado']) ?></p>
 
               <div class="d-flex gap-2">
-                <?php
-                  $categoria = $r['categoria'];
-                  $urlReporte = $mapaReportes[$categoria] ?? '/operador/form_reporte.php';
-                ?>
+                 <?php
+                        $categoria = $r['categoria'];
+                        $urlReporte = $mapaReportes[$categoria] ?? '/operador/form_reporte.php';
+                        $urlDescarga = "/operador/reportes/guardar_reporte_servicio.php?id=" . $r['id'];
+                    ?>
 
-                <?php if ($r['reporte_generado'] && $r['estado'] !== 'finalizado'): ?>
-                  <a href="<?= $urlReporte ?>?id=<?= $r['id'] ?>" 
-                    class="btn btn-secondary btn-sm w-100">Ver / Editar Reporte</a>
+                    <?php if ($r['reporte_generado'] && $r['estado'] !== 'finalizado'): ?>
+                        <a href="<?= $urlReporte ?>?id=<?= $r['id'] ?>" 
+                           class="btn btn-secondary btn-sm w-100">Ver / Editar Reporte</a>
 
-                <?php elseif ($r['estado'] === 'pendiente' || $r['estado'] === 'en proceso'): ?>
-                  <a href="<?= $urlReporte ?>?id=<?= $r['id'] ?>" 
-                    class="btn btn-outline-success btn-sm w-100">
-                    Generar Reporte
-                  </a>
+                    <?php elseif ($r['estado'] === 'pendiente' || $r['estado'] === 'en proceso'): ?>
+                        <a href="<?= $urlReporte ?>?id=<?= $r['id'] ?>" 
+                           class="btn btn-outline-success btn-sm w-100">Generar Reporte</a>
 
-                <?php elseif ($r['estado'] === 'finalizado'): ?>
-                  <a href="<?= $urlDescarga ?>" 
-                    class="btn btn-primary btn-sm w-100" target="_blank">
-                    Descargar Reporte
-                  </a>
-                <?php endif; ?>
+                    <?php elseif ($r['estado'] === 'finalizado'): ?>
+                        <a href="<?= $urlDescarga ?>" 
+                           class="btn btn-primary btn-sm w-100" target="_blank">Descargar Reporte</a>
+                    <?php endif; ?>
               </div>
             </div>
           </div>
