@@ -72,7 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       equipo7 = ?, 
       reporte_generado = 1,
       modificado_en = NOW(),
-      modificado_por = ?
+      modificado_por = ?,
+      estado = 'finalizado'
       WHERE id = ?");
   $stmt->execute([
       $trabajos,
