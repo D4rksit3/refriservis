@@ -12,7 +12,7 @@ $cuentas = [
   'usuarios' => $pdo->query('SELECT COUNT(*) FROM usuarios')->fetchColumn(),
   'clientes' => $pdo->query('SELECT COUNT(*) FROM clientes')->fetchColumn(),
   'equipos' => $pdo->query('SELECT COUNT(*) FROM equipos')->fetchColumn(),
-  'mantenimientos' => $pdo->query('SELECT COUNT(*) FROM mantenimientos')->fetchColumn(),
+  /* 'mantenimientos' => $pdo->query('SELECT COUNT(*) FROM mantenimientos')->fetchColumn(), */
 ];
 ?>
 <div class="row g-3">

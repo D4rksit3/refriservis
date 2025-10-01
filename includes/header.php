@@ -64,7 +64,7 @@ $rol = $_SESSION['rol'] ?? null;
             </li>
 
             <!-- Lo que ya tenías -->
-            <li class="nav-item"><a class="nav-link" href="/admin/mantenimientos.php">Mantenimientos</a></li>
+            <!-- <li class="nav-item"><a class="nav-link" href="/admin/mantenimientos.php">Mantenimientos</a></li> -->
 
           <?php elseif($rol==='digitador'): ?>
             <li class="nav-item"><a class="nav-link" href="/digitador/index.php">Mi Panel</a></li>
