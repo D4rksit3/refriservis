@@ -12,7 +12,7 @@ require_once __DIR__.'/../config/db.php';
 require_once __DIR__.'/../includes/header.php';
 
 $errors = [];
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['titulo'])) {
     $titulo = trim($_POST['titulo'] ?? '');
     $descripcion = trim($_POST['descripcion'] ?? '');
     $fecha = $_POST['fecha'] ?? date('Y-m-d');
@@ -84,14 +84,17 @@ $categorias = $pdo->query('SELECT nombre FROM categoria ORDER BY nombre')->fetch
 
         <div class="col-4">
             <label class="form-label">Cliente</label>
-            <select name="cliente_id" class="form-select">
-                <option value="">-- Ninguno --</option>
-                <?php foreach($clientes as $c): ?>
-                    <option value="<?=$c['id']?>">
-                        <?=htmlspecialchars($c['cliente'].' - '.$c['direccion'].' - '.$c['telefono'])?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+            <div class="input-group">
+                <select name="cliente_id" id="cliente_id" class="form-select">
+                    <option value="">-- Ninguno --</option>
+                    <?php foreach($clientes as $c): ?>
+                        <option value="<?=$c['id']?>">
+                            <?=htmlspecialchars($c['cliente'].' - '.$c['direccion'].' - '.$c['telefono'])?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoCliente">+ Nuevo</button>
+            </div>
         </div>
 
         <div class="col-4">
@@ -132,6 +135,45 @@ $categorias = $pdo->query('SELECT nombre FROM categoria ORDER BY nombre')->fetch
     </form>
 </div>
 
+<!-- Modal Nuevo Cliente -->
+<div class="modal fade" id="modalNuevoCliente" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="formNuevoCliente" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Agregar Cliente</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body row g-2">
+        <div class="col-12">
+            <label class="form-label">Cliente*</label>
+            <input type="text" name="cliente" class="form-control" required>
+        </div>
+        <div class="col-12">
+            <label class="form-label">Dirección*</label>
+            <input type="text" name="direccion" class="form-control" required>
+        </div>
+        <div class="col-6">
+            <label class="form-label">Teléfono*</label>
+            <input type="text" name="telefono" class="form-control" required>
+        </div>
+        <div class="col-6">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control">
+        </div>
+        <div class="col-12">
+            <label class="form-label">Responsable</label>
+            <input type="text" name="responsable" class="form-control">
+        </div>
+        <input type="hidden" name="estatus" value="1">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- jQuery primero -->
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 
@@ -146,5 +188,21 @@ $categorias = $pdo->query('SELECT nombre FROM categoria ORDER BY nombre')->fetch
 <script>
 $(document).ready(function(){
     $('.selectpicker').selectpicker();
+
+    // Enviar formulario nuevo cliente por AJAX
+    $('#formNuevoCliente').on('submit', function(e){
+        e.preventDefault();
+        $.post('/mantenimientos/guardar_cliente.php', $(this).serialize(), function(data){
+            if(data.success){
+                // Agregar el nuevo cliente al select
+                $('#cliente_id').append(
+                    $('<option>', { value: data.id, text: data.text }).prop('selected', true)
+                );
+                $('#modalNuevoCliente').modal('hide');
+            } else {
+                alert(data.error || 'Error al guardar cliente');
+            }
+        }, 'json');
+    });
 });
 </script>
