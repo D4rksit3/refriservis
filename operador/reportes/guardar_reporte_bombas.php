@@ -280,7 +280,7 @@ function generarPDF(PDO $pdo, int $id) {
         $pdf->Cell(0,6,txt("$k: $v"),1,1);
     }
     $pdf->Ln(3); */
-
+ 
     // ---------- ACTIVIDADES A REALIZAR ----------
     $pdf->SetFont('Arial','B',9);
     $pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
