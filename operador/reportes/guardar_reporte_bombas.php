@@ -282,9 +282,15 @@ function generarPDF(PDO $pdo, int $id) {
     $pdf->Ln(3); */
  
     // ---------- NUEVA PÁGINA ----------
-    $pdf->AddPage();
 
+
+
+
+        
+    // ---------- NUEVA PÁGINA ----------
+    $pdf->AddPage();
     // ---------- ACTIVIDADES A REALIZAR ----------
+    $pdf->AddPage(); // 👉 Si quieres que salga en nueva hoja
     $pdf->SetFont('Arial','B',9);
     $pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
 
@@ -327,10 +333,19 @@ function generarPDF(PDO $pdo, int $id) {
 
     // Decodificar JSON de la BD
     $actividadesBD = json_decode($row['actividades'], true);
+    if (!is_array($actividadesBD)) {
+        $actividadesBD = [];
+    }
 
     // Recorremos la lista fija
     foreach ($actividadesList as $idx => $nombre) {
         $actividadBD = $actividadesBD[$idx] ?? ["dias"=>[], "frecuencia"=>null];
+
+        // Normalizar dias
+        $diasMarcados = $actividadBD['dias'] ?? [];
+        if (!is_array($diasMarcados)) {
+            $diasMarcados = json_decode($diasMarcados, true) ?: [];
+        }
 
         // Guardar posición inicial
         $x = $pdf->GetX();
@@ -339,7 +354,7 @@ function generarPDF(PDO $pdo, int $id) {
         // MultiCell SOLO para el nombre
         $pdf->MultiCell(80,5, txt($nombre),1,'L');
 
-        // Altura de la celda de texto
+        // Altura real de la celda usada
         $altura = $pdf->GetY() - $y;
 
         // Regresar posición a la derecha del texto
@@ -347,20 +362,22 @@ function generarPDF(PDO $pdo, int $id) {
 
         // Columnas de días (01-07)
         for ($i=1;$i<=7;$i++) {
-            $marca = (in_array($i, $actividadBD['dias'] ?? [])) ? "✔" : "";
-            $pdf->Cell(10,$altura, txt($marca), 1, 0, 'C');
+            $marca = in_array($i, $diasMarcados) ? "X" : "";
+            $pdf->Cell(10,$altura, $marca, 1, 0, 'C');
         }
 
         // Columnas de frecuencia
         foreach (["B","T","S","A"] as $f) {
-            $marca = ($actividadBD['frecuencia'] === $f) ? "✔" : "";
-            $pdf->Cell(8,$altura, txt($marca), 1, 0, 'C');
+            $marca = ($actividadBD['frecuencia'] === $f) ? "X" : "";
+            $pdf->Cell(8,$altura, $marca, 1, 0, 'C');
         }
 
         // Bajar cursor a la siguiente fila
         $pdf->Ln();
     }
+
     $pdf->Ln(3);
+
 
 
 
