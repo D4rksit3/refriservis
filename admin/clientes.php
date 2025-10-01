@@ -9,7 +9,7 @@ if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'admin') {
 require_once __DIR__.'/../config/db.php';
 require_once __DIR__.'/../includes/header.php';
 
-$action = $_REQUEST['action'] ?? 'list'; 
+$action = $_GET['action'] ?? 'list';
 
 // =========================
 // PROCESAR FORMULARIO
@@ -45,15 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // =========================
 // ELIMINAR CLIENTE
 // =========================
-if ($action === 'delete' && $_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['id'])) {
-    $id = (int)$_POST['id'];
-    if($id > 0){
-        $stmt = $pdo->prepare('DELETE FROM clientes WHERE id=?');
-        $stmt->execute([$id]);
-    }
-    header('Location: clientes.php?ok=1');
-    exit;
-}exit;
+if ($action === 'delete' && isset($_GET['id'])) {
+    $pdo->prepare('DELETE FROM clientes WHERE id=?')->execute([(int)$_GET['id']]);
+    header('Location: /admin/clientes.php'); exit;
 }
 
 // =========================
@@ -114,18 +108,7 @@ if ($action === 'list') {
                             </td>
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="/admin/clientes.php?action=edit&id=<?=$c['id']?>">Editar</a>
-                                
-                               <!--  <a class="btn btn-sm btn-outline-danger" href="/admin/clientes.php?action=delete&id=<?=$c['id']?>" onclick="return confirm('Eliminar cliente?')">Eliminar</a>
-                             --><form method="post" action="clientes.php" style="display:inline-block;" onsubmit="return confirm('Eliminar cliente?')">
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="id" value="<?=$c['id']?>">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-                                </form>
-
-
-                            
-                            
-                            
+                                <a class="btn btn-sm btn-outline-danger" href="/admin/clientes.php?action=delete&id=<?=$c['id']?>" onclick="return confirm('Eliminar cliente?')">Eliminar</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
