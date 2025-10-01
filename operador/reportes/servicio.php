@@ -309,16 +309,25 @@ for ($i = 1; $i <= 7; $i++) {
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Cliente</label>
         <div class="firma-box"><canvas id="firmaClienteCanvas"></canvas></div>
+        <div class="mt-1">
+          <button type="button" class="btn btn-sm btn-secondary" onclick="sigCliente.clear()">Limpiar</button>
+        </div>
         <input type="hidden" name="firma_cliente" id="firma_cliente_input">
       </div>
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Supervisor</label>
         <div class="firma-box"><canvas id="firmaSupervisorCanvas"></canvas></div>
+          <div class="mt-1">
+        <button type="button" class="btn btn-sm btn-secondary" onclick="sigSupervisor.clear()">Limpiar</button>
+      </div>
         <input type="hidden" name="firma_supervisor" id="firma_supervisor_input">
       </div>
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Técnico</label>
         <div class="firma-box"><canvas id="firmaTecnicoCanvas"></canvas></div>
+        <div class="mt-1">
+    <button type="button" class="btn btn-sm btn-secondary" onclick="sigTecnico.clear()">Limpiar</button>
+  </div>
         <input type="hidden" name="firma_tecnico" id="firma_tecnico_input">
       </div>
     </div>
@@ -344,6 +353,18 @@ document.getElementById('formReporte').addEventListener('submit', function(){
   if (!sigCliente.isEmpty()) document.getElementById('firma_cliente_input').value = sigCliente.toDataURL();
   if (!sigSupervisor.isEmpty()) document.getElementById('firma_supervisor_input').value = sigSupervisor.toDataURL();
   if (!sigTecnico.isEmpty()) document.getElementById('firma_tecnico_input').value = sigTecnico.toDataURL();
+
+  function resizeCanvas(canvas) {
+      const ratio = Math.max(window.devicePixelRatio || 1, 1);
+      canvas.width = canvas.offsetWidth * ratio;
+      canvas.height = canvas.offsetHeight * ratio;
+      canvas.getContext("2d").scale(ratio, ratio);
+  }
+
+  const canvasCliente = document.getElementById('firmaClienteCanvas');
+  resizeCanvas(canvasCliente);
+  const sigCliente = new SignaturePad(canvasCliente, { backgroundColor: 'rgba(255,255,255,0)' });
+
 
 
    // Preguntar antes de guardar
