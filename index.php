@@ -42,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="UTF-8">
   <title>RefriServis - Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- ✅ importante para móvil -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
@@ -51,7 +52,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       margin: 0;
       height: 100vh;
       display: flex;
+      flex-direction: row; /* por defecto PC: lado a lado */
     }
+
+    /* Panel izquierdo PC */
     .left-panel {
       flex: 1;
       background: linear-gradient(135deg, #0d6efd, #00c6ff);
@@ -73,6 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       text-align: center;
       opacity: 0.9;
     }
+
+    /* Panel derecho PC */
     .right-panel {
       flex: 1;
       display: flex;
@@ -129,10 +135,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       from { opacity: 0; transform: translateY(-10px);}
       to { opacity: 1; transform: translateY(0);}
     }
+
+    /* ✅ Responsivo: en móvil solo el login */
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column; /* apila */
+      }
+      .left-panel {
+        display: none; /* oculta panel izquierdo */
+      }
+      .right-panel {
+        flex: none;
+        width: 100%;
+        height: 100vh;
+        background: linear-gradient(135deg, #0d6efd, #00c6ff); /* mismo fondo en móvil */
+      }
+      .login-card {
+        max-width: 90%;
+        width: 100%;
+        padding: 2rem;
+        border-radius: 0.75rem;
+        background: #fff;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      }
+    }
   </style>
 </head>
 <body>
-  <!-- Panel izquierdo estilo landing -->
+  <!-- Panel izquierdo (PC) -->
   <div class="left-panel">
     <h1>🔧 RefriServis</h1>
     <p>Gestión inteligente de mantenimientos y operaciones. Accede a tu panel de trabajo y mantén todo bajo control.</p>
