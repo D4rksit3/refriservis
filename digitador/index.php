@@ -3,6 +3,8 @@
 session_start();
 if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'digitador') header('Location: /index.php');
 require_once __DIR__.'/../includes/header.php';
+require_once __DIR__.'/../config/db.php';
+
 ?>
 <div class="card p-3">
   <h5>Panel Digitador</h5>
