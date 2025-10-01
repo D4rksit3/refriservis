@@ -9,10 +9,11 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL & ~E_DEPRECATED);
 
 session_start();
-if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
+if (!isset($_SESSION['usuario']) || !in_array($_SESSION['rol'], ['operador', 'digitador'])) {
     header('Location: /../index.php');
     exit;
 }
+
 
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../lib/fpdf.php';
