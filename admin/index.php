@@ -11,7 +11,7 @@ require_once __DIR__.'/../includes/header.php';
 $cuentas = [
   'usuarios' => $pdo->query('SELECT COUNT(*) FROM usuarios')->fetchColumn(),
   'clientes' => $pdo->query('SELECT COUNT(*) FROM clientes')->fetchColumn(),
-  'inventario' => $pdo->query('SELECT COUNT(*) FROM inventario')->fetchColumn(),
+  'equipos' => $pdo->query('SELECT COUNT(*) FROM equipos')->fetchColumn(),
   'mantenimientos' => $pdo->query('SELECT COUNT(*) FROM mantenimientos')->fetchColumn(),
 ];
 ?>
