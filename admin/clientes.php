@@ -108,7 +108,7 @@ if ($action === 'list') {
                             </td>
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="/admin/clientes.php?action=edit&id=<?=$c['id']?>">Editar</a>
-                                <a class="btn btn-sm btn-outline-danger" href="/admin/clientes.php?action=delete&id=<?=$c['id']?>" onclick="return confirm('Eliminar cliente?')">Eliminar</a>
+                                <a class="btn btn-sm btn-outline-danger" href="/admin/usuarios.php?action=delete&id=<?=$c['id']?>" onclick="return confirm('Eliminar cliente?')">Eliminar</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
