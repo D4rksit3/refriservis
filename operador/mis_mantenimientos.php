@@ -131,7 +131,7 @@ $mapaDescargas = [
 
                  <?php elseif ($r['estado'] === 'pendiente' || $r['estado'] === 'en proceso'): ?>
                         <a href="<?= $urlReporte ?>?id=<?= $id ?>" 
-                           class="btn btn-primary-success btn-sm w-100">Generar Reporte</a>
+                           class="btn btn-success btn-sm w-100">Generar Reporte</a>
 
                  <?php elseif ($r['estado'] === 'finalizado'): ?>
                         <a href="<?= $urlDescarga ?>" 
