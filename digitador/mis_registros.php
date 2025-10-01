@@ -17,7 +17,7 @@ if ($_SESSION['rol'] === 'digitador') {
 }
 
 // Traemos los mantenimientos
-$stmt = $pdo->prepare("SELECT * FROM mantenimientos WHERE $where ORDER BY creado_en DESC");
+$stmt = $pdo->prepare("SELECT * FROM mantenimientos /* WHERE $where */ ORDER BY creado_en DESC");
 $stmt->execute($params);
 $rows = $stmt->fetchAll();
 
