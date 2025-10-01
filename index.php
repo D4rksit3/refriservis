@@ -65,25 +65,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       position: relative;
       overflow: hidden;
     }
-    .left-panel svg {
+    .wave {
       position: absolute;
       right: -1px;
       top: 0;
       height: 100%;
-      width: auto;
+      width: 100%;
+      z-index: 1;
+    }
+    .left-panel h1, .left-panel p {
+      z-index: 2;
+      position: relative;
     }
     .left-panel h1 {
-      font-size: 2.4rem;
+      font-size: 2.5rem;
       font-weight: 700;
       margin-bottom: 1rem;
-      z-index: 2;
     }
     .left-panel p {
-      font-size: 1rem;
+      font-size: 1.1rem;
       max-width: 400px;
       text-align: center;
       opacity: 0.9;
-      z-index: 2;
     }
     .right-panel {
       flex: 1;
@@ -95,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     .login-card {
       width: 100%;
-      max-width: 400px;
+      max-width: 380px;
       background: #fff;
       border-radius: 1rem;
       padding: 2.5rem;
@@ -152,9 +155,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="left-panel">
     <h1>🔧 RefriServis</h1>
     <p>Gestión profesional de mantenimientos y operaciones. Accede a tu panel y mantén todo bajo control.</p>
-    <!-- Curva decorativa -->
-    <svg viewBox="0 0 500 500" preserveAspectRatio="none">
-      <path d="M500,0 C350,250 350,250 500,500 L0,500 L0,0 Z" fill="#fff"/>
+
+    <!-- Curva fluida -->
+    <svg class="wave" viewBox="0 0 500 500" preserveAspectRatio="none">
+      <path d="M0,0 C150,200 350,0 500,200 L500,0 Z" fill="#fff"/>
+      <path d="M0,200 C150,400 350,200 500,400 L500,200 Z" fill="#fff" opacity="0.9"/>
     </svg>
   </div>
 
