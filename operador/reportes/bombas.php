@@ -61,9 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($actividades as $idx => $act) {
         $dias = $act['dias'] ?? [];
         $frecuencia = $act['frecuencia'] ?? null;
-
         $actividadesLimpias[$idx] = [
-            'dias' => array_keys($dias), // guardamos solo índices marcados
+            'dias' => array_keys($dias),
             'frecuencia' => $frecuencia
         ];
     }
@@ -73,45 +72,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
     $stmt = $pdo->prepare("UPDATE mantenimientos SET 
-    trabajos = ?, 
-    observaciones = ?, 
-    parametros = ?, 
-    actividades = ?, 
-    firma_cliente = ?, 
-    firma_supervisor = ?, 
-    firma_tecnico = ?, 
-    fotos = ?, 
-    equipo1 = ?, 
-    equipo2 = ?, 
-    equipo3 = ?, 
-    equipo4 = ?, 
-    equipo5 = ?, 
-    equipo6 = ?, 
-    equipo7 = ?, 
-    reporte_generado = 1,
-    modificado_en = NOW(),
-    modificado_por = ?,
-    estado = 'finalizado'
-    WHERE id = ?");
-$stmt->execute([
-    $trabajos,
-    $observaciones,
-    json_encode($parametros),
-    json_encode($actividadesLimpias, JSON_UNESCAPED_UNICODE),
-    $firma_cliente,
-    $firma_supervisor,
-    $firma_tecnico,
-    json_encode($fotos_guardadas),
-    $equiposGuardados[1],
-    $equiposGuardados[2],
-    $equiposGuardados[3],
-    $equiposGuardados[4],
-    $equiposGuardados[5],
-    $equiposGuardados[6],
-    $equiposGuardados[7],
-    $_SESSION['usuario_id'],
-    $mantenimiento_id
-]);
+        trabajos = ?, 
+        observaciones = ?, 
+        parametros = ?, 
+        actividades = ?, 
+        firma_cliente = ?, 
+        firma_supervisor = ?, 
+        firma_tecnico = ?, 
+        fotos = ?, 
+        equipo1 = ?, 
+        equipo2 = ?, 
+        equipo3 = ?, 
+        equipo4 = ?, 
+        equipo5 = ?, 
+        equipo6 = ?, 
+        equipo7 = ?, 
+        reporte_generado = 1,
+        modificado_en = NOW(),
+        modificado_por = ?,
+        estado = 'finalizado'
+        WHERE id = ?");
+    $stmt->execute([
+        $trabajos,
+        $observaciones,
+        json_encode($parametros, JSON_UNESCAPED_UNICODE),
+        json_encode($actividadesLimpias, JSON_UNESCAPED_UNICODE),
+        $firma_cliente,
+        $firma_supervisor,
+        $firma_tecnico,
+        json_encode($fotos_guardadas, JSON_UNESCAPED_UNICODE),
+        $equiposGuardados[1],
+        $equiposGuardados[2],
+        $equiposGuardados[3],
+        $equiposGuardados[4],
+        $equiposGuardados[5],
+        $equiposGuardados[6],
+        $equiposGuardados[7],
+        $_SESSION['usuario_id'],
+        $mantenimiento_id
+    ]);
 
 
     // Si confirmación viene por POST, redirige al dashboard
@@ -138,6 +137,12 @@ $stmt = $pdo->prepare("
 $stmt->execute([$id]);
 $m = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$m) die('Mantenimiento no encontrado');
+
+// Decodificar actividades guardadas
+$actividadesGuardadas = [];
+if (!empty($m['actividades'])) {
+    $actividadesGuardadas = json_decode($m['actividades'], true) ?: [];
+}
 
 // Lista de equipos desde inventario
 $equiposList = $pdo->query("SELECT id_equipo AS id_equipo, Identificador, Marca, Modelo, Ubicacion, Voltaje 
@@ -221,7 +226,7 @@ for ($i = 1; $i <= 7; $i++) {
     <div><strong>FECHA:</strong> <?=htmlspecialchars($m['fecha'] ?? date('Y-m-d'))?></div>
   </div>
 
-  <form action="servicio.php"  id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
+  <form action="bombas.php"  id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
     <input type="hidden" name="mantenimiento_id" value="<?=htmlspecialchars($m['id'])?>">
 
     <!-- TABLA DE EQUIPOS -->
