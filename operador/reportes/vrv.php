@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if($confirmado === 'si'){
         header("Location: https://refriservis.seguricloud.com/operador/mis_mantenimientos.php");
     } else {
-        header("Location: guardar_reporte_bombas.php?id=$mantenimiento_id");
+        header("Location: guardar_reporte_vrv.php?id=$mantenimiento_id");
     }
     exit;
 }
@@ -195,7 +195,7 @@ for ($i = 1; $i <= 7; $i++) {
     <!-- Título y datos -->
     <td width="60%" align="center" style="font-weight: bold; font-size: 13px;">
       <div style="background:#cfe2f3; padding:2px; margin-bottom:3px;">FORMATO DE CALIDAD</div>
-      REPORTE DE SERVICIO TECNICO <br>
+      CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – VRV <br>
       <span style="font-weight: normal;">
         Oficina: (01) 6557907 <br>
         Emergencias: +51 943 048 606 <br>
@@ -226,7 +226,7 @@ for ($i = 1; $i <= 7; $i++) {
     <div><strong>FECHA:</strong> <?=htmlspecialchars($m['fecha'] ?? date('Y-m-d'))?></div>
   </div>
 
-  <form action="bombas.php"  id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
+  <form action="vrv.php"  id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
     <input type="hidden" name="mantenimiento_id" value="<?=htmlspecialchars($m['id'])?>">
 
     <!-- TABLA DE EQUIPOS -->
@@ -335,26 +335,18 @@ for ($i = 1; $i <= 7; $i++) {
     <tbody>
       <?php
       $actividades = [
-        "Revisión de Presión de Aceite",
-        "Revisión de Presión de Descarga y Succión de cada unidad",
-        "Ajuste y revisión de la operación de las válvulas de capacidad del equipo",
-        "Revisión del estado operativo de motores eléctricos y componentes mecánicos",
-        "Ajustes de válvulas reguladoras de presión",
-        "Revisión de fugas en el sistema",
-        "Revisión de Niveles de Refrigerante",
-        "Revisión de Gases no Condensables en el Sistema",
-        "Revisión del estado físico de tuberías de Refrigerante",
-        "Revisión de válvula de expansión termostáticas detectadas con falla en el sistema",
-        "Ajuste de la operación de los controles eléctricos del sistema",
-        "Revisión de Contactores y ajuste de componentes eléctricos",
-        "Revisión/Limpieza de componentes electrónicos",
-        "Revisión de la operación de los instrumentos de control del sistema",
-        "Lubricación de componentes mecánicos exteriores",
-        "Análisis de Vibraciones",
-        "Lubricación de componentes mecánicos interiores",
-        "Análisis de Acidez en el aceite",
-        "Megado de motores",
-        "Lavado químico de intercambiador"
+        "Inspección visual del estado de la unidad exterior, para asegurar que se encuentren sin rastros de aceite o golpes en el intercambiador de calor.",
+        "Revisar el historial de códigos de error acumulados en el histórico de la tarjeta de control principal en la unidad exterior.",
+        "Lavado serpentín condensador con una mescla de acti klean y agua.",
+        "Verificación y ajuste de componentes electromecánicos. Esto deberá incluir a los conectores en las tarjetas electrónicas.",
+        "Limpieza de tarjeta y componentes electrónicos.",
+        "Lubricación de componentes mecánicos.",
+        "Lectura de presiones y parámetros eléctricos.",
+        "Verificar estado de bandeja.",
+        "Limpieza de drenaje.",
+        "Análisis de Acidez en el aceite.",
+        "Megado de motores"
+
       ];
 
       foreach($actividades as $index => $act):

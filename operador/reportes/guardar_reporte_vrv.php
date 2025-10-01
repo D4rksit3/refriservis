@@ -309,26 +309,18 @@ $pdf->SetFont('Arial','',7);
 
 // Lista fija de actividades
 $actividadesList = [
-    "Revisión de Presión de Aceite",
-    "Revisión de Presión de Descarga y Succión de cada unidad",
-    "Ajuste y revisión de la operación de las válvulas de capacidad del equipo",
-    "Revisión del estado operativo de motores eléctricos y componentes mecánicos",
-    "Ajustes de válvulas reguladoras de presión",
-    "Revisión de fugas en el sistema",
-    "Revisión de Niveles de Refrigerante",
-    "Revisión de Gases no Condensables en el Sistema",
-    "Revisión del estado físico de tuberías de Refrigerante",
-    "Revisión de válvula de expansión termostáticas detectadas con falla en el sistema",
-    "Ajuste de la operación de los controles eléctricos del sistema",
-    "Revisión de Contactores y ajuste de componentes eléctricos",
-    "Revisión/Limpieza de componentes electrónicos",
-    "Revisión de la operación de los instrumentos de control del sistema",
-    "Lubricación de componentes mecánicos exteriores",
-    "Análisis de Vibraciones",
-    "Lubricación de componentes mecánicos interiores",
-    "Análisis de Acidez en el aceite",
-    "Megado de motores",
-    "Lavado químico de intercambiador"
+    "Inspección visual del estado de la unidad exterior, para asegurar que se encuentren sin rastros de aceite o golpes en el intercambiador de calor.",
+    "Revisar el historial de códigos de error acumulados en el histórico de la tarjeta de control principal en la unidad exterior.",
+    "Lavado serpentín condensador con una mescla de acti klean y agua.",
+    "Verificación y ajuste de componentes electromecánicos. Esto deberá incluir a los conectores en las tarjetas electrónicas.",
+    "Limpieza de tarjeta y componentes electrónicos.",
+    "Lubricación de componentes mecánicos.",
+    "Lectura de presiones y parámetros eléctricos.",
+    "Verificar estado de bandeja.",
+    "Limpieza de drenaje.",
+    "Análisis de Acidez en el aceite.",
+    "Megado de motores"
+
 ];
 
 // Decodificar JSON de la BD
@@ -460,7 +452,7 @@ $pdf->Ln(3);
     if (ob_get_length()) {
         @ob_end_clean();
     }
-    $fileName = "reporte_servicio_{$m['id']}.pdf";
+    $fileName = "reporte_vrv_{$m['id']}.pdf";
     $pdf->Output('D', $fileName);
     exit;
 }
