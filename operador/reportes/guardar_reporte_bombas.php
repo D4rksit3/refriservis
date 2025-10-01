@@ -288,7 +288,7 @@ function generarPDF(PDO $pdo, int $id) {
 
         
     // ---------- NUEVA PÁGINA ----------
-    $pdf->AddPage();
+ 
     // ---------- ACTIVIDADES A REALIZAR ----------
     $pdf->AddPage(); // 👉 Si quieres que salga en nueva hoja
     $pdf->SetFont('Arial','B',9);
