@@ -103,7 +103,7 @@ function generarPDF(PDO $pdo, int $id) {
 
     // Texto central
     $this->SetFont('Arial','B',12);
-    $text = txt("FORMATO DE CALIDAD\nCHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA");
+    $text = txt("CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS - BOMBA DE AGUA");
 
     // Altura de línea
     $lineH = 6;
