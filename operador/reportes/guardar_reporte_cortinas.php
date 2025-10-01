@@ -228,9 +228,8 @@ function generarPDF(PDO $pdo, int $id) {
 
     $labels = [
         'Corriente eléctrica nominal (Amperios) L1',
-        'Corriente L2','Corriente L3',
-        'Tensión eléctrica nominal V1','Tensión V2','Tensión V3',
-        'Presión de descarga (PSI)','Presión de succión (PSI)'
+        'Corriente L2',
+        'Tensión eléctrica nominal V1','Tensión V2'
     ];
 
     $pageWidth   = $pdf->GetPageWidth();
@@ -309,26 +308,15 @@ $pdf->SetFont('Arial','',7);
 
 // Lista fija de actividades
 $actividadesList = [
-    "Revisión de Presión de Aceite",
-    "Revisión de Presión de Descarga y Succión de cada unidad",
-    "Ajuste y revisión de la operación de las válvulas de capacidad del equipo",
-    "Revisión del estado operativo de motores eléctricos y componentes mecánicos",
-    "Ajustes de válvulas reguladoras de presión",
-    "Revisión de fugas en el sistema",
-    "Revisión de Niveles de Refrigerante",
-    "Revisión de Gases no Condensables en el Sistema",
-    "Revisión del estado físico de tuberías de Refrigerante",
-    "Revisión de válvula de expansión termostáticas detectadas con falla en el sistema",
-    "Ajuste de la operación de los controles eléctricos del sistema",
-    "Revisión de Contactores y ajuste de componentes eléctricos",
-    "Revisión/Limpieza de componentes electrónicos",
-    "Revisión de la operación de los instrumentos de control del sistema",
-    "Lubricación de componentes mecánicos exteriores",
-    "Análisis de Vibraciones",
-    "Lubricación de componentes mecánicos interiores",
-    "Análisis de Acidez en el aceite",
-    "Megado de motores",
-    "Lavado químico de intercambiador"
+        "Desmontaje de equipo",
+        "Limpieza de carcasa de cortina con paño húmedo",
+        "Limpieza de motor con aspiradora",
+        "Lavado de turbina",
+        "Lubricación de componentes mecánicos",
+        "Limpieza de parrillas laterales",
+        "Verificación y ajuste de componentes electromecánicos",
+        "Limpieza de componentes electrónicos",
+        "Pruebas de funcionamiento y toma de parámetros"
 ];
 
 // Decodificar JSON de la BD
