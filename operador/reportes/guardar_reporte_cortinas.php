@@ -103,7 +103,7 @@ function generarPDF(PDO $pdo, int $id) {
 
     // Texto central
     $this->SetFont('Arial','B',12);
-    $text = txt("FORMATO DE CALIDAD\nCHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA");
+    $text = txt("CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – CORTINAS DE AIRE");
 
     // Altura de línea
     $lineH = 6;
@@ -460,7 +460,7 @@ $pdf->Ln(3);
     if (ob_get_length()) {
         @ob_end_clean();
     }
-    $fileName = "reporte_servicio_{$m['id']}.pdf";
+    $fileName = "reporte_cortinas_{$m['id']}.pdf";
     $pdf->Output('D', $fileName);
     exit;
 }
