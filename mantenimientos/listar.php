@@ -1,8 +1,22 @@
 <?php
-// mantenimientos/listar.php
 session_start();
 if (!isset($_SESSION['usuario'])) { header('Location: /index.php'); exit; }
 require_once __DIR__.'/../config/db.php';
+
+// ============================
+// Mapa de descargas por categoría
+// ============================
+$mapaDescargas = [
+    'VRV - FORMATO DE CALIDAD'                            => '/operador/reportes/guardar_reporte_vrv.php',
+    'VENTILACION MECANICA (VEX-VIN) - FORMATO DE CALIDAD' => '/operador/reportes/guardar_reporte_vex_vin.php',
+    'UMA - FORMATO DE CALIDAD'                            => '/operador/reportes/guardar_reporte_uma.php',
+    'SPLIT DECORATIVO - FORMATO DE CALIDAD'               => '/operador/reportes/guardar_reporte_split.php',
+    'ROOFTOP - FORMATO DE CALIDAD'                        => '/operador/reportes/guardar_reporte_rooftop.php',
+    'CORTINAS DE AIRE - FORMATO DE CALIDAD'               => '/operador/reportes/guardar_reporte_cortinas.php',
+    'CHILLERS - FORMATO DE CALIDAD'                       => '/operador/reportes/guardar_reporte_chillers.php',
+    'BOMBAS DE AGUA - FORMATO DE CALIDAD'                 => '/operador/reportes/guardar_reporte_bombas.php',
+    'REPORTE DE SERVICIO TECNICO'                         => '/operador/reportes/guardar_reporte_servicio.php'
+];
 
 // ============================
 // Manejo de AJAX para tabla
@@ -58,6 +72,10 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
         $digitador = $r['digitador_id'] ? $pdo->query("SELECT nombre FROM usuarios WHERE id=".$r['digitador_id'])->fetchColumn() : null;
         $operador = $r['operador_id'] ? $pdo->query("SELECT nombre FROM usuarios WHERE id=".$r['operador_id'])->fetchColumn() : null;
 
+        // URL de descarga según categoría
+        $categoria = $r['categoria'] ?? null; // asegúrate de que la tabla mantenimientos tenga columna 'categoria'
+        $urlDescarga = $categoria && isset($mapaDescargas[$categoria]) ? $mapaDescargas[$categoria] : null;
+
         $result[] = [
             'id'=>$r['id'],
             'titulo'=>htmlspecialchars($r['titulo']),
@@ -68,6 +86,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
             'estado_color'=>$estado_color,
             'digitador'=>htmlspecialchars($digitador),
             'operador'=>htmlspecialchars($operador),
+            'url_reporte'=>$urlDescarga
         ];
     }
 
@@ -191,12 +210,11 @@ function cargarMantenimientos() {
                 ? `<button class="btn btn-sm btn-outline-primary btn-editar" data-id="${r.id}">Editar</button>` 
                 : ''
             }
-            ${r.estado === 'finalizado' 
-                ? `<button class="btn btn-sm btn-outline-success btn-reporte" data-id="${r.id}">Descargar Reporte</button>` 
+            ${r.estado === 'finalizado' && r.url_reporte
+                ? `<button class="btn btn-sm btn-outline-success btn-reporte" data-id="${r.id}" data-url="${r.url_reporte}">Descargar Reporte</button>` 
                 : ''
             }
           </td>
-
         `;
         tbody.appendChild(tr);
       });
@@ -256,7 +274,8 @@ document.querySelector('#tabla-mantenimientos').addEventListener('click', e => {
   // Descargar reporte
   if(e.target.classList.contains('btn-reporte')) {
     const id = e.target.dataset.id;
-    window.open(`/mantenimientos/reporte.php?id=${id}`, '_blank');
+    const url = e.target.dataset.url;
+    if(url) window.open(`${url}?id=${id}`, '_blank');
   }
 });
 
