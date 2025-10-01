@@ -1,6 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
+if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'digitador') {
     http_response_code(403);
     exit('Acceso denegado');
 }
