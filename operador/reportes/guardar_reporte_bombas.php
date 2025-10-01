@@ -461,7 +461,7 @@ $pdf->Ln(3);
     if (ob_get_length()) {
         @ob_end_clean();
     }
-    $fileName = "reporte_servicio_{$m['id']}.pdf";
+    $fileName = "reporte_bombas_{$m['id']}.pdf";
     $pdf->Output('D', $fileName);
     exit;
 }

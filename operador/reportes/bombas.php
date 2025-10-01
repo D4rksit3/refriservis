@@ -195,7 +195,7 @@ for ($i = 1; $i <= 7; $i++) {
     <!-- Título y datos -->
     <td width="60%" align="center" style="font-weight: bold; font-size: 13px;">
       <div style="background:#cfe2f3; padding:2px; margin-bottom:3px;">FORMATO DE CALIDAD</div>
-      REPORTE DE SERVICIO TECNICO <br>
+      CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA <br>
       <span style="font-weight: normal;">
         Oficina: (01) 6557907 <br>
         Emergencias: +51 943 048 606 <br>
