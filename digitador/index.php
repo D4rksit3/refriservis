@@ -11,7 +11,7 @@ require_once __DIR__.'/../includes/header.php';
     <div class="col-6"><a class="btn btn-primary w-100" href="/mantenimientos/crear.php">Crear mantenimiento</a></div>
     <!-- <div class="col-6"><a class="btn btn-outline-primary w-100" href="/digitador/subir_mantenimiento.php">Importar CSV</a></div> -->
   </div>
-
+<?php
 // Obtener lista de técnicos
 $tecnicos = $pdo->query("SELECT id, nombre FROM usuarios WHERE rol='operador'")->fetchAll();
 ?>
