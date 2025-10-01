@@ -418,6 +418,9 @@ for ($i = 1; $i <= 7; $i++) {
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Cliente</label>
         <div class="firma-box"><canvas id="firmaClienteCanvas"></canvas></div>
+        <div class="mt-1">
+          <button type="button" class="btn btn-sm btn-secondary" onclick="sigCliente.clear()">Limpiar</button>
+        </div>
         <input type="hidden" name="firma_cliente" id="firma_cliente_input">
       </div>
       <div class="col-12 col-md-4">
