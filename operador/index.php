@@ -1,7 +1,4 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 session_start();
 if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
     header('Location: /index.php');
@@ -11,7 +8,7 @@ require_once __DIR__.'/../includes/header.php';
 require_once __DIR__.'/../config/db.php';
 
 // Obtener lista de técnicos
-$tecnicos = $db->query("SELECT id, nombre FROM usuarios WHERE rol='operador'")->fetchAll(PDO::FETCH_ASSOC);
+$tecnicos = $pdo->query("SELECT id, nombre FROM usuarios WHERE rol='operador'")->fetchAll();
 ?>
 
 <div class="card p-3 mb-3">

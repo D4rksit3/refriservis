@@ -34,15 +34,15 @@ $sql = "SELECT estado, COUNT(*) as total
         FROM mantenimientos 
         WHERE fecha BETWEEN :inicio AND :hoy $filtro_tecnico 
         GROUP BY estado";
-$stmt = $db->prepare($sql);
+$stmt = $pdo->prepare($sql);
 $stmt->bindValue(':inicio', $inicio);
 $stmt->bindValue(':hoy', $hoy);
-if($tecnico !== 'todos') $stmt->bindValue(':tecnico', $tecnico);
+if($tecnico !== 'todos') $stmt->bindValue(':tecnico', $tecnico, PDO::PARAM_INT);
 $stmt->execute();
 
 $pendientes = 0;
 $finalizados = 0;
-while($row = $stmt->fetch(PDO::FETCH_ASSOC)){
+while($row = $stmt->fetch()){
     if($row['estado']=='pendiente') $pendientes = (int)$row['total'];
     if($row['estado']=='finalizado') $finalizados = (int)$row['total'];
 }
@@ -53,11 +53,11 @@ $sql2 = "SELECT u.nombre, COUNT(*) as total
          JOIN usuarios u ON m.operador_id = u.id
          WHERE m.estado='finalizado' AND fecha BETWEEN :inicio AND :hoy
          GROUP BY m.operador_id";
-$stmt2 = $db->prepare($sql2);
+$stmt2 = $pdo->prepare($sql2);
 $stmt2->bindValue(':inicio', $inicio);
 $stmt2->bindValue(':hoy', $hoy);
 $stmt2->execute();
-$tecnicos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+$tecnicos = $stmt2->fetchAll();
 
 echo json_encode([
     'pendientes' => $pendientes,
