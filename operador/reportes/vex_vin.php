@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if($confirmado === 'si'){
         header("Location: https://refriservis.seguricloud.com/operador/mis_mantenimientos.php");
     } else {
-        header("Location: guardar_reporte_bombas.php?id=$mantenimiento_id");
+        header("Location: guardar_reporte_vex_vin.php?id=$mantenimiento_id");
     }
     exit;
 }
@@ -195,7 +195,7 @@ for ($i = 1; $i <= 7; $i++) {
     <!-- Título y datos -->
     <td width="60%" align="center" style="font-weight: bold; font-size: 13px;">
       <div style="background:#cfe2f3; padding:2px; margin-bottom:3px;">FORMATO DE CALIDAD</div>
-      REPORTE DE SERVICIO TECNICO <br>
+      CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – VENTILACIÓN MECÁNICA (VEX-VIN) <br>
       <span style="font-weight: normal;">
         Oficina: (01) 6557907 <br>
         Emergencias: +51 943 048 606 <br>
@@ -226,7 +226,7 @@ for ($i = 1; $i <= 7; $i++) {
     <div><strong>FECHA:</strong> <?=htmlspecialchars($m['fecha'] ?? date('Y-m-d'))?></div>
   </div>
 
-  <form action="bombas.php"  id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
+  <form action="vex_vin.php"  id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
     <input type="hidden" name="mantenimiento_id" value="<?=htmlspecialchars($m['id'])?>">
 
     <!-- TABLA DE EQUIPOS -->
@@ -294,8 +294,7 @@ for ($i = 1; $i <= 7; $i++) {
           $parametros = [
             'Corriente eléctrica nominal (Amperios) L1',
             'Corriente L2','Corriente L3',
-            'Tensión eléctrica nominal V1','Tensión V2','Tensión V3',
-            'Presión de descarga (PSI)','Presión de succión (PSI)'
+            'Tensión eléctrica nominal V1','Tensión V2','Tensión V3'
           ];
           foreach($parametros as $p): ?>
             <tr>
@@ -335,26 +334,19 @@ for ($i = 1; $i <= 7; $i++) {
     <tbody>
       <?php
       $actividades = [
-        "Revisión de Presión de Aceite",
-        "Revisión de Presión de Descarga y Succión de cada unidad",
-        "Ajuste y revisión de la operación de las válvulas de capacidad del equipo",
-        "Revisión del estado operativo de motores eléctricos y componentes mecánicos",
-        "Ajustes de válvulas reguladoras de presión",
-        "Revisión de fugas en el sistema",
-        "Revisión de Niveles de Refrigerante",
-        "Revisión de Gases no Condensables en el Sistema",
-        "Revisión del estado físico de tuberías de Refrigerante",
-        "Revisión de válvula de expansión termostáticas detectadas con falla en el sistema",
-        "Ajuste de la operación de los controles eléctricos del sistema",
-        "Revisión de Contactores y ajuste de componentes eléctricos",
-        "Revisión/Limpieza de componentes electrónicos",
-        "Revisión de la operación de los instrumentos de control del sistema",
-        "Lubricación de componentes mecánicos exteriores",
-        "Análisis de Vibraciones",
-        "Lubricación de componentes mecánicos interiores",
-        "Análisis de Acidez en el aceite",
-        "Megado de motores",
-        "Lavado químico de intercambiador"
+        "Inspección tensión de línea, L1, L2, L3",
+        "Inspección corriente de línea",
+        "Verificar presión estática Ventilador",
+        "Verificar caudal de aire Ventilador",
+        "Verificar fugas de aire en red de ductos",
+        "Verificar obstrucciones de aire en red de ductos",
+        "Inspección mecánica de ventiladores, rodajes, chumaceras y lubricación",
+        "Inspección mecánica de ventiladores, fajas y poleas, ajuste y tensado",
+        "Inspecciones chavetas de transmisión en ejes y poleas, limpieza del eje",
+        "Revisión de estado de fajas transmisión y apuntar modelo",
+        "Verificar ruido y vibración de unidad",
+        "Limpieza de rejillas de inyección y extracción"
+
       ];
 
       foreach($actividades as $index => $act):
