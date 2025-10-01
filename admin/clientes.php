@@ -9,7 +9,7 @@ if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'admin') {
 require_once __DIR__.'/../config/db.php';
 require_once __DIR__.'/../includes/header.php';
 
-$action = $_GET['action'] ?? 'list';
+$action = $_REQUEST['action'] ?? 'list';
 
 // =========================
 // PROCESAR FORMULARIO
