@@ -402,7 +402,7 @@ for ($i = 1; $i <= 7; $i++) {
     </div>
 
     <!-- FIRMAS -->
-     <h6>Firmas</h6>
+    <h6>Firmas</h6>
     <div class="row g-3">
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Cliente</label>
@@ -410,22 +410,23 @@ for ($i = 1; $i <= 7; $i++) {
         <div class="mt-1">
           <button type="button" class="btn btn-sm btn-secondary" onclick="sigCliente.clear()">Limpiar</button>
         </div>
+        
         <input type="hidden" name="firma_cliente" id="firma_cliente_input">
       </div>
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Supervisor</label>
         <div class="firma-box"><canvas id="firmaSupervisorCanvas"></canvas></div>
-        <div class="mt-1">
-    <button type="button" class="btn btn-sm btn-secondary" onclick="sigSupervisor.clear()">Limpiar</button>
-  </div>
+          <div class="mt-1">
+        <button type="button" class="btn btn-sm btn-secondary" onclick="sigSupervisor.clear()">Limpiar</button>
+      </div>
         <input type="hidden" name="firma_supervisor" id="firma_supervisor_input">
       </div>
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Técnico</label>
         <div class="firma-box"><canvas id="firmaTecnicoCanvas"></canvas></div>
         <div class="mt-1">
-          <button type="button" class="btn btn-sm btn-secondary" onclick="sigTecnico.clear()">Limpiar</button>
-        </div>
+    <button type="button" class="btn btn-sm btn-secondary" onclick="sigTecnico.clear()">Limpiar</button>
+  </div>
         <input type="hidden" name="firma_tecnico" id="firma_tecnico_input">
       </div>
     </div>
