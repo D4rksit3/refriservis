@@ -282,72 +282,83 @@ function generarPDF(PDO $pdo, int $id) {
     $pdf->Ln(3); */
  
     // ---------- ACTIVIDADES A REALIZAR ----------
-    $pdf->SetFont('Arial','B',9);
-    $pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
+$pdf->SetFont('Arial','B',9);
+$pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
 
-    // Cabecera
-    $pdf->SetFont('Arial','B',7);
-    $pdf->Cell(80,7, txt("Actividad"), 1, 0, 'C');
+// Cabecera
+$pdf->SetFont('Arial','B',7);
+$pdf->Cell(80,7, txt("Actividad"), 1, 0, 'C');
+for ($i=1;$i<=7;$i++) {
+    $pdf->Cell(10,7, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
+}
+$pdf->Cell(8,7,"B",1,0,'C');
+$pdf->Cell(8,7,"T",1,0,'C');
+$pdf->Cell(8,7,"S",1,0,'C');
+$pdf->Cell(8,7,"A",1,1,'C');
+
+$pdf->SetFont('Arial','',7);
+
+// Lista fija de actividades
+$actividadesList = [
+    "Revisión de Presión de Aceite",
+    "Revisión de Presión de Descarga y Succión de cada unidad",
+    "Ajuste y revisión de la operación de las válvulas de capacidad del equipo",
+    "Revisión del estado operativo de motores eléctricos y componentes mecánicos",
+    "Ajustes de válvulas reguladoras de presión",
+    "Revisión de fugas en el sistema",
+    "Revisión de Niveles de Refrigerante",
+    "Revisión de Gases no Condensables en el Sistema",
+    "Revisión del estado físico de tuberías de Refrigerante",
+    "Revisión de válvula de expansión termostáticas detectadas con falla en el sistema",
+    "Ajuste de la operación de los controles eléctricos del sistema",
+    "Revisión de Contactores y ajuste de componentes eléctricos",
+    "Revisión/Limpieza de componentes electrónicos",
+    "Revisión de la operación de los instrumentos de control del sistema",
+    "Lubricación de componentes mecánicos exteriores",
+    "Análisis de Vibraciones",
+    "Lubricación de componentes mecánicos interiores",
+    "Análisis de Acidez en el aceite",
+    "Megado de motores",
+    "Lavado químico de intercambiador"
+];
+
+// Decodificar JSON desde BD
+$actividadesBD = json_decode($row['actividades'], true);
+
+// Recorremos la lista fija
+foreach ($actividadesList as $idx => $nombre) {
+    $actividadBD = $actividadesBD[$idx] ?? ["dias"=>[], "frecuencia"=>null];
+
+    // Guardar posición actual
+    $x = $pdf->GetX();
+    $y = $pdf->GetY();
+
+    // MultiCell para el texto (máx 80 ancho)
+    $pdf->MultiCell(80,5, txt($nombre),1,'L');
+
+    // Calcular altura usada
+    $altura = $pdf->GetY() - $y;
+
+    // Regresar posición a la derecha de la columna "Actividad"
+    $pdf->SetXY($x+80,$y);
+
+    // Días 01 - 07
     for ($i=1;$i<=7;$i++) {
-        $pdf->Cell(10,7, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
+        $marca = (in_array($i, $actividadBD['dias'])) ? "✔" : "";
+        $pdf->Cell(10,$altura, txt($marca), 1, 0, 'C');
     }
-    $pdf->Cell(8,7,"B",1,0,'C');
-    $pdf->Cell(8,7,"T",1,0,'C');
-    $pdf->Cell(8,7,"S",1,0,'C');
-    $pdf->Cell(8,7,"A",1,1,'C');
 
-    // Contenido
-    $pdf->SetFont('Arial','',7);
-
-    // Lista fija de actividades
-    $actividadesList = [
-        "Revisión de Presión de Aceite",
-        "Revisión de Presión de Descarga y Succión de cada unidad",
-        "Ajuste y revisión de la operación de las válvulas de capacidad del equipo",
-        "Revisión del estado operativo de motores eléctricos y componentes mecánicos",
-        "Ajustes de válvulas reguladoras de presión",
-        "Revisión de fugas en el sistema",
-        "Revisión de Niveles de Refrigerante",
-        "Revisión de Gases no Condensables en el Sistema",
-        "Revisión del estado físico de tuberías de Refrigerante",
-        "Revisión de válvula de expansión termostáticas detectadas con falla en el sistema",
-        "Ajuste de la operación de los controles eléctricos del sistema",
-        "Revisión de Contactores y ajuste de componentes eléctricos",
-        "Revisión/Limpieza de componentes electrónicos",
-        "Revisión de la operación de los instrumentos de control del sistema",
-        "Lubricación de componentes mecánicos exteriores",
-        "Análisis de Vibraciones",
-        "Lubricación de componentes mecánicos interiores",
-        "Análisis de Acidez en el aceite",
-        "Megado de motores",
-        "Lavado químico de intercambiador"
-    ];
-
-    // Decodificar lo que viene de BD
-    $actividadesBD = json_decode($row['actividades'], true);
-
-    // Recorremos la lista fija
-    foreach ($actividadesList as $idx => $nombre) {
-        $pdf->Cell(80,7, txt($nombre), 1, 0);
-
-        // Si existe en BD lo usamos, sino vacío
-        $actividadBD = $actividadesBD[$idx] ?? ["dias"=>[], "frecuencia"=>[]];
-
-        // Días 01 - 07
-        for ($i=1;$i<=7;$i++) {
-            $marca = (!empty($actividadBD['dias'][$i]) && $actividadBD['dias'][$i]) ? "✔" : "";
-            $pdf->Cell(10,7, txt($marca), 1, 0, 'C');
-        }
-
-        // Frecuencia B,T,S,A
-        foreach (["B","T","S","A"] as $f) {
-            $marca = (!empty($actividadBD['frecuencia']) && in_array($f, $actividadBD['frecuencia'])) ? "✔" : "";
-            $pdf->Cell(8,7, txt($marca), 1, 0, 'C');
-        }
-
-        $pdf->Ln();
+    // Frecuencia (B,T,S,A)
+    foreach (["B","T","S","A"] as $f) {
+        $marca = ($actividadBD['frecuencia'] === $f) ? "✔" : "";
+        $pdf->Cell(8,$altura, txt($marca), 1, 0, 'C');
     }
-    $pdf->Ln(3);
+
+    // Pasar a siguiente línea
+    $pdf->Ln();
+}
+$pdf->Ln(3);
+
 
 
 
