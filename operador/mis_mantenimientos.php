@@ -104,6 +104,8 @@ $mapaDescargas = [
             $urlReporte  = $mapaReportes[$categoria] ?? '/operador/form_reporte.php';
             $urlDescarga = $mapaDescargas[$categoria] ?? '/operador/reportes/guardar_reporte_servicio.php';
             $urlDescarga .= '?id=' . $id;
+
+            $estado = ucfirst(htmlspecialchars($r['estado'] ?? '-'));
         ?>
         <div class="col-md-6 mb-3">
           <div class="card shadow-sm h-100 border-0">
@@ -113,7 +115,14 @@ $mapaDescargas = [
               <p class="card-text mb-1"><b>Cliente:</b> <?= htmlspecialchars($r['cliente'] ?? '-') ?></p>
               <p class="card-text mb-1"><b>Digitador:</b> <?= htmlspecialchars($r['digitador'] ?? '-') ?></p>
               <p class="card-text mb-1"><b>Fecha:</b> <?= htmlspecialchars($r['fecha'] ?? '-') ?></p>
-              <p class="card-text mb-2"><b>Estado:</b> <?= ucfirst(htmlspecialchars($r['estado'] ?? '-')) ?></p>
+              <p class="card-text mb-2"><b>Estado:</b> <?php if ($estado === 'Pendiente') {
+                    echo '<span class="badge text-bg-warning">' . $estado . '</span>';
+                } elseif ($estado === 'Finalizado') {
+                    echo '<span class="badge text-bg-success">' . $estado . '</span>';
+                } else {
+                    // por defecto, si no es ninguno de los anteriores
+                    echo '<span class="badge text-bg-secondary">' . $estado . '</span>';
+                } ?></p>
 
               <div class="d-flex gap-2">
                  <?php if (!empty($r['reporte_generado']) && $r['estado'] !== 'finalizado'): ?>
