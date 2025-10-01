@@ -442,28 +442,35 @@ for ($i = 1; $i <= 7; $i++) {
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 
 <script>
-// Firma
+// Firmas
 const sigCliente = new SignaturePad(document.getElementById('firmaClienteCanvas'));
 const sigSupervisor = new SignaturePad(document.getElementById('firmaSupervisorCanvas'));
 const sigTecnico = new SignaturePad(document.getElementById('firmaTecnicoCanvas'));
 
-document.getElementById('formReporte').addEventListener('submit', function(){
-  if (!sigCliente.isEmpty()) document.getElementById('firma_cliente_input').value = sigCliente.toDataURL();
-  if (!sigSupervisor.isEmpty()) document.getElementById('firma_supervisor_input').value = sigSupervisor.toDataURL();
-  if (!sigTecnico.isEmpty()) document.getElementById('firma_tecnico_input').value = sigTecnico.toDataURL();
+document.getElementById('formReporte').addEventListener('submit', function(e){
+  // Guardar las firmas en los inputs ocultos
+  if (!sigCliente.isEmpty()) {
+    document.getElementById('firma_cliente_input').value = sigCliente.toDataURL();
+  }
+  if (!sigSupervisor.isEmpty()) {
+    document.getElementById('firma_supervisor_input').value = sigSupervisor.toDataURL();
+  }
+  if (!sigTecnico.isEmpty()) {
+    document.getElementById('firma_tecnico_input').value = sigTecnico.toDataURL();
+  }
 
-
-   // Preguntar antes de guardar
-    if(confirm("¿Estás seguro de guardar el reporte?")){
-        // añadir un campo oculto para indicar confirmación
-        let input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'confirmado';
-        input.value = 'si';
-        this.appendChild(input);
-
-        this.submit();
-    }
+  // Confirmar antes de enviar
+  if(!confirm("¿Estás seguro de guardar el reporte?")){
+    e.preventDefault(); // cancelar envío
+  } else {
+    // Campo oculto de confirmación
+    let input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'confirmado';
+    input.value = 'si';
+    this.appendChild(input);
+    // ⚠️ NO llamar a this.submit(), ya se está enviando solo
+  }
 });
 
 $(document).ready(function(){
