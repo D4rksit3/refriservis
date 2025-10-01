@@ -123,11 +123,11 @@ if ($action === 'list') {
                                 <a class="btn btn-sm btn-outline-primary" href="/admin/clientes.php?action=edit&id=<?=$c['id']?>">Editar</a>
                                 <!-- <a class="btn btn-sm btn-outline-danger" href="/admin/clientes.php?action=delete&id=<?=$c['id']?>" onclick="return confirm('Eliminar cliente?')">Eliminar</a>
                              -->
-                            <form method="post" action="clientes.php" style="display:inline-block;" onsubmit="return confirm('Eliminar cliente?')">
+                           <!--  <form method="post" action="clientes.php" style="display:inline-block;" onsubmit="return confirm('Eliminar cliente?')">
     <input type="hidden" name="action" value="delete">
     <input type="hidden" name="id" value="<?=$c['id']?>">
     <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-</form>
+</form> -->
 
                             </td>
                         </tr>
