@@ -296,7 +296,10 @@ function generarPDF(PDO $pdo, int $id) {
     $pdf->Cell(8,7,"S",1,0,'C');
     $pdf->Cell(8,7,"A",1,1,'C');
 
+    // Contenido
     $pdf->SetFont('Arial','',7);
+
+    // Lista fija de actividades
     $actividadesList = [
         "Revisión de Presión de Aceite",
         "Revisión de Presión de Descarga y Succión de cada unidad",
@@ -320,19 +323,32 @@ function generarPDF(PDO $pdo, int $id) {
         "Lavado químico de intercambiador"
     ];
 
+    // Decodificar lo que viene de BD
+    $actividadesBD = json_decode($row['actividades'], true);
+
+    // Recorremos la lista fija
     foreach ($actividadesList as $idx => $nombre) {
         $pdf->Cell(80,7, txt($nombre), 1, 0);
+
+        // Si existe en BD lo usamos, sino vacío
+        $actividadBD = $actividadesBD[$idx] ?? ["dias"=>[], "frecuencia"=>[]];
+
+        // Días 01 - 07
         for ($i=1;$i<=7;$i++) {
-            $marca = !empty($actividades[$idx]['dias'][$i]) ? "✔" : "";
+            $marca = (!empty($actividadBD['dias'][$i]) && $actividadBD['dias'][$i]) ? "✔" : "";
             $pdf->Cell(10,7, txt($marca), 1, 0, 'C');
         }
+
+        // Frecuencia B,T,S,A
         foreach (["B","T","S","A"] as $f) {
-            $marca = (isset($actividades[$idx]['frecuencia']) && $actividades[$idx]['frecuencia']==$f) ? "✔" : "";
+            $marca = (!empty($actividadBD['frecuencia']) && in_array($f, $actividadBD['frecuencia'])) ? "✔" : "";
             $pdf->Cell(8,7, txt($marca), 1, 0, 'C');
         }
+
         $pdf->Ln();
     }
     $pdf->Ln(3);
+
 
 
 
