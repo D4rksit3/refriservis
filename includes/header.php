@@ -16,7 +16,7 @@ $rol = $_SESSION['rol'] ?? null;
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
   <div class="container">
-    <a class="navbar-brand d-flex align-items-center" href="/../index.php">
+    
       <img src="/assets/img/logo.svg" alt="RefriServis" style="height:38px;margin-right:10px">
       
     </a>
