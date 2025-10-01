@@ -426,10 +426,9 @@ for ($i = 1; $i <= 7; $i++) {
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Supervisor</label>
         <div class="firma-box"><canvas id="firmaSupervisorCanvas"></canvas></div>
-        <div class="mt-1">
-          <button type="button" class="btn btn-sm btn-secondary" onclick="sigCliente.clear()">Limpiar</button>
-        <div class="mt-1">
-          <button type="button" class="btn btn-sm btn-secondary" onclick="sigSupervisor.clear()">Limpiar</button>
+     <div class="mt-1">
+    <button type="button" class="btn btn-sm btn-secondary" onclick="sigSupervisor.clear()">Limpiar</button>
+  </div>
         </div>
       <div class="col-12 col-md-4">
         <label class="form-label">Firma Técnico</label>
