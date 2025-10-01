@@ -335,26 +335,27 @@ for ($i = 1; $i <= 7; $i++) {
     <tbody>
       <?php
       $actividades = [
-        "Revisión de Presión de Aceite",
-        "Revisión de Presión de Descarga y Succión de cada unidad",
-        "Ajuste y revisión de la operación de las válvulas de capacidad del equipo",
-        "Revisión del estado operativo de motores eléctricos y componentes mecánicos",
-        "Ajustes de válvulas reguladoras de presión",
-        "Revisión de fugas en el sistema",
-        "Revisión de Niveles de Refrigerante",
-        "Revisión de Gases no Condensables en el Sistema",
-        "Revisión del estado físico de tuberías de Refrigerante",
-        "Revisión de válvula de expansión termostáticas detectadas con falla en el sistema",
-        "Ajuste de la operación de los controles eléctricos del sistema",
-        "Revisión de Contactores y ajuste de componentes eléctricos",
-        "Revisión/Limpieza de componentes electrónicos",
-        "Revisión de la operación de los instrumentos de control del sistema",
-        "Lubricación de componentes mecánicos exteriores",
-        "Análisis de Vibraciones",
-        "Lubricación de componentes mecánicos interiores",
-        "Análisis de Acidez en el aceite",
-        "Megado de motores",
-        "Lavado químico de intercambiador"
+        "Inspección ocular del equipo en funcionamiento",
+        "Verificación del estado de superficies y aseo general del equipo",
+        "Medición y registro de parámetros de operación (amperaje, voltaje, potencia)",
+        "Inspección de estado del sello mecánico",
+        "Inspección de manómetros y termómetros",
+        "Inspección de rodamientos de motor y bomba centrifuga",
+        "Inspección del acoplamiento y ajuste de prisioneros",
+        "Medición y registro de consumos eléctricos",
+        "Ajuste de conexiones eléctricas del motor",
+        "Revisión de variador de velocidad",
+        "Lubricación de rodamientos de acuerdo a recomendaciones del fabricante",
+        "Revisión de los pernos de la base y motor (requiere uso de torquímetro)",
+        "Pintado externo del motor y bomba manteniendo color original (dieléctrica)",
+        "Prueba de funcionamiento y verificación de condiciones operativas",
+        "Lubricación y engrase de la bomba.",
+        "Revisión y Ajuste de la prensa estopa y/o sello mecánico",
+        "Revisión y/o cambio de empaquetaduras de O-rings",
+        "Revisión y cambio de borneras eléctricas",
+        "Cambio de empaquetaduras, sellos y rodamientos en caso se requiera",
+        "Pintado de las válvulas y de las tuberías de distribución si lo requiere",
+        "Megar y registrar el estado del aislamiento del motor eléctrico"
       ];
 
       foreach($actividades as $index => $act):
@@ -452,6 +453,17 @@ document.getElementById('formReporte').addEventListener('submit', function(){
   if (!sigCliente.isEmpty()) document.getElementById('firma_cliente_input').value = sigCliente.toDataURL();
   if (!sigSupervisor.isEmpty()) document.getElementById('firma_supervisor_input').value = sigSupervisor.toDataURL();
   if (!sigTecnico.isEmpty()) document.getElementById('firma_tecnico_input').value = sigTecnico.toDataURL();
+
+  function resizeCanvas(canvas) {
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    canvas.width = canvas.offsetWidth * ratio;
+    canvas.height = canvas.offsetHeight * ratio;
+    canvas.getContext("2d").scale(ratio, ratio);
+  }
+
+  const canvasCliente = document.getElementById('firmaClienteCanvas');
+  resizeCanvas(canvasCliente);
+  const sigCliente = new SignaturePad(canvasCliente, { backgroundColor: 'rgba(255,255,255,0)' });
 
 
    // Preguntar antes de guardar
