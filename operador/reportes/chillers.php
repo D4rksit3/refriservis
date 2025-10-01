@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if($confirmado === 'si'){
         header("Location: https://refriservis.seguricloud.com/operador/mis_mantenimientos.php");
     } else {
-        header("Location: guardar_reporte_bombas.php?id=$mantenimiento_id");
+        header("Location: guardar_reporte_chillers.php?id=$mantenimiento_id");
     }
     exit;
 }
@@ -226,7 +226,7 @@ for ($i = 1; $i <= 7; $i++) {
     <div><strong>FECHA:</strong> <?=htmlspecialchars($m['fecha'] ?? date('Y-m-d'))?></div>
   </div>
 
-  <form action="bombas.php"  id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
+  <form action="chillers.php"  id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
     <input type="hidden" name="mantenimiento_id" value="<?=htmlspecialchars($m['id'])?>">
 
     <!-- TABLA DE EQUIPOS -->
