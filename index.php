@@ -51,34 +51,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       margin: 0;
       height: 100vh;
       display: flex;
+      background: #f4f6f9;
     }
     .left-panel {
       flex: 1;
-      background: linear-gradient(135deg, #0d6efd, #00c6ff);
+      background: linear-gradient(135deg, #0a3d91, #007bff);
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-direction: column;
       padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .left-panel svg {
+      position: absolute;
+      right: -1px;
+      top: 0;
+      height: 100%;
+      width: auto;
     }
     .left-panel h1 {
-      font-size: 2.5rem;
+      font-size: 2.4rem;
       font-weight: 700;
       margin-bottom: 1rem;
+      z-index: 2;
     }
     .left-panel p {
-      font-size: 1.1rem;
+      font-size: 1rem;
       max-width: 400px;
       text-align: center;
       opacity: 0.9;
+      z-index: 2;
     }
     .right-panel {
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #f8f9fa;
+      background: #fff;
+      position: relative;
     }
     .login-card {
       width: 100%;
@@ -86,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       background: #fff;
       border-radius: 1rem;
       padding: 2.5rem;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
       animation: fadeIn 0.8s ease;
     }
     .login-card h2 {
@@ -94,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       font-size: 1.5rem;
       margin-bottom: 1rem;
       text-align: center;
-      color: #0d6efd;
+      color: #0a3d91;
     }
     .form-control {
       padding-left: 2.5rem;
@@ -102,8 +115,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       transition: all 0.2s ease;
     }
     .form-control:focus {
-      border-color: #0d6efd;
-      box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25);
+      border-color: #0a3d91;
+      box-shadow: 0 0 0 0.2rem rgba(10,61,145,.25);
     }
     .input-icon {
       position: absolute;
@@ -119,11 +132,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       font-weight: 600;
       padding: 0.75rem;
       border-radius: 0.5rem;
+      background: #0a3d91;
+      border: none;
       transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     button:hover {
+      background: #083577;
       transform: translateY(-2px);
-      box-shadow: 0 6px 15px rgba(13,110,253,.3);
+      box-shadow: 0 6px 15px rgba(10,61,145,.3);
     }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-10px);}
@@ -132,10 +148,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </style>
 </head>
 <body>
-  <!-- Panel izquierdo estilo landing -->
+  <!-- Panel izquierdo con curva -->
   <div class="left-panel">
     <h1>🔧 RefriServis</h1>
-    <p>Gestión inteligente de mantenimientos y operaciones. Accede a tu panel de trabajo y mantén todo bajo control.</p>
+    <p>Gestión profesional de mantenimientos y operaciones. Accede a tu panel y mantén todo bajo control.</p>
+    <!-- Curva decorativa -->
+    <svg viewBox="0 0 500 500" preserveAspectRatio="none">
+      <path d="M500,0 C350,250 350,250 500,500 L0,500 L0,0 Z" fill="#fff"/>
+    </svg>
   </div>
 
   <!-- Panel derecho con login -->
