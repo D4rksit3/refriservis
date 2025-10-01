@@ -116,7 +116,7 @@ function cargarDatos() {
     const periodo = document.getElementById('filtro_periodo').value;
     const tecnico = document.getElementById('filtro_tecnico').value;
 
-    fetch(`/operador/dashboard_data.php?periodo=${periodo}&tecnico=${tecnico}`)
+    fetch(`/admin/dashboard_data.php?periodo=${periodo}&tecnico=${tecnico}`)
         .then(res => res.json())
         .then(data => {
             // 1️⃣ Estado de mantenimientos (barras)
