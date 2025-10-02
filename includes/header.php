@@ -44,7 +44,7 @@ $rol = $_SESSION['rol'] ?? null;
                     <h6 class="dropdown-header text-primary">👥 Clientes</h6>
                     <a class="dropdown-item" href="/admin/clientes.php">Lista de Clientes</a>
                   </div>
-
+                 <li class="nav-item"><a class="nav-link" href="/admin/index.php">Dashboard</a></li>
                   <!-- Inventario -->
                   <div class="col-md-4">
                     <h6 class="dropdown-header text-primary">📦 Inventario</h6>
@@ -52,7 +52,7 @@ $rol = $_SESSION['rol'] ?? null;
                     <!-- <a class="dropdown-item" href="/admin/inventario_productos.php">Productos</a> -->
                     <!-- <a class="dropdown-item" href="/admin/inventario_servicios.php">Servicios</a> -->
                   </div>
-
+                
                   <!-- Usuarios -->
                   <div class="col-md-4">
                     <h6 class="dropdown-header text-primary">👤 Usuarios</h6>
