@@ -1,9 +1,11 @@
 <?php
+// Mostrar errores en desarrollo
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 session_start();
+// Validar acceso
 if (!isset($_SESSION['usuario']) || !in_array($_SESSION['rol'], ['admin','digitador','operador'])) {
     header('Location: /index.php');
     exit;
@@ -22,7 +24,7 @@ $mapaDescargas = [
     'Default'  => '/operador/reportes/guardar_reporte_servicio.php'
 ];
 
-// Si es petición AJAX para listar mantenimientos
+// --- Petición AJAX para obtener datos ---
 if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     $stmt = $pdo->query("SELECT m.*, 
                                 c.nombre AS cliente, 
@@ -53,7 +55,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             default       => 'secondary'
         };
 
-        // Seleccionar reporte correcto según categoría
+        // Seleccionar reporte según categoría
         $categoria = $r['categoria'] ?? 'Default';
         $urlDescarga = $mapaDescargas[$categoria] ?? $mapaDescargas['Default'];
 
@@ -77,6 +79,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 }
 ?>
 
+<!-- ====== FRONTEND ====== -->
 <div class="container mt-4">
     <h3 class="mb-3">Lista de Mantenimientos</h3>
     <table class="table table-bordered table-striped" id="tabla-mantenimientos">
@@ -98,6 +101,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 </div>
 
 <script>
+// Cargar lista de mantenimientos
 async function cargarMantenimientos() {
     const resp = await fetch('?ajax=1');
     const data = await resp.json();
@@ -125,7 +129,7 @@ async function cargarMantenimientos() {
         tbody.appendChild(tr);
     });
 
-    // Delegación de evento para botones
+    // Acción al dar click en "Descargar Reporte"
     document.querySelectorAll('.btn-reporte').forEach(btn => {
         btn.addEventListener('click', () => {
             const id = btn.dataset.id;
@@ -135,5 +139,6 @@ async function cargarMantenimientos() {
     });
 }
 
+// Inicializar
 cargarMantenimientos();
 </script>
