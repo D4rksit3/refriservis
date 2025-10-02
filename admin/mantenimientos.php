@@ -1,20 +1,43 @@
 <?php
-// Mostrar errores en desarrollo
+// ===============================
+// CONFIGURACIÓN INICIAL
+// ===============================
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 session_start();
-// Validar acceso
+// Simulación de sesión activa para pruebas
+// Elimínalo cuando ya tengas login real
+if (!isset($_SESSION['usuario'])) {
+    $_SESSION['usuario'] = "admin_demo";
+    $_SESSION['rol'] = "admin";
+}
+
+// Validación de roles
 if (!isset($_SESSION['usuario']) || !in_array($_SESSION['rol'], ['admin','digitador','operador'])) {
     header('Location: /index.php');
     exit;
 }
 
-require_once __DIR__.'/../config/db.php';
-require_once __DIR__.'/../includes/header.php';
+// ===============================
+// CONEXIÓN A BASE DE DATOS
+// ===============================
+$host = "localhost";
+$user = "root";
+$pass = "";
+$db   = "refriservis";  // cambia según tu base
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+    ]);
+} catch (Exception $e) {
+    die("Error al conectar a la BD: " . $e->getMessage());
+}
 
-// Mapear categorías con la ruta del reporte correspondiente
+// ===============================
+// MAPA DE REPORTES
+// ===============================
 $mapaDescargas = [
     'VRV'      => '/operador/reportes/guardar_reporte_bombas.php',
     'VEX'      => '/operador/reportes/guardar_reporte_ventilacion.php',
@@ -24,7 +47,9 @@ $mapaDescargas = [
     'Default'  => '/operador/reportes/guardar_reporte_servicio.php'
 ];
 
-// --- Petición AJAX para obtener datos ---
+// ===============================
+// MODO AJAX: devolver JSON
+// ===============================
 if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     $stmt = $pdo->query("SELECT m.*, 
                                 c.nombre AS cliente, 
@@ -79,34 +104,59 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 }
 ?>
 
-<!-- ====== FRONTEND ====== -->
+<!-- ===============================
+     FRONTEND HTML + BOOTSTRAP
+=============================== -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mantenimientos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
 <div class="container mt-4">
-    <h3 class="mb-3">Lista de Mantenimientos</h3>
-    <table class="table table-bordered table-striped" id="tabla-mantenimientos">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>Título</th>
-                <th>Fecha</th>
-                <th>Cliente</th>
-                <th>Equipos</th>
-                <th>Estado</th>
-                <th>Digitador</th>
-                <th>Operador</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+    <h2 class="mb-3 text-center">📋 Lista de Mantenimientos</h2>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <table class="table table-bordered table-striped align-middle text-center" id="tabla-mantenimientos">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Título</th>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Equipos</th>
+                        <th>Estado</th>
+                        <th>Digitador</th>
+                        <th>Operador</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="9" class="text-muted">Cargando datos...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script>
-// Cargar lista de mantenimientos
+// ===============================
+// FUNCIONES JS
+// ===============================
 async function cargarMantenimientos() {
     const resp = await fetch('?ajax=1');
     const data = await resp.json();
     const tbody = document.querySelector('#tabla-mantenimientos tbody');
     tbody.innerHTML = '';
+
+    if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-muted">No hay mantenimientos registrados</td></tr>`;
+        return;
+    }
 
     data.forEach(r => {
         const tr = document.createElement('tr');
@@ -121,15 +171,18 @@ async function cargarMantenimientos() {
             <td>${r.operador}</td>
             <td>
                 ${r.estado === 'finalizado'
-                    ? `<button class="btn btn-sm btn-outline-success btn-reporte" data-id="${r.id}" data-url="${r.url_reporte}">Descargar Reporte</button>`
-                    : ''
+                    ? `<button class="btn btn-sm btn-outline-success btn-reporte" 
+                               data-id="${r.id}" data-url="${r.url_reporte}">
+                           Descargar Reporte
+                       </button>`
+                    : '<span class="text-muted">No disponible</span>'
                 }
             </td>
         `;
         tbody.appendChild(tr);
     });
 
-    // Acción al dar click en "Descargar Reporte"
+    // Delegación de evento para botones
     document.querySelectorAll('.btn-reporte').forEach(btn => {
         btn.addEventListener('click', () => {
             const id = btn.dataset.id;
@@ -139,6 +192,8 @@ async function cargarMantenimientos() {
     });
 }
 
-// Inicializar
+// Inicializar carga
 cargarMantenimientos();
 </script>
+</body>
+</html>
