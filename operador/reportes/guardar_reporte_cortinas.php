@@ -9,7 +9,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL & ~E_DEPRECATED);
 
 session_start();
-if (!isset($_SESSION['usuario']) || !in_array($_SESSION['rol'], ['operador', 'digitador'])) {
+if (!isset($_SESSION['usuario']) || !in_array($_SESSION['rol'], ['operador', 'digitador', 'admin'])) {
     header('Location: /../index.php');
     exit;
 }
