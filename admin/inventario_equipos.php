@@ -84,7 +84,7 @@ require_once __DIR__.'/../includes/header.php';
     <div class="modal-content">
       <form id="formEditarEquipo" method="post">
         <div class="modal-header bg-warning">
-          <h5 class="modal-title">✏️ Editar Equipo</h5>
+          <h5 class="modal-title">✏️</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
         <div class="modal-body">
