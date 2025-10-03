@@ -23,15 +23,15 @@ require_once __DIR__.'/../includes/header.php';
           <th>ID</th>
           <th>Identificador</th>
           <th>Nombre</th>
-          <th>marca</th>
-          <th>modelo</th>
-          <th>ubicacion</th>
-          <th>voltaje</th>
-
-          
+          <th>Marca</th>
+          <th>Modelo</th>
+          <th>Ubicación</th>
+          <th>Voltaje</th>
+          <th>Descripción</th>
           <th>Cliente</th>
-          <th>Categoria</th>
-          <th>Estado</th>
+          <th>Categoría</th>
+          <th>Estatus</th>
+          <!-- <th>Fecha validación</th> -->
           <th>Acciones</th>
         </tr>
       </thead>
