@@ -1,23 +1,49 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-require_once __DIR__.'/../config/db.php';
+require_once __DIR__ . '/../config/db.php';
 
-// If GET with id => return single record (used to open Edit modal)
-if($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])){
-    $id = intval($_GET['id']);
-    $stmt = $pdo->prepare("SELECT * FROM equipos WHERE id_equipo = ?");
-    $stmt->execute([$id]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    echo json_encode($row ?: []);
+// =======================
+// 1) LISTADO PARA DATATABLES
+// =======================
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_GET['id'])) {
+    try {
+        $stmt = $pdo->query("SELECT * FROM equipos");
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // DataTables espera {"data":[...]}
+        echo json_encode(["data" => $rows]);
+    } catch (PDOException $e) {
+        echo json_encode(["data" => [], "error" => $e->getMessage()]);
+    }
     exit;
 }
 
-// POST actions (add / edit / delete)
+// =======================
+// 2) GET por id (abrir modal de edición)
+// =======================
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
+    $id = intval($_GET['id']);
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM equipos WHERE id_equipo = ?");
+        $stmt->execute([$id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        echo json_encode($row ?: []);
+    } catch (PDOException $e) {
+        echo json_encode(["success" => false, "message" => $e->getMessage()]);
+    }
+    exit;
+}
+
+// =======================
+// 3) CRUD con POST
+// =======================
 $accion = $_POST['accion'] ?? '';
 
-if($accion === 'agregar'){
+if ($accion === 'agregar') {
     try {
-        $stmt = $pdo->prepare("INSERT INTO equipos (Identificador, Nombre, marca, modelo, ubicacion, voltaje, Descripcion, Cliente, Categoria, Estatus, Fecha_validad) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
+        $stmt = $pdo->prepare("INSERT INTO equipos 
+            (Identificador, Nombre, marca, modelo, ubicacion, voltaje, Descripcion, Cliente, Categoria, Estatus, Fecha_validad) 
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)");
         $success = $stmt->execute([
             $_POST['Identificador'] ?? null,
             $_POST['Nombre'] ?? null,
@@ -33,14 +59,16 @@ if($accion === 'agregar'){
         ]);
         echo json_encode(['success' => (bool)$success]);
     } catch (PDOException $e) {
-        echo json_encode(['success'=>false,'message'=>$e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
     exit;
 }
 
-if($accion === 'editar'){
+if ($accion === 'editar') {
     try {
-        $stmt = $pdo->prepare("UPDATE equipos SET Identificador=?, Nombre=?, marca=?, modelo=?, ubicacion=?, voltaje=?, Descripcion=?, Cliente=?, Categoria=?, Estatus=?, Fecha_validad=? WHERE id_equipo=?");
+        $stmt = $pdo->prepare("UPDATE equipos SET 
+            Identificador=?, Nombre=?, marca=?, modelo=?, ubicacion=?, voltaje=?, Descripcion=?, Cliente=?, Categoria=?, Estatus=?, Fecha_validad=? 
+            WHERE id_equipo=?");
         $success = $stmt->execute([
             $_POST['Identificador'] ?? null,
             $_POST['Nombre'] ?? null,
@@ -57,20 +85,23 @@ if($accion === 'editar'){
         ]);
         echo json_encode(['success' => (bool)$success]);
     } catch (PDOException $e) {
-        echo json_encode(['success'=>false,'message'=>$e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
     exit;
 }
 
-if($accion === 'eliminar'){
+if ($accion === 'eliminar') {
     try {
         $stmt = $pdo->prepare("DELETE FROM equipos WHERE id_equipo = ?");
         $success = $stmt->execute([$_POST['id_equipo'] ?? 0]);
         echo json_encode(['success' => (bool)$success]);
     } catch (PDOException $e) {
-        echo json_encode(['success'=>false,'message'=>$e->getMessage()]);
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
     exit;
 }
 
-echo json_encode(['success'=>false, 'message'=>'Acción no reconocida']);
+// =======================
+// Si llega aquí, acción no reconocida
+// =======================
+echo json_encode(['success' => false, 'message' => 'Acción no reconocida']);
