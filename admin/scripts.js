@@ -53,26 +53,27 @@ $(document).ready(function(){
 
     // -------------- EQUIPOS: AGREGAR --------------
         // AGREGAR
-    $('#formAgregarEquipo').submit(function(e){
-        e.preventDefault();
+            $// -------------- EQUIPOS: AGREGAR --------------
+        $('#formAgregarEquipo').on('submit', function(e){
+            e.preventDefault();
 
-        $.post('equipos_crud.php', $(this).serialize(), function(resp){
-            if(resp.success){
-                // Cierra modal correctamente
-                $('#modalAgregar').modal('hide');
+            $.post('equipos_crud.php', $(this).serialize(), function(resp){
+                if(resp.success){
+                    // cerrar modal
+                    $('#modalAgregar').modal('hide');
+                    // recargar tabla
+                    if(tablaEquipos) tablaEquipos.ajax.reload(null, false);
+                    // limpiar formulario
+                    $('#formAgregarEquipo')[0].reset();
 
-                // Recarga tabla cuando se cierre
-                $('#modalAgregar').one('hidden.bs.modal', function(){
-                    tabla.ajax.reload();
-                    $('#formAgregarEquipo')[0].reset(); // limpiar form
-                });
-
-            } else {
-                alert('Error al agregar');
-            }
-        }, 'json');
-    });
-
+                    console.log("✅ Equipo agregado con ID:", resp.last_id);
+                } else {
+                    alert(resp.message ? resp.message : 'Error al agregar');
+                }
+            }, 'json').fail(function(){
+                alert('Error de red al agregar');
+            });
+        });
     // Limpieza global de backdrop al cerrar cualquier modal
     $(document).on('hidden.bs.modal', '.modal', function () {
         $('.modal-backdrop').remove();
