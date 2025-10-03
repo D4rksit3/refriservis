@@ -4,7 +4,7 @@ $(document).ready(function(){
     // ---------- TABLE: EQUIPOS ----------
     var tablaEquipos = $('#tablaEquipos').length ? $('#tablaEquipos').DataTable({
         processing: true,
-       /*  serverSide: true, */
+       serverSide: true,
         ajax: {
             url: 'equipos_data.php',
             type: 'GET'
