@@ -5,7 +5,11 @@ $(document).ready(function(){
     var tablaEquipos = $('#tablaEquipos').length ? $('#tablaEquipos').DataTable({
         processing: true,
        /*  serverSide: true, */
-        ajax: 'equipos_data.php',
+        ajax: {
+            url: 'equipos_data.php',
+            type: 'GET'
+
+        },
         columns: [
             {data:'id_equipo'},
             {data:'Identificador'},
@@ -18,7 +22,7 @@ $(document).ready(function(){
             {data:'Cliente'},
             {data:'Categoria'},
             {data:'Estatus'},
-            {data:'Fecha_validad'},
+            /* {data:'Fecha_validad'}, */
             {data:'acciones', orderable:false, searchable:false}
         ],
         language:{ url:'//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }

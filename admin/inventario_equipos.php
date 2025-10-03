@@ -31,7 +31,7 @@ require_once __DIR__.'/../includes/header.php';
           
           <th>Cliente</th>
           <th>Categoria</th>
-          
+          <th>Estado</th>
           <th>Acciones</th>
         </tr>
       </thead>
