@@ -61,7 +61,6 @@ $(document).ready(function(){
             $.post('equipos_crud.php', $(this).serialize(), function(resp){
                 if(resp.success){
                     $('#modalAgregarEquipo').modal('hide');
-
                     $('#modalAgregarEquipo').one('hidden.bs.modal', function(){
                         if(tablaEquipos) tablaEquipos.ajax.reload(null, false);
                         $('#formAgregarEquipo')[0].reset();
