@@ -28,11 +28,10 @@ require_once __DIR__.'/../includes/header.php';
           <th>ubicacion</th>
           <th>voltaje</th>
 
-          <th>Descripcion</th>
+          
           <th>Cliente</th>
           <th>Categoria</th>
-          <th>Estatus</th>
-          <th>Fecha Validación</th>
+          
           <th>Acciones</th>
         </tr>
       </thead>
