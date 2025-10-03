@@ -47,8 +47,13 @@ require_once __DIR__.'/../includes/header.php';
         </div>
         <div class="modal-body">
           <input type="hidden" name="accion" value="agregar">
+          <div class="mb-2"><label>Identificador</label><input type="text" class="form-control" name="Identificador" required></div>
           <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" name="Nombre" required></div>
-          <div class="mb-2"><label>Descripcion</label><textarea class="form-control" name="Descripcion"></textarea></div>
+
+          <div class="mb-2"><label>marca</label><input type="text" class="form-control" name="marca" required></div>
+          <div class="mb-2"><label>modelo</label><input type="text" class="form-control" name="modelo" required></div>
+          <div class="mb-2"><label>ubicacion</label><input type="text" class="form-control" name="ubicacion" required></div>
+          <div class="mb-2"><label>voltaje</label><input type="text" class="form-control" name="voltaje" required></div>
           <div class="mb-2"><label>Cliente</label><input type="text" class="form-control" name="Cliente"></div>
           <div class="mb-2"><label>Categoria</label><input type="text" class="form-control" name="Categoria"></div>
           <div class="mb-2"><label>Estatus</label>
@@ -80,7 +85,13 @@ require_once __DIR__.'/../includes/header.php';
         <div class="modal-body">
           <input type="hidden" name="accion" value="editar">
           <input type="hidden" name="id_equipo" id="editIdEquipo">
+          <div class="mb-2"><label>Identificador</label><input type="text" class="form-control" id="editIdentificador" name="Identificador" required></div>
           <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" id="editNombreEquipo" name="Nombre" required></div>
+          <div class="mb-2"><label>marca</label><input type="text" class="form-control" id="editmarca" name="marca" required></div>
+          <div class="mb-2"><label>modelo</label><input type="text" class="form-control" id="editmodelo" name="modelo" required></div>
+          <div class="mb-2"><label>ubicacion</label><input type="text" class="form-control" id="editubicacion" name="ubicacion" required></div>
+          <div class="mb-2"><label>voltaje</label><input type="text" class="form-control" id="editvoltaje" name="voltaje" required></div>
+          
           <div class="mb-2"><label>Descripcion</label><textarea class="form-control" id="editDescripcionEquipo" name="Descripcion"></textarea></div>
           <div class="mb-2"><label>Cliente</label><input type="text" class="form-control" id="editClienteEquipo" name="Cliente"></div>
           <div class="mb-2"><label>Categoria</label><input type="text" class="form-control" id="editCategoriaEquipo" name="Categoria"></div>

@@ -8,7 +8,12 @@ $(document).ready(function(){
         ajax: 'equipos_data.php',
         columns: [
             {data:'id_equipo'},
+            {data:'Identificador'},
             {data:'Nombre'},
+            {data:'marca'},
+            {data:'modelo'},
+            {data:'ubicacion'},
+            {data:'voltaje'},
             {data:'Descripcion'},
             {data:'Cliente'},
             {data:'Categoria'},
@@ -26,7 +31,12 @@ $(document).ready(function(){
         ajax: 'productos_data.php',
         columns: [
             {data:'productos_id'},
+            {data:'Identificador'},
             {data:'Nombre'},
+            {data:'marca'},
+            {data:'modelo'},
+            {data:'ubicacion'},
+            {data:'voltaje'},
             {data:'Categoria'},
             {data:'Estatus'},
             {data:'Valor_unitario'},
@@ -93,7 +103,12 @@ $(document).ready(function(){
         $.getJSON('equipos_crud.php', {id: id}, function(row){
             if(row){
                 $('#editIdEquipo').val(row.id_equipo);
+                $('#editIdentificador').val(row.Identificador);
                 $('#editNombreEquipo').val(row.Nombre);
+                $('#editmarca').val(row.marca);
+                $('#editmodelo').val(row.modelo);
+                $('#editubicacion').val(row.ubicacion);
+                $('#editvoltaje').val(row.voltaje);
                 $('#editDescripcionEquipo').val(row.Descripcion);
                 $('#editClienteEquipo').val(row.Cliente);
                 $('#editCategoriaEquipo').val(row.Categoria);
@@ -158,7 +173,12 @@ $(document).ready(function(){
         $.getJSON('productos_crud.php', {id: id}, function(row){
             if(row){
                 $('#editId').val(row.productos_id);
-                $('#editNombre').val(row.Nombre);
+                $('#editIdentificador').val(row.productos_Identificador);   
+                $('#editNombre').val(row.Nombre);   
+                $('#editmarca').val(row.marca);   
+                $('#editmodelo').val(row.modelo);   
+                $('#editubicacion').val(row.ubicacion);   
+                $('#editvoltaje').val(row.voltaje);
                 $('#editCategoria').val(row.Categoria);
                 $('#editEstatus').val(row.Estatus);
                 $('#editValor').val(row.Valor_unitario);

@@ -9,7 +9,7 @@ $searchValue = $_GET['search']['value'] ?? '';
 $orderCol = $_GET['order'][0]['column'] ?? 0;
 $orderDir = $_GET['order'][0]['dir'] ?? 'asc';
 
-$columns = ['id_equipo','Nombre','Descripcion','Cliente','Categoria','Estatus','Fecha_validad'];
+$columns = ['id_equipo','Identificador','Nombre','marca','modelo','ubicacion','voltaje','Descripcion','Cliente','Categoria','Estatus','Fecha_validad'];
 $orderBy = $columns[$orderCol] ?? 'id_equipo';
 
 // total

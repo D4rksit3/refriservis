@@ -17,9 +17,14 @@ $accion = $_POST['accion'] ?? '';
 
 if($accion === 'agregar'){
     try {
-        $stmt = $pdo->prepare("INSERT INTO equipos (Nombre, Descripcion, Cliente, Categoria, Estatus, Fecha_validad) VALUES (?,?,?,?,?,?)");
+        $stmt = $pdo->prepare("INSERT INTO equipos (Identificador, Nombre,marca, modelo, ubicacion, voltaje, Descripcion, Cliente, Categoria, Estatus, Fecha_validad) VALUES (?,?,?,?,?,?)");
         $success = $stmt->execute([
+            $_POST['Identificador'] ?? null,
             $_POST['Nombre'] ?? null,
+            $_POST['marca'] ?? null,
+            $_POST['modelo'] ?? null,
+            $_POST['ubicacion'] ?? null,
+            $_POST['voltaje'] ?? null,
             $_POST['Descripcion'] ?? null,
             $_POST['Cliente'] ?? null,
             $_POST['Categoria'] ?? null,
@@ -35,9 +40,14 @@ if($accion === 'agregar'){
 
 if($accion === 'editar'){
     try {
-        $stmt = $pdo->prepare("UPDATE equipos SET Nombre=?, Descripcion=?, Cliente=?, Categoria=?, Estatus=?, Fecha_validad=? WHERE id_equipo=?");
+        $stmt = $pdo->prepare("UPDATE equipos SET Identificador=?, Nombre=?, marca=?, modelo=?, ubicacion=?, voltaje=?, Descripcion=?, Cliente=?, Categoria=?, Estatus=?, Fecha_validad=? WHERE id_equipo=?");
         $success = $stmt->execute([
+            $_POST['Identificador'] ?? null,
             $_POST['Nombre'] ?? null,
+            $_POST['marca'] ?? null,
+            $_POST['modelo'] ?? null,
+            $_POST['ubicacion'] ?? null,
+            $_POST['voltaje'] ?? null,
             $_POST['Descripcion'] ?? null,
             $_POST['Cliente'] ?? null,
             $_POST['Categoria'] ?? null,
