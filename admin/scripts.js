@@ -52,28 +52,32 @@ $(document).ready(function(){
     });
 
     // -------------- EQUIPOS: AGREGAR --------------
-       // AGREGAR
-        $('#formAgregarEquipo').submit(function(e){
-            e.preventDefault();
+    // ---------------- EQUIPOS: AGREGAR ----------------
+    // Primero eliminamos cualquier submit previo para evitar duplicados
+    $(document).off('submit', '#formAgregarEquipo');
 
-            $.post('equipos_crud.php', $(this).serialize(), function(resp){
-                if(resp.success){
-                    // Cierra modal correctamente
-                    $('#modalAgregar').modal('hide');
+    $(document).on('submit', '#formAgregarEquipo', function(e){
+        e.preventDefault();
 
-                    // Recarga tabla cuando se cierre
-                    $('#modalAgregar').one('hidden.bs.modal', function(){
-                        if(tablaEquipos) tablaEquipos.ajax.reload(null, false);
-                        $('#formAgregarEquipo')[0].reset(); // limpiar form
-                    });
+        $.post('equipos_crud.php', $(this).serialize(), function(resp){
+            if(resp.success){
+                // Cierra modal
+                $('#modalAgregar').modal('hide');
 
-                } else {
-                    alert(resp.message ? resp.message : 'Error al agregar');
-                }
-            }, 'json').fail(function(){
-                alert('Error de red al agregar');
-            });
+                // Recarga tabla cuando se cierre
+                $('#modalAgregar').one('hidden.bs.modal', function(){
+                    if (tablaEquipos) tablaEquipos.ajax.reload(null, false);
+                    $('#formAgregarEquipo')[0].reset(); // limpiar form
+                });
+
+            } else {
+                alert(resp.message ? resp.message : 'Error al agregar');
+            }
+        }, 'json').fail(function(){
+            alert('Error de red al agregar');
         });
+    });
+
 
     // -------------- EQUIPOS: EDITAR --------------
     // abrir edit - delegación
