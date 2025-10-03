@@ -4,12 +4,8 @@ $(document).ready(function(){
     // ---------- TABLE: EQUIPOS ----------
     var tablaEquipos = $('#tablaEquipos').length ? $('#tablaEquipos').DataTable({
         processing: true,
-       /*  serverSide: true, */
-        ajax: {
-            url: 'equipos_data.php',
-            type: 'GET'
-
-        },
+        serverSide: true,
+        ajax: 'equipos_data.php',
         columns: [
             {data:'id_equipo'},
             {data:'Identificador'},
@@ -22,13 +18,32 @@ $(document).ready(function(){
             {data:'Cliente'},
             {data:'Categoria'},
             {data:'Estatus'},
-            /* {data:'Fecha_validad'}, */
+            {data:'Fecha_validad'},
             {data:'acciones', orderable:false, searchable:false}
         ],
         language:{ url:'//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
     }) : null;
 
-
+    // ---------- TABLE: PRODUCTOS ----------
+    var tablaProductos = $('#tablaProductos').length ? $('#tablaProductos').DataTable({
+        processing: true,
+        serverSide: true,
+        ajax: 'productos_data.php',
+        columns: [
+            {data:'productos_id'},
+            {data:'Identificador'},
+            {data:'Nombre'},
+            {data:'marca'},
+            {data:'modelo'},
+            {data:'ubicacion'},
+            {data:'voltaje'},
+            {data:'Categoria'},
+            {data:'Estatus'},
+            {data:'Valor_unitario'},
+            {data:'acciones', orderable:false, searchable:false}
+        ],
+        language:{ url:'//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
+    }) : null;
 
     // ---------- UTILS: cerrar modal y limpiar backdrop ----------
     function cerrarModalById(modalId){
@@ -52,32 +67,33 @@ $(document).ready(function(){
     });
 
     // -------------- EQUIPOS: AGREGAR --------------
-    // ---------------- EQUIPOS: AGREGAR ----------------
-    // Primero eliminamos cualquier submit previo para evitar duplicados
-    $(document).off('submit', '#formAgregarEquipo');
-
-    $(document).on('submit', '#formAgregarEquipo', function(e){
+        // AGREGAR
+    $('#formAgregarEquipo').submit(function(e){
         e.preventDefault();
 
         $.post('equipos_crud.php', $(this).serialize(), function(resp){
             if(resp.success){
-                // Cierra modal
+                // Cierra modal correctamente
                 $('#modalAgregar').modal('hide');
 
                 // Recarga tabla cuando se cierre
                 $('#modalAgregar').one('hidden.bs.modal', function(){
-                    if (tablaEquipos) tablaEquipos.ajax.reload(null, false);
+                    tabla.ajax.reload();
                     $('#formAgregarEquipo')[0].reset(); // limpiar form
                 });
 
             } else {
-                alert(resp.message ? resp.message : 'Error al agregar');
+                alert('Error al agregar');
             }
-        }, 'json').fail(function(){
-            alert('Error de red al agregar');
-        });
+        }, 'json');
     });
 
+    // Limpieza global de backdrop al cerrar cualquier modal
+    $(document).on('hidden.bs.modal', '.modal', function () {
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        $('body').css('overflow', 'auto');
+    });
 
     // -------------- EQUIPOS: EDITAR --------------
     // abrir edit - delegación
