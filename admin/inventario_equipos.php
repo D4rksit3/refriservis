@@ -62,7 +62,7 @@ require_once __DIR__.'/../includes/header.php';
               <option>Inactivo</option>
             </select>
           </div>
-          <div class="mb-2"><label>Fecha Validación</label><input type="date" class="form-control" name="Fecha_validad"></div>
+          <!-- <div class="mb-2"><label>Fecha Validación</label><input type="date" class="form-control" name="Fecha_validad"></div> -->
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-success">Agregar</button>
