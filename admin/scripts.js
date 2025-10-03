@@ -53,20 +53,19 @@ $(document).ready(function(){
 
     // -------------- EQUIPOS: AGREGAR --------------
         // AGREGAR
-            $// -------------- EQUIPOS: AGREGAR --------------
-        $('#formAgregarEquipo').on('submit', function(e){
+                // Evita múltiples binds
+        $(document).off('submit', '#formAgregarEquipo').on('submit', '#formAgregarEquipo', function(e){
             e.preventDefault();
 
             $.post('equipos_crud.php', $(this).serialize(), function(resp){
                 if(resp.success){
-                    // cerrar modal
                     $('#modalAgregar').modal('hide');
-                    // recargar tabla
-                    if(tablaEquipos) tablaEquipos.ajax.reload(null, false);
-                    // limpiar formulario
-                    $('#formAgregarEquipo')[0].reset();
 
-                    console.log("✅ Equipo agregado con ID:", resp.last_id);
+                    $('#modalAgregar').one('hidden.bs.modal', function(){
+                        if(tablaEquipos) tablaEquipos.ajax.reload(null, false);
+                        $('#formAgregarEquipo')[0].reset();
+                    });
+
                 } else {
                     alert(resp.message ? resp.message : 'Error al agregar');
                 }
