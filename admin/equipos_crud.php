@@ -17,7 +17,7 @@ $accion = $_POST['accion'] ?? '';
 
 if($accion === 'agregar'){
     try {
-        $stmt = $pdo->prepare("INSERT INTO equipos (Identificador, Nombre,marca, modelo, ubicacion, voltaje, Descripcion, Cliente, Categoria, Estatus, Fecha_validad) VALUES (?,?,?,?,?,?)");
+        $stmt = $pdo->prepare("INSERT INTO equipos (Identificador, Nombre, marca, modelo, ubicacion, voltaje, Descripcion, Cliente, Categoria, Estatus, Fecha_validad) VALUES (?,?,?,?,?,?)");
         $success = $stmt->execute([
             $_POST['Identificador'] ?? null,
             $_POST['Nombre'] ?? null,
