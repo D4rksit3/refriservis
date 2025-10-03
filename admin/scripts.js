@@ -18,10 +18,10 @@ $(document).ready(function(){
             {data:'modelo'},
             {data:'ubicacion'},
             {data:'voltaje'},
-            {data:'Descripcion'},
+            /* {data:'Descripcion'}, */
             {data:'Cliente'},
-            {data:'Categoria'},
-            {data:'Estatus'},
+            /* {data:'Categoria'}, */
+            /* {data:'Estatus'}, */
             /* {data:'Fecha_validad'}, */
             {data:'acciones', orderable:false, searchable:false}
         ],

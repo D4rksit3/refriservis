@@ -27,10 +27,10 @@ require_once __DIR__.'/../includes/header.php';
           <th>Modelo</th>
           <th>Ubicación</th>
           <th>Voltaje</th>
-          <th>Descripción</th>
+          <!-- <th>Descripción</th> -->
           <th>Cliente</th>
-          <th>Categoría</th>
-          <th>Estatus</th>
+          <!-- <th>Categoría</th>
+          <th>Estatus</th> -->
           <!-- <th>Fecha validación</th> -->
           <th>Acciones</th>
         </tr>
