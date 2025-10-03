@@ -4,8 +4,12 @@ $(document).ready(function(){
     // ---------- TABLE: EQUIPOS ----------
     var tablaEquipos = $('#tablaEquipos').length ? $('#tablaEquipos').DataTable({
         processing: true,
-        serverSide: true,
-        ajax: 'equipos_data.php',
+       /*  serverSide: true, */
+        ajax: {
+            url: 'equipos_data.php',
+            type: 'GET'
+
+        },
         columns: [
             {data:'id_equipo'},
             {data:'Identificador'},
@@ -18,32 +22,13 @@ $(document).ready(function(){
             {data:'Cliente'},
             {data:'Categoria'},
             {data:'Estatus'},
-            {data:'Fecha_validad'},
+            /* {data:'Fecha_validad'}, */
             {data:'acciones', orderable:false, searchable:false}
         ],
         language:{ url:'//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
     }) : null;
 
-    // ---------- TABLE: PRODUCTOS ----------
-    var tablaProductos = $('#tablaProductos').length ? $('#tablaProductos').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: 'productos_data.php',
-        columns: [
-            {data:'productos_id'},
-            {data:'Identificador'},
-            {data:'Nombre'},
-            {data:'marca'},
-            {data:'modelo'},
-            {data:'ubicacion'},
-            {data:'voltaje'},
-            {data:'Categoria'},
-            {data:'Estatus'},
-            {data:'Valor_unitario'},
-            {data:'acciones', orderable:false, searchable:false}
-        ],
-        language:{ url:'//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
-    }) : null;
+
 
     // ---------- UTILS: cerrar modal y limpiar backdrop ----------
     function cerrarModalById(modalId){
