@@ -41,8 +41,8 @@ $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // add action buttons (use data-id attributes)
 foreach($data as &$row){
     $id = $row['id_equipo'];
-    $row['acciones'] = '<button type="button" class="btn btn-sm btn-warning editar-equipo" data-id="'.$id.'">✏️ Editar</button> '
-                     . '<button type="button" class="btn btn-sm btn-danger eliminar-equipo" data-id="'.$id.'">🗑️ Eliminar</button>';
+    $row['acciones'] = '<button type="button" class="btn btn-sm btn-warning editar-equipo" data-id="'.$id.'">✏️</button> '
+                     . '<button type="button" class="btn btn-sm btn-danger eliminar-equipo" data-id="'.$id.'">🗑️</button>';
 }
 
 echo json_encode([
