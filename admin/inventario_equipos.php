@@ -21,7 +21,13 @@ require_once __DIR__.'/../includes/header.php';
       <thead class="table-primary">
         <tr>
           <th>ID</th>
+          <th>Identificador</th>
           <th>Nombre</th>
+          <th>marca</th>
+          <th>modelo</th>
+          <th>ubicacion</th>
+          <th>voltaje</th>
+
           <th>Descripcion</th>
           <th>Cliente</th>
           <th>Categoria</th>
