@@ -44,6 +44,7 @@ if ($accion === 'agregar') {
         $stmt = $pdo->prepare("INSERT INTO equipos 
             (Identificador, Nombre, marca, modelo, ubicacion, voltaje, Descripcion, Cliente, Categoria, Estatus, Fecha_validad) 
             VALUES (?,?,?,?,?,?,?,?,?,?,?)");
+        
         $success = $stmt->execute([
             $_POST['Identificador'] ?? null,
             $_POST['Nombre'] ?? null,
@@ -57,7 +58,14 @@ if ($accion === 'agregar') {
             $_POST['Estatus'] ?? null,
             $_POST['Fecha_validad'] ?? null
         ]);
-        echo json_encode(['success' => (bool)$success]);
+        
+        $lastId = $pdo->lastInsertId();
+        
+        echo json_encode([
+            'success' => (bool)$success,
+            'last_id' => $lastId,
+            'posted'  => $_POST // <- para debug
+        ]);
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
