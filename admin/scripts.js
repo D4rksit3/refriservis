@@ -24,26 +24,7 @@ $(document).ready(function(){
         language:{ url:'//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
     }) : null;
 
-    // ---------- TABLE: PRODUCTOS ----------
-    var tablaProductos = $('#tablaProductos').length ? $('#tablaProductos').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: 'productos_data.php',
-        columns: [
-            {data:'productos_id'},
-            {data:'Identificador'},
-            {data:'Nombre'},
-            {data:'marca'},
-            {data:'modelo'},
-            {data:'ubicacion'},
-            {data:'voltaje'},
-            {data:'Categoria'},
-            {data:'Estatus'},
-            {data:'Valor_unitario'},
-            {data:'acciones', orderable:false, searchable:false}
-        ],
-        language:{ url:'//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
-    }) : null;
+
 
     // ---------- UTILS: cerrar modal y limpiar backdrop ----------
     function cerrarModalById(modalId){
