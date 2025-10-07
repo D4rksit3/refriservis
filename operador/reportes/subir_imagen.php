@@ -1,5 +1,5 @@
 <?php
-$uploadDir = __DIR__ . 'uploads/';
+$uploadDir = __DIR__ . '/uploads/';
 if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
 $rutas = [];
@@ -11,7 +11,7 @@ if (!empty($_FILES['imagenes']['name'][0])) {
         $destino = $uploadDir . $nombreSeguro;
 
         if (move_uploaded_file($tmpName, $destino)) {
-            // 🔹 Devolver ruta pública relativa
+            // 🔹 Devolver ruta pública relativa (para usar en el PDF o HTML)
             $rutas[] = 'uploads/' . $nombreSeguro;
         }
     }
