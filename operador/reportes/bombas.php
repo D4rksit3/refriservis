@@ -401,10 +401,11 @@ for ($i = 1; $i <= 7; $i++) {
       <textarea class="form-control" name="trabajos" rows="4"></textarea>
     </div>
 
-    <div class="mb-3">
-      <label>Observaciones y recomendaciones</label>
-      <textarea class="form-control" name="observaciones" rows="3"></textarea>
+    <div class="col-12">
+      <label class="form-label">Observaciones y recomendaciones</label>
+      <textarea id="observaciones" name="observaciones" class="form-control"></textarea>
     </div>
+
 
     <!-- FOTOS -->
     <div class="mb-3">
@@ -447,6 +448,10 @@ for ($i = 1; $i <= 7; $i++) {
     </div>
   </form>
 </div>
+
+<!-- Summernote -->
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -521,6 +526,78 @@ $(document).ready(function(){
       }
     });
   });
+
+  $(document).ready(function(){
+    $('.selectpicker').selectpicker();
+
+    // Inicializar Summernote (editor multimedia)
+    $('#observaciones').summernote({
+        placeholder: 'Escribe tus observaciones aquí...',
+        height: 250,
+        toolbar: [
+            ['style', ['bold', 'italic', 'underline', 'clear']],
+            ['font', ['fontsize', 'color']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['insert', ['link', 'picture', 'video']],
+            ['view', ['fullscreen', 'codeview']]
+        ]
+    });
+
+    // 🔹 Actualizar contenido del editor cuando cambian los equipos
+    $('select[name="equipos[]"]').on('changed.bs.select', function (e, clickedIndex, isSelected, previousValue) {
+        const equiposSeleccionados = $(this).val() || [];
+        let contenidoActual = $('#observaciones').summernote('code');
+
+        // Extraer los identificadores existentes en el texto
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(contenidoActual, 'text/html');
+        const existentes = Array.from(doc.querySelectorAll('h6.equipo-titulo')).map(h => h.dataset.id);
+
+        // Añadir nuevos identificadores que no existan
+        equiposSeleccionados.forEach(id_equipo => {
+            if (!existentes.includes(id_equipo)) {
+                const texto = $(this).find('option[value="'+id_equipo+'"]').text();
+                const identificador = texto.split('|')[0].trim();
+                const bloqueHTML = `
+                    <h6 class="fw-bold equipo-titulo" data-id="${id_equipo}">${identificador}:</h6>
+                    <p><br></p>
+                `;
+                contenidoActual += bloqueHTML;
+            }
+        });
+
+        // Eliminar identificadores que ya no estén seleccionados
+        existentes.forEach(id_equipo => {
+            if (!equiposSeleccionados.includes(id_equipo)) {
+                const regex = new RegExp(`<h6 class="fw-bold equipo-titulo" data-id="${id_equipo}".*?</p>`, 'gs');
+                contenidoActual = contenidoActual.replace(regex, '');
+            }
+        });
+
+        // Actualizar el contenido del editor
+        $('#observaciones').summernote('code', contenidoActual);
+    });
+
+    // Guardar nuevo cliente por AJAX (sin cambios)
+    $('#formNuevoCliente').on('submit', function(e){
+        e.preventDefault();
+        $.post('/mantenimientos/guardar_cliente.php', $(this).serialize(), function(data){
+            if(data.success){
+                $('#cliente_id')
+                    .append($('<option>', { value: data.id, text: data.text }))
+                    .val(data.id)
+                    .selectpicker('refresh');
+                $('#modalNuevoCliente').modal('hide');
+            } else {
+                alert(data.error || 'Error al guardar cliente');
+            }
+        }, 'json');
+    });
+});
+
+
+
+
 });
 </script>
 </body>
