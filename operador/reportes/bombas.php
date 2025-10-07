@@ -401,11 +401,15 @@ for ($i = 1; $i <= 7; $i++) {
       <textarea class="form-control" name="trabajos" rows="4"></textarea>
     </div>
 
-    <div class="col-12">
-      <label class="form-label">Observaciones y recomendaciones</label>
-      <textarea id="observaciones" name="observaciones" class="form-control"></textarea>
-    </div>
+    <!-- OBSERVACIONES MULTIMEDIA -->
+    <h6>Observaciones y recomendaciones (Multimedia por equipo)</h6>
 
+    <div id="observacionesMultimedia"></div>
+
+    <!-- Campo oculto donde se almacenará todo el contenido final -->
+    <textarea name="observaciones" id="observacionesFinal" hidden></textarea>
+
+    <hr>
 
     <!-- FOTOS -->
     <div class="mb-3">
@@ -449,20 +453,10 @@ for ($i = 1; $i <= 7; $i++) {
   </form>
 </div>
 
-<!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
-<!-- Bootstrap (JS + CSS) -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Bootstrap Select -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
-
-<!-- Summernote -->
-<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-lite.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 
 <script>
 // Firmas
@@ -532,79 +526,84 @@ $(document).ready(function(){
       }
     });
   });
+});
 
-  $(document).ready(function(){
-    $('.selectpicker').selectpicker();
+// 🔹 Generar área multimedia por cada equipo seleccionado
+function generarObservacionesMultimedia() {
+  const contenedor = document.getElementById('observacionesMultimedia');
+  contenedor.innerHTML = ''; // limpiar contenido anterior
 
-    // Inicializar Summernote (editor multimedia)
-    $('#observaciones').summernote({
-        placeholder: 'Escribe tus observaciones aquí...',
-        height: 250,
-        toolbar: [
-            ['style', ['bold', 'italic', 'underline', 'clear']],
-            ['font', ['fontsize', 'color']],
-            ['para', ['ul', 'ol', 'paragraph']],
-            ['insert', ['link', 'picture', 'video']],
-            ['view', ['fullscreen', 'codeview']]
-        ]
-    });
+  $('.equipo-select').each(function() {
+    const index = $(this).data('index');
+    const id = $(this).val();
+    const texto = $(this).find('option:selected').text().trim();
 
-    // 🔹 Actualizar contenido del editor cuando cambian los equipos
-    $('select[name="equipos[]"]').on('changed.bs.select', function (e, clickedIndex, isSelected, previousValue) {
-        const equiposSeleccionados = $(this).val() || [];
-        let contenidoActual = $('#observaciones').summernote('code');
+    if (id && texto && texto !== '-- Seleccione --') {
+      const bloque = document.createElement('div');
+      bloque.className = 'card p-3 mb-3';
+      bloque.innerHTML = `
+        <h6 class="text-primary mb-2">🔧 ${texto}</h6>
+        <div class="mb-2">
+          <label>Texto / Recomendación:</label>
+          <textarea class="form-control observacion-texto" data-index="${index}" rows="3" placeholder="Escribe observaciones específicas para ${texto}..."></textarea>
+        </div>
+        <div class="mb-2">
+          <label>Imágenes:</label>
+          <input type="file" class="form-control observacion-imagen" data-index="${index}" accept="image/*" multiple>
+          <div id="preview-${index}" class="d-flex flex-wrap gap-2 mt-2"></div>
+        </div>
+      `;
+      contenedor.appendChild(bloque);
+    }
+  });
+}
 
-        // Extraer los identificadores existentes en el texto
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(contenidoActual, 'text/html');
-        const existentes = Array.from(doc.querySelectorAll('h6.equipo-titulo')).map(h => h.dataset.id);
+// 🔹 Mostrar vista previa de imágenes
+$(document).on('change', '.observacion-imagen', function() {
+  const index = $(this).data('index');
+  const preview = document.getElementById(`preview-${index}`);
+  preview.innerHTML = '';
+  for (const file of this.files) {
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    img.className = 'img-thumbnail';
+    img.style.maxWidth = '120px';
+    img.style.maxHeight = '120px';
+    preview.appendChild(img);
+  }
+});
 
-        // Añadir nuevos identificadores que no existan
-        equiposSeleccionados.forEach(id_equipo => {
-            if (!existentes.includes(id_equipo)) {
-                const texto = $(this).find('option[value="'+id_equipo+'"]').text();
-                const identificador = texto.split('|')[0].trim();
-                const bloqueHTML = `
-                    <h6 class="fw-bold equipo-titulo" data-id="${id_equipo}">${identificador}:</h6>
-                    <p><br></p>
-                `;
-                contenidoActual += bloqueHTML;
-            }
-        });
+// 🔹 Actualizar secciones cuando cambie algún combo de equipo
+$('.equipo-select').on('change', function() {
+  generarObservacionesMultimedia();
+});
 
-        // Eliminar identificadores que ya no estén seleccionados
-        existentes.forEach(id_equipo => {
-            if (!equiposSeleccionados.includes(id_equipo)) {
-                const regex = new RegExp(`<h6 class="fw-bold equipo-titulo" data-id="${id_equipo}".*?</p>`, 'gs');
-                contenidoActual = contenidoActual.replace(regex, '');
-            }
-        });
+// 🔹 Al cargar por primera vez
+$(document).ready(function() {
+  generarObservacionesMultimedia();
+});
 
-        // Actualizar el contenido del editor
-        $('#observaciones').summernote('code', contenidoActual);
-    });
+// 🔹 Al enviar el formulario, consolidar todo
+document.getElementById('formReporte').addEventListener('submit', function(e) {
+  // 🔸 Consolidar observaciones de texto
+  const data = [];
+  document.querySelectorAll('.observacion-texto').forEach(txt => {
+    const index = txt.dataset.index;
+    const nombre = $(`.equipo-select[data-index='${index}'] option:selected`).text().trim();
+    if (nombre && txt.value.trim()) {
+      data.push({
+        equipo: nombre,
+        texto: txt.value.trim()
+      });
+    }
+  });
 
-    // Guardar nuevo cliente por AJAX (sin cambios)
-    $('#formNuevoCliente').on('submit', function(e){
-        e.preventDefault();
-        $.post('/mantenimientos/guardar_cliente.php', $(this).serialize(), function(data){
-            if(data.success){
-                $('#cliente_id')
-                    .append($('<option>', { value: data.id, text: data.text }))
-                    .val(data.id)
-                    .selectpicker('refresh');
-                $('#modalNuevoCliente').modal('hide');
-            } else {
-                alert(data.error || 'Error al guardar cliente');
-            }
-        }, 'json');
-    });
+  // 🔸 Guardar en el textarea oculto
+  document.getElementById('observacionesFinal').value = JSON.stringify(data, null, 2);
 });
 
 
 
-
-});
 </script>
 </body>
 </html>
