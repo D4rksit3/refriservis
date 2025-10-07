@@ -5,16 +5,11 @@ require_once __DIR__ . '/../config/db.php';
 // =======================
 // 1) LISTADO PARA DATATABLES
 // =======================
+// =======================
+// 1) LISTADO PARA DATATABLES
+// =======================
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_GET['id'])) {
-    try {
-        $stmt = $pdo->query("SELECT * FROM equipos");
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // DataTables espera {"data":[...]}
-        echo json_encode(["data" => $rows]);
-    } catch (PDOException $e) {
-        echo json_encode(["data" => [], "error" => $e->getMessage()]);
-    }
+    http_response_code(204); // sin contenido
     exit;
 }
 
