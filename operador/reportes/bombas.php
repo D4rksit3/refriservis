@@ -528,10 +528,9 @@ $(document).ready(function(){
   });
 });
 
-// 🔹 Generar área multimedia por cada equipo seleccionado
 function generarObservacionesMultimedia() {
   const contenedor = document.getElementById('observacionesMultimedia');
-  contenedor.innerHTML = ''; // limpiar contenido anterior
+  contenedor.innerHTML = '';
 
   $('.equipo-select').each(function() {
     const index = $(this).data('index');
@@ -545,7 +544,8 @@ function generarObservacionesMultimedia() {
         <h6 class="text-primary mb-2">🔧 ${texto}</h6>
         <div class="mb-2">
           <label>Texto / Recomendación:</label>
-          <textarea class="form-control observacion-texto" data-index="${index}" rows="3" placeholder="Escribe observaciones específicas para ${texto}..."></textarea>
+          <textarea class="form-control observacion-texto" data-index="${index}" rows="3"
+            placeholder="Escribe observaciones específicas para ${texto}..."></textarea>
         </div>
         <div class="mb-2">
           <label>Imágenes:</label>
@@ -558,50 +558,65 @@ function generarObservacionesMultimedia() {
   });
 }
 
-// 🔹 Mostrar vista previa de imágenes
+// Vista previa de imágenes y subida inmediata al servidor
 $(document).on('change', '.observacion-imagen', function() {
   const index = $(this).data('index');
+  const files = this.files;
   const preview = document.getElementById(`preview-${index}`);
   preview.innerHTML = '';
-  for (const file of this.files) {
-    const img = document.createElement('img');
-    img.src = URL.createObjectURL(file);
-    img.className = 'img-thumbnail';
-    img.style.maxWidth = '120px';
-    img.style.maxHeight = '120px';
-    preview.appendChild(img);
-  }
+
+  if (files.length === 0) return;
+
+  const formData = new FormData();
+  for (const f of files) formData.append('imagenes[]', f);
+
+  // Subir imágenes al servidor
+  fetch('subir_imagen.php', { method: 'POST', body: formData })
+    .then(res => res.json())
+    .then(rutas => {
+      // Mostrar preview
+      rutas.forEach(ruta => {
+        const img = document.createElement('img');
+        img.src = ruta;
+        img.className = 'img-thumbnail';
+        img.style.maxWidth = '120px';
+        img.style.maxHeight = '120px';
+        preview.appendChild(img);
+      });
+
+      // Guardar rutas en dataset
+      preview.dataset.rutas = JSON.stringify(rutas);
+    })
+    .catch(err => console.error('Error subiendo imágenes:', err));
 });
 
-// 🔹 Actualizar secciones cuando cambie algún combo de equipo
+// Generar secciones según equipos seleccionados
 $('.equipo-select').on('change', function() {
   generarObservacionesMultimedia();
 });
+$(document).ready(generarObservacionesMultimedia);
 
-// 🔹 Al cargar por primera vez
-$(document).ready(function() {
-  generarObservacionesMultimedia();
-});
-
-// 🔹 Al enviar el formulario, consolidar todo
+// Consolidar al enviar
 document.getElementById('formReporte').addEventListener('submit', function(e) {
-  // 🔸 Consolidar observaciones de texto
   const data = [];
+
   document.querySelectorAll('.observacion-texto').forEach(txt => {
     const index = txt.dataset.index;
     const nombre = $(`.equipo-select[data-index='${index}'] option:selected`).text().trim();
+    const preview = document.getElementById(`preview-${index}`);
+    const rutas = preview?.dataset?.rutas ? JSON.parse(preview.dataset.rutas) : [];
+
     if (nombre && txt.value.trim()) {
       data.push({
         equipo: nombre,
-        texto: txt.value.trim()
+        texto: txt.value.trim(),
+        imagenes: rutas
       });
     }
   });
 
-  // 🔸 Guardar en el textarea oculto
   document.getElementById('observacionesFinal').value = JSON.stringify(data, null, 2);
 });
-
 
 
 </script>
