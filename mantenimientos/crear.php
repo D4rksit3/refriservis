@@ -85,7 +85,10 @@ $categorias = $pdo->query('SELECT nombre FROM categoria ORDER BY nombre')->fetch
         <div class="col-4">
             <label class="form-label">Cliente</label>
             <div class="input-group">
-                <select name="cliente_id" id="cliente_id" class="form-select">
+                <select name="cliente_id" id="cliente_id" 
+                    class="form-select selectpicker" 
+                    data-live-search="true" 
+                    title="Selecciona un cliente...">
                     <option value="">-- Ninguno --</option>
                     <?php foreach($clientes as $c): ?>
                         <option value="<?=$c['id']?>">
@@ -187,6 +190,7 @@ $categorias = $pdo->query('SELECT nombre FROM categoria ORDER BY nombre')->fetch
 
 <script>
 $(document).ready(function(){
+    // Inicializar los selectpicker
     $('.selectpicker').selectpicker();
 
     // Enviar formulario nuevo cliente por AJAX
@@ -194,10 +198,12 @@ $(document).ready(function(){
         e.preventDefault();
         $.post('/mantenimientos/guardar_cliente.php', $(this).serialize(), function(data){
             if(data.success){
-                // Agregar el nuevo cliente al select
-                $('#cliente_id').append(
-                    $('<option>', { value: data.id, text: data.text }).prop('selected', true)
-                );
+                // Agregar el nuevo cliente al select y refrescar
+                $('#cliente_id')
+                    .append($('<option>', { value: data.id, text: data.text }))
+                    .val(data.id)
+                    .selectpicker('refresh');
+
                 $('#modalNuevoCliente').modal('hide');
             } else {
                 alert(data.error || 'Error al guardar cliente');
