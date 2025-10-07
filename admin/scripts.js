@@ -59,11 +59,17 @@ $(document).ready(function(){
         $(document).off('submit', '#formAgregarEquipo').on('submit', '#formAgregarEquipo', function(e){
             e.preventDefault();
 
-            // Evitar doble clic rápido o doble envío
-            if ($(this).data('enviando')) return;
-            $(this).data('enviando', true);
+            if (enviando) return; // evita doble envío
+            enviando = true;
 
-            $.post('equipos_crud.php', $(this).serialize(), function(resp){
+            console.log('🟢 Enviando formulario...');
+            $.ajax({
+                url: 'equipos_crud.php',
+                type: 'POST',
+                data: $(this).serialize(),
+                dataType: 'json'
+            })
+            .done(function(resp){
                 if(resp.success){
                     $('#modalAgregarEquipo').modal('hide');
                     $('#modalAgregarEquipo').one('hidden.bs.modal', function(){
@@ -71,13 +77,14 @@ $(document).ready(function(){
                         $('#formAgregarEquipo')[0].reset();
                     });
                 } else {
-                    alert(resp.message ? resp.message : 'Error al agregar');
+                    alert(resp.message || 'Error al agregar');
                 }
-            }, 'json').fail(function(){
+            })
+            .fail(function(){
                 alert('Error de red al agregar');
-            }).always(() => {
-                // Libera bloqueo tras terminar
-                $('#formAgregarEquipo').data('enviando', false);
+            })
+            .always(function(){
+                enviando = false; // liberar bloqueo
             });
         });
 
