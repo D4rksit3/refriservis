@@ -402,7 +402,7 @@ $pdf->Ln(3);
                 // Imágenes
                 if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
                     foreach ($obs['imagenes'] as $imgPath) {
-                        $realPath = __DIR__ . '/../' . $imgPath; // ajusta la ruta si es necesario
+                        $realPath = __DIR__ . '/' . $imgPath; // ajusta la ruta si es necesario
                         if (file_exists($realPath)) {
                             // Obtener ancho del PDF y ajustar imagen
                             $x = $pdf->GetX();
