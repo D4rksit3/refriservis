@@ -380,7 +380,7 @@ $pdf->Ln(3);
     $pdf->Ln(2);
 
     // ---------- OBSERVACIONES ----------
-    $pdf->AddPage();
+   $pdf->AddPage();
     $pdf->SetFont('Arial','B',10);
     $pdf->Cell(0,8, utf8_decode("Observaciones y Recomendaciones:"), 0, 1, 'L');
     $pdf->Ln(2);
@@ -390,40 +390,61 @@ $pdf->Ln(3);
 
         if (is_array($observaciones)) {
             foreach ($observaciones as $obs) {
-                // Nombre del equipo
+
+                // === Dibuja el marco general ===
+                $xStart = 10;
+                $yStart = $pdf->GetY();
+                $pdf->SetDrawColor(180,180,180);
+                $pdf->SetLineWidth(0.2);
+
+                // Guarda posición para calcular alto dinámico
+                $startY = $pdf->GetY();
+
+                // --- Contenido ---
                 $pdf->SetFont('Arial','B',9);
-                $pdf->Cell(0,6, utf8_decode("Equipo: " . ($obs['equipo'] ?? '')), 0, 1);
-                
-                // Texto de observación
+                $pdf->MultiCell(0,6, utf8_decode("Equipo: " . ($obs['equipo'] ?? '')), 0, 'L');
+
                 $pdf->SetFont('Arial','',9);
                 $texto = isset($obs['texto']) ? utf8_decode($obs['texto']) : '';
                 $pdf->MultiCell(0,6, "Observación: " . $texto, 0, 'L');
                 $pdf->Ln(2);
 
-                // Imágenes
+                // --- Imágenes (2 por fila) ---
                 if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
+                    $maxWidth = 60;
+                    $maxHeight = 45;
+                    $margin = 10;
+                    $count = 0;
+
                     foreach ($obs['imagenes'] as $imgPath) {
-                        $realPath = __DIR__ . '/' . $imgPath; // ajusta la ruta si es necesario
+                        $realPath = __DIR__ . '/' . $imgPath;
                         if (file_exists($realPath)) {
-                            // Obtener ancho del PDF y ajustar imagen
-                            $x = $pdf->GetX();
+                            $x = 10 + ($count % 2) * ($maxWidth + $margin);
                             $y = $pdf->GetY();
-                            $maxWidth = 60;
-                            $maxHeight = 45;
 
                             $pdf->Image($realPath, $x, $y, $maxWidth, $maxHeight);
-                            $pdf->Ln($maxHeight + 2);
+
+                            // Cada 2 imágenes, salta de línea
+                            if ($count % 2 == 1) {
+                                $pdf->Ln($maxHeight + 5);
+                            }
+                            $count++;
                         } else {
                             $pdf->SetFont('Arial','I',8);
                             $pdf->Cell(0,5, utf8_decode("Imagen no encontrada: $imgPath"), 0, 1, 'L');
                         }
                     }
+
+                    // Si quedó una sola imagen sin pareja, baja de línea igual
+                    if ($count % 2 == 1) {
+                        $pdf->Ln($maxHeight + 5);
+                    }
                 }
 
-                $pdf->Ln(5);
-                $pdf->SetDrawColor(200,200,200);
-                $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
-                $pdf->Ln(5);
+                // --- Fin del cuadro ---
+                $endY = $pdf->GetY();
+                $pdf->Rect($xStart, $yStart, 190 - $xStart, $endY - $yStart);
+                $pdf->Ln(6);
             }
         } else {
             $pdf->SetFont('Arial','I',9);
@@ -435,6 +456,7 @@ $pdf->Ln(3);
     }
 
     $pdf->Ln(4);
+
 
 
 
