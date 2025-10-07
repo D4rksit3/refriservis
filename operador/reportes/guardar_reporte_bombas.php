@@ -263,15 +263,7 @@ function generarPDF(PDO $pdo, int $id) {
     }
     $pdf->Ln(4);
 
-    // ---------- TRABAJOS ----------
-    $pdf->SetFont('Arial','B',9);
-    $pdf->MultiCell(0,7, txt("Trabajos Realizados:\n" . ($m['trabajos'] ?? '')), 1);
-    $pdf->Ln(2);
-
-    // ---------- OBSERVACIONES ----------
-    $pdf->SetFont('Arial','B',9);
-    $pdf->MultiCell(0,7, txt("Observaciones y Recomendaciones:\n" . ($m['observaciones'] ?? '')), 1);
-    $pdf->Ln(4);
+    
 
       // ---------- PARÁMETROS ----------
    /*  $pdf->SetFont('Arial','B',9);
@@ -382,7 +374,15 @@ $pdf->Ln(3);
 
 
 
+// ---------- TRABAJOS ----------
+    $pdf->SetFont('Arial','B',9);
+    $pdf->MultiCell(0,7, txt("Trabajos Realizados:\n" . ($m['trabajos'] ?? '')), 1);
+    $pdf->Ln(2);
 
+    // ---------- OBSERVACIONES ----------
+    $pdf->SetFont('Arial','B',9);
+    $pdf->MultiCell(0,7, txt("Observaciones y Recomendaciones:\n" . ($m['observaciones'] ?? '')), 1);
+    $pdf->Ln(4);
 
 
     // ---------- FOTOS ----------
