@@ -63,7 +63,7 @@ $(document).ready(function(){
     const formData = new FormData(this);
     formData.append('accion', 'agregar');
 
-    fetch('equipos_crud.php', {
+    fetch('equipos_add_crud.php', {
         method: 'POST',
         body: formData
     })

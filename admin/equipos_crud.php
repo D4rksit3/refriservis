@@ -34,34 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
 // =======================
 $accion = $_POST['accion'] ?? '';
 
-if ($accion === 'agregar') {
-    try {
-        $stmt = $pdo->prepare("INSERT INTO equipos 
-            (Identificador, Nombre, marca, modelo, ubicacion, voltaje, Descripcion, Cliente, Categoria, Estatus, Fecha_validad) 
-            VALUES (?,?,?,?,?,?,?,?,?,?,?)");
-        $success = $stmt->execute([
-            $_POST['Identificador'] ?? null,
-            $_POST['Nombre'] ?? null,
-            $_POST['marca'] ?? null,
-            $_POST['modelo'] ?? null,
-            $_POST['ubicacion'] ?? null,
-            $_POST['voltaje'] ?? null,
-            $_POST['Descripcion'] ?? null,
-            $_POST['Cliente'] ?? null,
-            $_POST['Categoria'] ?? null,
-            $_POST['Estatus'] ?? null,
-            $_POST['Fecha_validad'] ?? null
-        ]);
-        echo json_encode([
-            'success' => (bool)$success,
-            'last_id' => $pdo->lastInsertId(),
-            'posted'  => $_POST
-        ]);
-    } catch (PDOException $e) {
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-    }
-    exit;
-}
+
 
 if ($accion === 'editar') {
     try {
