@@ -380,6 +380,7 @@ $pdf->Ln(3);
     $pdf->Ln(2);
 
     // ---------- OBSERVACIONES ----------
+    $pdf->AddPage();
     $pdf->SetFont('Arial','B',10);
     $pdf->Cell(0,8, utf8_decode("Observaciones y Recomendaciones:"), 0, 1, 'L');
     $pdf->Ln(2);
