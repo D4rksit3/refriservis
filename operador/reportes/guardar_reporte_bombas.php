@@ -263,27 +263,6 @@ function generarPDF(PDO $pdo, int $id) {
     }
     $pdf->Ln(4);
 
- 
-   // ---------- ACTIVIDADES A REALIZAR ----------
-    $pdf->AddPage(); // 👉 que empiece en una nueva hoja
-    $pdf->SetFont('Arial','B',9);
-    $pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
-
-    // Cabecera
-    $pdf->SetFont('Arial','B',7);
-    $pdf->Cell(80,7, txt("Actividad"), 1, 0, 'C');
-    for ($i=1;$i<=7;$i++) {
-        $pdf->Cell(10,7, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
-    }
-    $pdf->Cell(8,7,"B",1,0,'C');
-    $pdf->Cell(8,7,"T",1,0,'C');
-    $pdf->Cell(8,7,"S",1,0,'C');
-    $pdf->Cell(8,7,"A",1,1,'C');
-
-    $pdf->SetFont('Arial','',7);
-
-
-
     // ---------- TRABAJOS ----------
     $pdf->SetFont('Arial','B',9);
     $pdf->MultiCell(0,7, txt("Trabajos Realizados:\n" . ($m['trabajos'] ?? '')), 1);
@@ -310,7 +289,24 @@ function generarPDF(PDO $pdo, int $id) {
 
         
     // ---------- NUEVA PÁGINA ----------
+ 
+   // ---------- ACTIVIDADES A REALIZAR ----------
+$pdf->AddPage(); // 👉 que empiece en una nueva hoja
+$pdf->SetFont('Arial','B',9);
+$pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
 
+// Cabecera
+$pdf->SetFont('Arial','B',7);
+$pdf->Cell(80,7, txt("Actividad"), 1, 0, 'C');
+for ($i=1;$i<=7;$i++) {
+    $pdf->Cell(10,7, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
+}
+$pdf->Cell(8,7,"B",1,0,'C');
+$pdf->Cell(8,7,"T",1,0,'C');
+$pdf->Cell(8,7,"S",1,0,'C');
+$pdf->Cell(8,7,"A",1,1,'C');
+
+$pdf->SetFont('Arial','',7);
 
 // Lista fija de actividades
 $actividadesList = [
