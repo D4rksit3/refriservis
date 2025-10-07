@@ -8,10 +8,10 @@ require_once __DIR__ . '/../config/db.php';
 // =======================
 // 1) LISTADO PARA DATATABLES
 // =======================
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_GET['id'])) {
+/* if ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_GET['id'])) {
     http_response_code(204); // sin contenido
     exit;
-}
+} */
 
 // =======================
 // 2) GET por id (abrir modal de edición)
