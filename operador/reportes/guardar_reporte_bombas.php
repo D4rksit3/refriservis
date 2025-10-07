@@ -380,9 +380,61 @@ $pdf->Ln(3);
     $pdf->Ln(2);
 
     // ---------- OBSERVACIONES ----------
-    $pdf->SetFont('Arial','B',9);
-    $pdf->MultiCell(0,7, txt("Observaciones y Recomendaciones:\n" . ($m['observaciones'] ?? '')), 1);
+    $pdf->SetFont('Arial','B',10);
+    $pdf->Cell(0,8, utf8_decode("Observaciones y Recomendaciones:"), 0, 1, 'L');
+    $pdf->Ln(2);
+
+    if (!empty($m['observaciones'])) {
+        $observaciones = json_decode($m['observaciones'], true);
+
+        if (is_array($observaciones)) {
+            foreach ($observaciones as $obs) {
+                // Nombre del equipo
+                $pdf->SetFont('Arial','B',9);
+                $pdf->Cell(0,6, utf8_decode("Equipo: " . ($obs['equipo'] ?? '')), 0, 1);
+                
+                // Texto de observación
+                $pdf->SetFont('Arial','',9);
+                $texto = isset($obs['texto']) ? utf8_decode($obs['texto']) : '';
+                $pdf->MultiCell(0,6, "Observación: " . $texto, 0, 'L');
+                $pdf->Ln(2);
+
+                // Imágenes
+                if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
+                    foreach ($obs['imagenes'] as $imgPath) {
+                        $realPath = __DIR__ . '/../' . $imgPath; // ajusta la ruta si es necesario
+                        if (file_exists($realPath)) {
+                            // Obtener ancho del PDF y ajustar imagen
+                            $x = $pdf->GetX();
+                            $y = $pdf->GetY();
+                            $maxWidth = 60;
+                            $maxHeight = 45;
+
+                            $pdf->Image($realPath, $x, $y, $maxWidth, $maxHeight);
+                            $pdf->Ln($maxHeight + 2);
+                        } else {
+                            $pdf->SetFont('Arial','I',8);
+                            $pdf->Cell(0,5, utf8_decode("Imagen no encontrada: $imgPath"), 0, 1, 'L');
+                        }
+                    }
+                }
+
+                $pdf->Ln(5);
+                $pdf->SetDrawColor(200,200,200);
+                $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
+                $pdf->Ln(5);
+            }
+        } else {
+            $pdf->SetFont('Arial','I',9);
+            $pdf->Cell(0,6, utf8_decode("No hay observaciones registradas."), 0, 1);
+        }
+    } else {
+        $pdf->SetFont('Arial','I',9);
+        $pdf->Cell(0,6, utf8_decode("No hay observaciones registradas."), 0, 1);
+    }
+
     $pdf->Ln(4);
+
 
 
     // ---------- FOTOS ----------
