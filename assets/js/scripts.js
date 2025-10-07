@@ -18,7 +18,7 @@ $(document).ready(function(){
     });
 
     // AGREGAR
-    $('#formAgregarEquipo').submit(function(e){
+    /* $('#formAgregarEquipo').submit(function(e){
         e.preventDefault();
         $.post('equipos_crud.php', $(this).serialize(), function(resp){
             if(resp.success){
@@ -27,7 +27,7 @@ $(document).ready(function(){
                 tabla.ajax.reload();
             } else alert('Error al agregar');
         }, 'json');
-    });
+    }); */
 
     // EDITAR - abrir modal
     $('#tablaEquipos').on('click', '.editar', function(){

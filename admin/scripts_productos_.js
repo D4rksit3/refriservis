@@ -25,19 +25,7 @@ $(document).ready(function(){
     }
 
     // -------- AGREGAR --------
-    $('#formAgregarEquipo').on('submit', function(e){
-        e.preventDefault();
-
-        $.post('equipos_crud.php', $(this).serialize(), function(resp){
-            if(resp.success){
-                $('#formAgregarEquipo')[0].reset();
-                tabla.ajax.reload(null,false);
-                cerrarModal('modalAgregar');
-            } else {
-                alert('Error al agregar');
-            }
-        }, 'json');
-    });
+    
 
     // -------- EDITAR (abrir modal) --------
     $('#tablaProductos').on('click', '.editar', function(){
