@@ -56,9 +56,11 @@ $(document).ready(function(){
                 // Evita múltiples binds
         // Evitar múltiples eventos duplicados
         $(document).off('submit', '#formAgregarEquipo').on('submit', '#formAgregarEquipo', function(e){
+            
             e.preventDefault();
 
-            $.post('equipos_crud.php', $(this).serialize(), function(resp){
+            $.post('equipos_crud.php', $(this).serialize() + '&accion=agregar', function(resp){
+
                 if(resp.success){
                     $('#modalAgregarEquipo').modal('hide');
                     $('#modalAgregarEquipo').one('hidden.bs.modal', function(){
