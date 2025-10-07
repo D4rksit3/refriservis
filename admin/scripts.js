@@ -1,6 +1,9 @@
 // scripts.js - unificado para equipos y productos
 $(document).ready(function(){
 
+    let enviando = false; // declarar variable de control global para evitar doble envío
+
+
     // ---------- TABLE: EQUIPOS ----------
     var tablaEquipos = $('#tablaEquipos').length ? $('#tablaEquipos').DataTable({
         processing: true,
@@ -52,41 +55,43 @@ $(document).ready(function(){
     });
 
     // -------------- EQUIPOS: AGREGAR --------------
-        // AGREGAR
-                // Evita múltiples binds
-        // Evitar múltiples eventos duplicados
-      // -------------- EQUIPOS: AGREGAR --------------
-        $(document).off('submit', '#formAgregarEquipo').on('submit', '#formAgregarEquipo', function(e){
-            e.preventDefault();
+        // ---------- EQUIPOS: AGREGAR ----------
+    $(document).off('submit', '#formAgregarEquipo').on('submit', '#formAgregarEquipo', function(e) {
+        e.preventDefault();
 
-            if (enviando) return; // evita doble envío
-            enviando = true;
+        if (enviando) {
+            console.warn('⛔ Envío duplicado bloqueado');
+            return;
+        }
 
-            console.log('🟢 Enviando formulario...');
-            $.ajax({
-                url: 'equipos_crud.php',
-                type: 'POST',
-                data: $(this).serialize(),
-                dataType: 'json'
-            })
-            .done(function(resp){
-                if(resp.success){
-                    $('#modalAgregarEquipo').modal('hide');
-                    $('#modalAgregarEquipo').one('hidden.bs.modal', function(){
-                        if(tablaEquipos) tablaEquipos.ajax.reload(null, false);
-                        $('#formAgregarEquipo')[0].reset();
-                    });
-                } else {
-                    alert(resp.message || 'Error al agregar');
-                }
-            })
-            .fail(function(){
-                alert('Error de red al agregar');
-            })
-            .always(function(){
-                enviando = false; // liberar bloqueo
-            });
+        enviando = true;
+        console.log('🟢 Enviando formulario...');
+
+        $.ajax({
+            url: 'equipos_crud.php',
+            type: 'POST',
+            data: $(this).serialize(),
+            dataType: 'json'
+        })
+        .done(function(resp) {
+            if (resp.success) {
+                $('#modalAgregarEquipo').modal('hide');
+                $('#modalAgregarEquipo').one('hidden.bs.modal', function() {
+                    if (tablaEquipos) tablaEquipos.ajax.reload(null, false);
+                    $('#formAgregarEquipo')[0].reset();
+                });
+            } else {
+                alert(resp.message || 'Error al agregar');
+            }
+        })
+        .fail(function() {
+            alert('Error de red al agregar');
+        })
+        .always(function() {
+            enviando = false; // liberar bloqueo
         });
+    });
+
 
 
     // Limpieza global de backdrop al cerrar cualquier modal
