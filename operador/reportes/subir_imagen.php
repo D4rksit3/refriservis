@@ -1,6 +1,4 @@
 <?php
-// subir_imagen.php
-
 $uploadDir = __DIR__ . '/uploads/';
 if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
@@ -13,6 +11,7 @@ if (!empty($_FILES['imagenes']['name'][0])) {
         $destino = $uploadDir . $nombreSeguro;
 
         if (move_uploaded_file($tmpName, $destino)) {
+            // 🔹 Devolver ruta pública relativa
             $rutas[] = 'uploads/' . $nombreSeguro;
         }
     }
