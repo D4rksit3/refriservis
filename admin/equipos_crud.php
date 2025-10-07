@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
 // =======================
 $accion = $_POST['accion'] ?? '';
 
-/* if ($accion === 'agregar') {
+if ($accion === 'agregar') {
     try {
         $stmt = $pdo->prepare("INSERT INTO equipos 
             (Identificador, Nombre, marca, modelo, ubicacion, voltaje, Descripcion, Cliente, Categoria, Estatus, Fecha_validad) 
@@ -61,7 +61,7 @@ $accion = $_POST['accion'] ?? '';
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
     exit;
-} */
+}
 
 if ($accion === 'editar') {
     try {
