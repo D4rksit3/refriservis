@@ -56,41 +56,31 @@ $(document).ready(function(){
 
     // -------------- EQUIPOS: AGREGAR --------------
         // ---------- EQUIPOS: AGREGAR ----------
-    $(document).off('submit', '#formAgregarEquipo').on('submit', '#formAgregarEquipo', function(e) {
-        e.preventDefault();
+    $('#formAgregarEquipo').off('submit').on('submit', function (e) {
+    e.preventDefault();
+    console.log('EVENTO SUBMIT DISPARADO UNA SOLA VEZ ✅');
 
-        if (enviando) {
-            console.warn('⛔ Envío duplicado bloqueado');
-            return;
+    const formData = new FormData(this);
+    formData.append('accion', 'agregar');
+
+    fetch('equipos_crud.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log(data);
+        if (data.success) {
+            alert('Equipo agregado correctamente');
+            $('#modalAgregar').modal('hide');
+            $('#tablaEquipos').DataTable().ajax.reload();
+        } else {
+            alert('Error: ' + (data.message || 'No se pudo agregar'));
         }
+    })
+    .catch(err => console.error(err));
+});
 
-        enviando = true;
-        console.log('🟢 Enviando formulario...');
-
-        $.ajax({
-            url: 'equipos_crud.php',
-            type: 'POST',
-            data: $(this).serialize(),
-            dataType: 'json'
-        })
-        .done(function(resp) {
-            if (resp.success) {
-                $('#modalAgregarEquipo').modal('hide');
-                $('#modalAgregarEquipo').one('hidden.bs.modal', function() {
-                    if (tablaEquipos) tablaEquipos.ajax.reload(null, false);
-                    $('#formAgregarEquipo')[0].reset();
-                });
-            } else {
-                alert(resp.message || 'Error al agregar');
-            }
-        })
-        .fail(function() {
-            alert('Error de red al agregar');
-        })
-        .always(function() {
-            enviando = false; // liberar bloqueo
-        });
-    });
 
 
 
