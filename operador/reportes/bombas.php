@@ -528,6 +528,8 @@ $(document).ready(function(){
   });
 });
 
+
+
 function generarObservacionesMultimedia() {
   const contenedor = document.getElementById('observacionesMultimedia');
   contenedor.innerHTML = '';
@@ -570,11 +572,21 @@ $(document).on('change', '.observacion-imagen', function() {
   const formData = new FormData();
   for (const f of files) formData.append('imagenes[]', f);
 
-  // Subir imágenes al servidor
+  console.log('🟡 Subiendo imágenes de equipo', index, files);
+
   fetch('subir_imagen.php', { method: 'POST', body: formData })
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error('Error HTTP ' + res.status);
+      return res.json();
+    })
     .then(rutas => {
-      // Mostrar preview
+      console.log('🟢 Rutas devueltas:', rutas);
+
+      if (!Array.isArray(rutas) || rutas.length === 0) {
+        console.warn('⚠️ No se devolvieron rutas válidas');
+        return;
+      }
+
       rutas.forEach(ruta => {
         const img = document.createElement('img');
         img.src = ruta;
@@ -584,11 +596,13 @@ $(document).on('change', '.observacion-imagen', function() {
         preview.appendChild(img);
       });
 
-      // Guardar rutas en dataset
       preview.dataset.rutas = JSON.stringify(rutas);
     })
-    .catch(err => console.error('Error subiendo imágenes:', err));
+    .catch(err => {
+      console.error('🔴 Error subiendo imágenes:', err);
+    });
 });
+
 
 // Generar secciones según equipos seleccionados
 $('.equipo-select').on('change', function() {
