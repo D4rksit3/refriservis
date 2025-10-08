@@ -393,7 +393,8 @@ $pdf->Ln(3);
 
                 $pdf->SetFont('Arial','',9);
                 $texto = isset($obs['texto']) ? utf8_decode($obs['texto']) : '';
-                $pdf->MultiCell(0,6, "Observación: " . $texto, 0, 'L');
+                $pdf->MultiCell(0,6, utf8_decode("Observación: " . $texto), 0, 'L');
+
                 $pdf->Ln(2);
 
                 // --- Imágenes (2 por fila) ---
