@@ -292,10 +292,15 @@ for ($i = 1; $i <= 7; $i++) {
       <textarea class="form-control" name="trabajos" rows="4"></textarea>
     </div>
 
-    <div class="mb-3">
-      <label>Observaciones y recomendaciones</label>
-      <textarea class="form-control" name="observaciones" rows="3"></textarea>
-    </div>
+    <!-- OBSERVACIONES MULTIMEDIA -->
+    <h6>Observaciones y recomendaciones (Multimedia por equipo)</h6>
+
+    <div id="observacionesMultimedia"></div>
+
+    <!-- Campo oculto donde se almacenará todo el contenido final -->
+    <textarea name="observaciones" id="observacionesFinal" hidden></textarea>
+
+    <hr>
 
     <!-- FOTOS -->
     <div class="mb-3">
@@ -344,6 +349,9 @@ for ($i = 1; $i <= 7; $i++) {
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 
+
+
+
 <script>
 // Firmas
 const sigCliente = new SignaturePad(document.getElementById('firmaClienteCanvas'));
@@ -375,7 +383,6 @@ document.getElementById('formReporte').addEventListener('submit', function(e){
     // ⚠️ NO llamar a this.submit(), ya se está enviando solo
   }
 });
-
 
 $(document).ready(function(){
   $('.equipo-select').select2({ placeholder:"Buscar equipo...", allowClear:true, width:'100%' });
@@ -414,6 +421,112 @@ $(document).ready(function(){
     });
   });
 });
+
+
+
+function generarObservacionesMultimedia() {
+  const contenedor = document.getElementById('observacionesMultimedia');
+  contenedor.innerHTML = '';
+
+  $('.equipo-select').each(function() {
+    const index = $(this).data('index');
+    const id = $(this).val();
+    const texto = $(this).find('option:selected').text().trim();
+
+    if (id && texto && texto !== '-- Seleccione --') {
+      const bloque = document.createElement('div');
+      bloque.className = 'card p-3 mb-3';
+      bloque.innerHTML = `
+        <h6 class="text-primary mb-2">🔧 ${texto}</h6>
+        <div class="mb-2">
+          <label>Texto / Recomendación:</label>
+          <textarea class="form-control observacion-texto" data-index="${index}" rows="3"
+            placeholder="Escribe observaciones específicas para ${texto}..."></textarea>
+        </div>
+        <div class="mb-2">
+          <label>Imágenes:</label>
+          <input type="file" class="form-control observacion-imagen" data-index="${index}" accept="image/*" multiple>
+          <div id="preview-${index}" class="d-flex flex-wrap gap-2 mt-2"></div>
+        </div>
+      `;
+      contenedor.appendChild(bloque);
+    }
+  });
+}
+
+// Vista previa de imágenes y subida inmediata al servidor
+$(document).on('change', '.observacion-imagen', function() {
+  const index = $(this).data('index');
+  const files = this.files;
+  const preview = document.getElementById(`preview-${index}`);
+  preview.innerHTML = '';
+
+  if (files.length === 0) return;
+
+  const formData = new FormData();
+  for (const f of files) formData.append('imagenes[]', f);
+
+  console.log('🟡 Subiendo imágenes de equipo', index, files);
+
+  fetch('subir_imagen.php', { method: 'POST', body: formData })
+    .then(res => {
+      if (!res.ok) throw new Error('Error HTTP ' + res.status);
+      return res.json();
+    })
+    .then(rutas => {
+      console.log('🟢 Rutas devueltas:', rutas);
+
+      if (!Array.isArray(rutas) || rutas.length === 0) {
+        console.warn('⚠️ No se devolvieron rutas válidas');
+        return;
+      }
+
+      rutas.forEach(ruta => {
+        const img = document.createElement('img');
+        img.src = ruta;
+        img.className = 'img-thumbnail';
+        img.style.maxWidth = '120px';
+        img.style.maxHeight = '120px';
+        preview.appendChild(img);
+      });
+
+      preview.dataset.rutas = JSON.stringify(rutas);
+    })
+    .catch(err => {
+      console.error('🔴 Error subiendo imágenes:', err);
+    });
+});
+
+
+// Generar secciones según equipos seleccionados
+$('.equipo-select').on('change', function() {
+  generarObservacionesMultimedia();
+});
+$(document).ready(generarObservacionesMultimedia);
+
+// Consolidar al enviar
+document.getElementById('formReporte').addEventListener('submit', function(e) {
+  const data = [];
+
+  document.querySelectorAll('.observacion-texto').forEach(txt => {
+    const index = txt.dataset.index;
+    const nombre = $(`.equipo-select[data-index='${index}'] option:selected`).text().trim();
+    const preview = document.getElementById(`preview-${index}`);
+    const rutas = preview?.dataset?.rutas ? JSON.parse(preview.dataset.rutas) : [];
+
+    if (nombre && txt.value.trim()) {
+      data.push({
+        equipo: nombre,
+        texto: txt.value.trim(),
+        imagenes: rutas
+      });
+    }
+  });
+
+  document.getElementById('observacionesFinal').value = JSON.stringify(data, null, 2);
+});
+
+
 </script>
 </body>
 </html>
