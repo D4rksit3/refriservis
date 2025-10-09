@@ -262,15 +262,6 @@ function generarPDF(PDO $pdo, int $id) {
     }
     $pdf->Ln(4);
 
-    // ---------- TRABAJOS ----------
-    $pdf->SetFont('Arial','B',9);
-    $pdf->MultiCell(0,7, txt("Trabajos Realizados:\n" . ($m['trabajos'] ?? '')), 1);
-    $pdf->Ln(2);
-
-    // ---------- OBSERVACIONES ----------
-    $pdf->SetFont('Arial','B',9);
-    $pdf->MultiCell(0,7, txt("Observaciones y Recomendaciones:\n" . ($m['observaciones'] ?? '')), 1);
-    $pdf->Ln(4);
 
       // ---------- PARÁMETROS ----------
    /*  $pdf->SetFont('Arial','B',9);
@@ -369,6 +360,92 @@ foreach ($actividadesList as $idx => $nombre) {
 }
 
 $pdf->Ln(3);
+
+
+
+// ---------- TRABAJOS ----------
+    $pdf->SetFont('Arial','B',9);
+    $pdf->MultiCell(0,7, txt("Trabajos Realizados:\n" . ($m['trabajos'] ?? '')), 1);
+    $pdf->Ln(2);
+
+    // ---------- OBSERVACIONES ----------
+   $pdf->AddPage();
+    $pdf->SetFont('Arial','B',10);
+    $pdf->Cell(0,8, utf8_decode("Observaciones y Recomendaciones:"), 0, 1, 'L');
+    $pdf->Ln(2);
+
+    if (!empty($m['observaciones'])) {
+        $observaciones = json_decode($m['observaciones'], true);
+
+        if (is_array($observaciones)) {
+            foreach ($observaciones as $obs) {
+
+                // === Dibuja el marco general ===
+                $xStart = 10;
+                $yStart = $pdf->GetY();
+                $pdf->SetDrawColor(180,180,180);
+                $pdf->SetLineWidth(0.2);
+
+                // Guarda posición para calcular alto dinámico
+                $startY = $pdf->GetY();
+
+                // --- Contenido ---
+                $pdf->SetFont('Arial','B',9);
+                $pdf->MultiCell(0,6, utf8_decode("Equipo: " . ($obs['equipo'] ?? '')), 0, 'L');
+
+                $pdf->SetFont('Arial','',9);
+                $texto = isset($obs['texto']) ? utf8_decode($obs['texto']) : '';
+                $pdf->MultiCell(0,6, utf8_decode("Observación: " . $texto), 0, 'L');
+
+                $pdf->Ln(2);
+
+                // --- Imágenes (2 por fila) ---
+                if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
+                    $maxWidth = 60;
+                    $maxHeight = 45;
+                    $margin = 10;
+                    $count = 0;
+
+                    foreach ($obs['imagenes'] as $imgPath) {
+                        $realPath = __DIR__ . '/' . $imgPath;
+                        if (file_exists($realPath)) {
+                            $x = 10 + ($count % 2) * ($maxWidth + $margin);
+                            $y = $pdf->GetY();
+
+                            $pdf->Image($realPath, $x, $y, $maxWidth, $maxHeight);
+
+                            // Cada 2 imágenes, salta de línea
+                            if ($count % 2 == 1) {
+                                $pdf->Ln($maxHeight + 5);
+                            }
+                            $count++;
+                        } else {
+                            $pdf->SetFont('Arial','I',8);
+                            $pdf->Cell(0,5, utf8_decode("Imagen no encontrada: $imgPath"), 0, 1, 'L');
+                        }
+                    }
+
+                    // Si quedó una sola imagen sin pareja, baja de línea igual
+                    if ($count % 2 == 1) {
+                        $pdf->Ln($maxHeight + 5);
+                    }
+                }
+
+                // --- Fin del cuadro ---
+                $endY = $pdf->GetY();
+                $pdf->Rect($xStart, $yStart, 190 - $xStart, $endY - $yStart);
+                $pdf->Ln(6);
+            }
+        } else {
+            $pdf->SetFont('Arial','I',9);
+            $pdf->Cell(0,6, utf8_decode("No hay observaciones registradas."), 0, 1);
+        }
+    } else {
+        $pdf->SetFont('Arial','I',9);
+        $pdf->Cell(0,6, utf8_decode("No hay observaciones registradas."), 0, 1);
+    }
+
+    $pdf->Ln(4);
 
 
 
