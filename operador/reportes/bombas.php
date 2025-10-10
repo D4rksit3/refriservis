@@ -532,33 +532,6 @@ $(document).ready(function(){
       }
     });
   });
-
-    $('#formAgregarEquipo').on('submit', function(e) {
-    e.preventDefault();
-
-    $.ajax({
-      url: '/../../admin/equipos_crud.php', // archivo PHP que guarda el equipo
-      type: 'POST',
-      data: $(this).serialize(),
-      success: function(resp) {
-        try {
-          const r = JSON.parse(resp);
-          if (r.success) {
-            alert('✅ Equipo agregado correctamente');
-            $('#modalAgregarEquipo').modal('hide');
-            $('#formAgregarEquipo')[0].reset();
-          } else {
-            alert('⚠️ Error: ' + (r.message || 'No se pudo agregar.'));
-          }
-        } catch {
-          console.log(resp);
-          alert('Error inesperado');
-        }
-      }
-    });
-  });
-
-
 });
 
 
@@ -664,9 +637,6 @@ document.getElementById('formReporte').addEventListener('submit', function(e) {
 
   document.getElementById('observacionesFinal').value = JSON.stringify(data, null, 2);
 });
-
-
-
 
 
 
