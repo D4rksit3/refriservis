@@ -13,7 +13,18 @@ if (!isset($_SESSION['usuario']) || !in_array($_SESSION['rol'], ['operador', 'di
     header('Location: /../index.php');
     exit;
 }
-$userName = $_SESSION['usuario'] ?? 'Desconocido';
+
+$userName = 'Desconocido';
+if (!empty($m['modificado_por'])) {
+    $stmtUser = $pdo->prepare("SELECT nombre FROM usuarios WHERE id = ?");
+    $stmtUser->execute([$m['modificado_por']]);
+    $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
+    if ($userRow && !empty($userRow['nombre'])) {
+        $userName = $userRow['nombre'];
+    }
+}
+
+
 
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../lib/fpdf.php';
@@ -140,25 +151,24 @@ function generarPDF(PDO $pdo, int $id) {
         } */
         public function Footer()
         {
-            // Posiciona el pie de página a 15 mm del final
+            // Posición del footer (15 mm del final)
             $this->SetY(-15);
-
-            // Fuente y estilo
             $this->SetFont('Arial', 'I', 8);
 
-            // Fecha y hora actual de Lima
+            // Zona horaria y fecha/hora actual
             date_default_timezone_set('America/Lima');
             $fechaHora = date('d/m/Y H:i:s');
 
-            // Usuario que generó el PDF
+            // Usuario generador del PDF
             $usuario = isset($this->user) ? $this->user : 'Desconocido';
 
-            // Texto del footer
+            // Texto del pie
             $texto = utf8_decode("Página " . $this->PageNo() . " de {nb}    |    Generado por: $usuario    |    $fechaHora");
 
-            // Imprime el footer centrado
+            // Mostrar centrado
             $this->Cell(0, 10, $texto, 0, 0, 'C');
         }
+
 
 
 
