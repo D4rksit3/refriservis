@@ -54,12 +54,20 @@ function generarPDF(PDO $pdo, int $id) {
     }
 
     $userName = 'Desconocido';
+
     if (!empty($m['modificado_por'])) {
         $stmtUser = $pdo->prepare("SELECT nombre FROM usuarios WHERE id = ?");
         $stmtUser->execute([$m['modificado_por']]);
-        $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
-        if ($userRow && !empty($userRow['nombre'])) {
-            $userName = $userRow['nombre'];
+        $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
+        if ($user && !empty($user['nombre'])) {
+            $userName = $user['nombre'];
+        }
+    } elseif (!empty($m['digitador_id'])) {
+        $stmtUser = $pdo->prepare("SELECT nombre FROM usuarios WHERE id = ?");
+        $stmtUser->execute([$m['digitador_id']]);
+        $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
+        if ($user && !empty($user['nombre'])) {
+            $userName = $user['nombre'];
         }
     }
 
