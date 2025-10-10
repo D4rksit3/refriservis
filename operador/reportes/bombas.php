@@ -164,7 +164,7 @@ for ($i = 1; $i <= 7; $i++) {
     $equiposMantenimiento[$i] = $eq;
 }
 
-<?php include __DIR__ . '/modal_equipo.php'; ?>
+include __DIR__ . '/../includes/modal_equipo.php';
 ?>
 <!doctype html>
 <html lang="es">
@@ -536,6 +536,33 @@ $(document).ready(function(){
 
 
 
+$('#formAgregarEquipo').on('submit', function(e) {
+    e.preventDefault();
+
+    $.ajax({
+      url: '/ruta/a/equipos_acciones.php', // archivo PHP que guarda el equipo
+      type: 'POST',
+      data: $(this).serialize(),
+      success: function(resp) {
+        try {
+          const r = JSON.parse(resp);
+          if (r.success) {
+            alert('✅ Equipo agregado correctamente');
+            $('#modalAgregarEquipo').modal('hide');
+            $('#formAgregarEquipo')[0].reset();
+          } else {
+            alert('⚠️ Error: ' + (r.message || 'No se pudo agregar.'));
+          }
+        } catch {
+          console.log(resp);
+          alert('Error inesperado');
+        }
+      }
+    });
+  });
+
+
+
 function generarObservacionesMultimedia() {
   const contenedor = document.getElementById('observacionesMultimedia');
   contenedor.innerHTML = '';
@@ -637,7 +664,6 @@ document.getElementById('formReporte').addEventListener('submit', function(e) {
 
   document.getElementById('observacionesFinal').value = JSON.stringify(data, null, 2);
 });
-
 
 
 </script>
