@@ -53,6 +53,27 @@ function generarPDF(PDO $pdo, int $id) {
         exit("Mantenimiento no encontrado.");
     }
 
+
+    $userName = 'Desconocido';
+    $fechaModificacion = !empty($m['modificado_en'])
+        ? date('d/m/Y H:i:s', strtotime($m['modificado_en']))
+        : 'Sin fecha';
+    if (!empty($m['modificado_por'])) {
+        $stmtUser = $pdo->prepare("SELECT nombre FROM usuarios WHERE id = ?");
+        $stmtUser->execute([$m['modificado_por']]);
+        $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
+        if ($user && !empty($user['nombre'])) {
+            $userName = $user['nombre'];
+        }
+    } elseif (!empty($m['digitador_id'])) {
+        $stmtUser = $pdo->prepare("SELECT nombre FROM usuarios WHERE id = ?");
+        $stmtUser->execute([$m['digitador_id']]);
+        $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
+        if ($user && !empty($user['nombre'])) {
+            $userName = $user['nombre'];
+        }
+    }
+
     // Traer equipos según los campos equipo1..equipo7
     $equipos = [];
     for ($i = 1; $i <= 7; $i++) {
@@ -166,7 +187,25 @@ function generarPDF(PDO $pdo, int $id) {
     $this->SetY($top + $cellH + 10);
 }
 
+    public function Footer()
+        {
+            // Posición del footer (15 mm del final)
+            $this->SetY(-15);
+            $this->SetFont('Arial', 'I', 8);
 
+            // Zona horaria y fecha/hora actual
+            date_default_timezone_set('America/Lima');
+            $fechaHora = date('d/m/Y H:i:s');
+
+            // Usuario generador del PDF
+            $usuario = isset($this->user) ? $this->user : 'Desconocido';
+
+            // Texto del pie
+            $texto = utf8_decode("Página " . $this->PageNo() . " de {nb}    |    Generado por: $usuario    |    {$this->fechaModificacion}");
+
+            // Mostrar centrado
+            $this->Cell(0, 10, $texto, 0, 0, 'C');
+        }
 
 
     }
@@ -174,6 +213,8 @@ function generarPDF(PDO $pdo, int $id) {
     // Construir PDF
     $pdf = new PDF('P','mm','A4');
     $pdf->mantenimientoId = $m['id'];
+    $pdf->user = $userName;
+    $pdf->fechaModificacion = $fechaModificacion;
     $pdf->AliasNbPages();
     $pdf->AddPage();
     $pdf->SetFont('Arial','',9);

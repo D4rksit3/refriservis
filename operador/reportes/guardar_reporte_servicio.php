@@ -179,7 +179,25 @@ function generarPDF(PDO $pdo, int $id) {
             $this->Cell(0, 10, $texto, 0, 0, 'C');
         }
 
+        public function Footer()
+        {
+            // Posición del footer (15 mm del final)
+            $this->SetY(-15);
+            $this->SetFont('Arial', 'I', 8);
 
+            // Zona horaria y fecha/hora actual
+            date_default_timezone_set('America/Lima');
+            $fechaHora = date('d/m/Y H:i:s');
+
+            // Usuario generador del PDF
+            $usuario = isset($this->user) ? $this->user : 'Desconocido';
+
+            // Texto del pie
+            $texto = utf8_decode("Página " . $this->PageNo() . " de {nb}    |    Generado por: $usuario    |    {$this->fechaModificacion}");
+
+            // Mostrar centrado
+            $this->Cell(0, 10, $texto, 0, 0, 'C');
+        }
 
 
     }
@@ -187,6 +205,8 @@ function generarPDF(PDO $pdo, int $id) {
     // Construir PDF
     $pdf = new PDF('P','mm','A4');
     $pdf->mantenimientoId = $m['id'];
+    $pdf->user = $userName;
+    $pdf->fechaModificacion = $fechaModificacion;
     $pdf->user = $userName;
     $pdf->fechaModificacion = $fechaModificacion;
     $pdf->AliasNbPages();

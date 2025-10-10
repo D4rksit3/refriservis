@@ -54,7 +54,9 @@ function generarPDF(PDO $pdo, int $id) {
     }
 
     $userName = 'Desconocido';
-
+    $fechaModificacion = !empty($m['modificado_en'])
+        ? date('d/m/Y H:i:s', strtotime($m['modificado_en']))
+        : 'Sin fecha';
     if (!empty($m['modificado_por'])) {
         $stmtUser = $pdo->prepare("SELECT nombre FROM usuarios WHERE id = ?");
         $stmtUser->execute([$m['modificado_por']]);
@@ -200,7 +202,7 @@ function generarPDF(PDO $pdo, int $id) {
             $usuario = isset($this->user) ? $this->user : 'Desconocido';
 
             // Texto del pie
-            $texto = utf8_decode("Página " . $this->PageNo() . " de {nb}    |    Generado por: $usuario    |    $fechaHora");
+            $texto = utf8_decode("Página " . $this->PageNo() . " de {nb}    |    Generado por: $usuario    |    {$this->fechaModificacion}");
 
             // Mostrar centrado
             $this->Cell(0, 10, $texto, 0, 0, 'C');
@@ -219,6 +221,7 @@ function generarPDF(PDO $pdo, int $id) {
     $pdf = new PDF('P','mm','A4');
     $pdf->mantenimientoId = $m['id'];
     $pdf->user = $userName;
+    $pdf->fechaModificacion = $fechaModificacion;
     $pdf->AliasNbPages();
     $pdf->AddPage();
     $pdf->SetFont('Arial','',9);
