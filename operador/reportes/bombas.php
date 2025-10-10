@@ -163,6 +163,9 @@ for ($i = 1; $i <= 7; $i++) {
     }
     $equiposMantenimiento[$i] = $eq;
 }
+
+include __DIR__ . '/modal_equipo.php';
+
 ?>
 <!doctype html>
 <html lang="es">
@@ -183,6 +186,9 @@ for ($i = 1; $i <= 7; $i++) {
   <div class="d-flex justify-content-between align-items-center mb-3">
     <!-- <h5>Reporte de Servicio Técnico — Mantenimiento #<?=htmlspecialchars($m['id'])?></h5> -->
     <a class="btn btn-secondary btn-sm" href="/operador/mis_mantenimientos.php">Volver</a>
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
+    ➕ Agregar Equipo
+  </button>
   </div>
   
 
