@@ -13,7 +13,7 @@ if (!isset($_SESSION['usuario']) || !in_array($_SESSION['rol'], ['operador', 'di
     header('Location: /../index.php');
     exit;
 }
-
+$userName = $_SESSION['usuario'] ?? 'Desconocido';
 
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../lib/fpdf.php';
@@ -133,16 +133,41 @@ function generarPDF(PDO $pdo, int $id) {
             // 👉 ESTA LÍNEA ES CLAVE: baja el cursor debajo del header
             $this->SetY($top + $cellH + 15);
         }
-        public function Footer() {
+        /* public function Footer() {
             $this->SetY(-15);
             $this->SetFont('Arial','I',8);
             $this->Cell(0,10,'Página '.$this->PageNo().'/{nb}',0,0,'C');
+        } */
+        public function Footer()
+        {
+            // Posiciona el pie de página a 15 mm del final
+            $this->SetY(-15);
+
+            // Fuente y estilo
+            $this->SetFont('Arial', 'I', 8);
+
+            // Fecha y hora actual de Lima
+            date_default_timezone_set('America/Lima');
+            $fechaHora = date('d/m/Y H:i:s');
+
+            // Usuario que generó el PDF
+            $usuario = isset($this->user) ? $this->user : 'Desconocido';
+
+            // Texto del footer
+            $texto = utf8_decode("Página " . $this->PageNo() . " de {nb}    |    Generado por: $usuario    |    $fechaHora");
+
+            // Imprime el footer centrado
+            $this->Cell(0, 10, $texto, 0, 0, 'C');
         }
+
+
+
     }
 
     // Construir PDF
     $pdf = new PDF('P','mm','A4');
     $pdf->mantenimientoId = $m['id'];
+    $pdf->user = $userName; 
     $pdf->AliasNbPages();
     $pdf->AddPage();
     $pdf->SetFont('Arial','',9);
