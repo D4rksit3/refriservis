@@ -163,6 +163,8 @@ for ($i = 1; $i <= 7; $i++) {
     }
     $equiposMantenimiento[$i] = $eq;
 }
+
+<?php include __DIR__ . '/modal_equipo.php'; ?>
 ?>
 <!doctype html>
 <html lang="es">
