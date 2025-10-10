@@ -14,15 +14,7 @@ if (!isset($_SESSION['usuario']) || !in_array($_SESSION['rol'], ['operador', 'di
     exit;
 }
 
-$userName = 'Desconocido';
-if (!empty($m['modificado_por'])) {
-    $stmtUser = $pdo->prepare("SELECT nombre FROM usuarios WHERE id = ?");
-    $stmtUser->execute([$m['modificado_por']]);
-    $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
-    if ($userRow && !empty($userRow['nombre'])) {
-        $userName = $userRow['nombre'];
-    }
-}
+
 
 
 
@@ -63,6 +55,18 @@ function generarPDF(PDO $pdo, int $id) {
         http_response_code(404);
         exit("Mantenimiento no encontrado.");
     }
+
+
+    $userName = 'Desconocido';
+    if (!empty($m['modificado_por'])) {
+        $stmtUser = $pdo->prepare("SELECT nombre FROM usuarios WHERE id = ?");
+        $stmtUser->execute([$m['modificado_por']]);
+        $userRow = $stmtUser->fetch(PDO::FETCH_ASSOC);
+        if ($userRow && !empty($userRow['nombre'])) {
+            $userName = $userRow['nombre'];
+        }
+    }
+
 
     // Traer equipos según los campos equipo1..equipo7
     $equipos = [];
