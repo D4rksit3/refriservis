@@ -185,6 +185,13 @@ for ($i = 1; $i <= 7; $i++) {
     <a class="btn btn-secondary btn-sm" href="/operador/mis_mantenimientos.php">Volver</a>
   </div>
 
+  <div class="container py-4">
+  <h2>Panel del Cliente</h2>
+  <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
+    ➕ Agregar Equipo
+  </button>
+</div>
+
 <table border="1" cellspacing="0" cellpadding="4" width="100%" style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;">
   <tr>
     <!-- Logo -->
