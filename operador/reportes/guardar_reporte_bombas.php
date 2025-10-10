@@ -218,6 +218,7 @@ function generarPDF(PDO $pdo, int $id) {
     // Construir PDF
     $pdf = new PDF('P','mm','A4');
     $pdf->mantenimientoId = $m['id'];
+    $pdf->user = $userName;
     $pdf->AliasNbPages();
     $pdf->AddPage();
     $pdf->SetFont('Arial','',9);
