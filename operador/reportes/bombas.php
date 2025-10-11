@@ -498,6 +498,10 @@ document.getElementById('formReporte').addEventListener('submit', function(e){
 });
 
 $(document).ready(function(){
+
+  
+
+
   $('.equipo-select').select2({ placeholder:"Buscar equipo...", allowClear:true, width:'100%' });
 
   // Cargar datos de equipos seleccionados
@@ -535,7 +539,30 @@ $(document).ready(function(){
   });
 });
 
+ $('#formAgregarEquipo').on('submit', function(e) {
+    e.preventDefault();
 
+    $.ajax({
+      url: '/ruta/a/equipos_acciones.php', // archivo PHP que guarda el equipo
+      type: 'POST',
+      data: $(this).serialize(),
+      success: function(resp) {
+        try {
+          const r = JSON.parse(resp);
+          if (r.success) {
+            alert('✅ Equipo agregado correctamente');
+            $('#modalAgregarEquipo').modal('hide');
+            $('#formAgregarEquipo')[0].reset();
+          } else {
+            alert('⚠️ Error: ' + (r.message || 'No se pudo agregar.'));
+          }
+        } catch {
+          console.log(resp);
+          alert('Error inesperado');
+        }
+      }
+    });
+  });
 
 function generarObservacionesMultimedia() {
   const contenedor = document.getElementById('observacionesMultimedia');
