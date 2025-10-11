@@ -163,6 +163,9 @@ for ($i = 1; $i <= 7; $i++) {
     }
     $equiposMantenimiento[$i] = $eq;
 }
+
+include __DIR__ . '/modal_equipo.php';
+
 ?>
 <!doctype html>
 <html lang="es">
@@ -183,6 +186,10 @@ for ($i = 1; $i <= 7; $i++) {
   <div class="d-flex justify-content-between align-items-center mb-3">
     <!-- <h5>Reporte de Servicio Técnico — Mantenimiento #<?=htmlspecialchars($m['id'])?></h5> -->
     <a class="btn btn-secondary btn-sm" href="/operador/mis_mantenimientos.php">Volver</a>
+  
+  <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
+    ➕ Agregar Equipo
+  </button>
   </div>
 
 <table border="1" cellspacing="0" cellpadding="4" width="100%" style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;">
@@ -480,6 +487,36 @@ document.getElementById('formReporte').addEventListener('submit', function(e){
 });
 
 $(document).ready(function(){
+
+  $('#formAgregarEquipo').on('submit', function(e) {
+    e.preventDefault();
+
+    $.ajax({
+      url: '/../../admin/equipos_add_crud.php', // archivo PHP que guarda el equipo
+      type: 'POST',
+      data: $(this).serialize(),
+      success: function(resp) {
+        try {
+          const r = JSON.parse(resp);
+          if (r.success) {
+            alert('✅ Equipo agregado correctamente');
+            $('#modalAgregarEquipo').modal('hide');
+            $('#formAgregarEquipo')[0].reset();
+          } else {
+            alert('⚠️ Error: ' + (r.message || 'No se pudo agregar.'));
+          }
+        } catch {
+          console.log(resp);
+          alert('✅ Equipo agregado correctamente');
+          location.reload();
+
+        }
+      }
+    });
+  });
+
+
+
   $('.equipo-select').select2({ placeholder:"Buscar equipo...", allowClear:true, width:'100%' });
 
   // Cargar datos de equipos seleccionados
