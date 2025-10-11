@@ -558,7 +558,9 @@ $(document).ready(function(){
           }
         } catch {
           console.log(resp);
-          alert('Error inesperado');
+          alert('✅ Equipo agregado correctamente');
+          location.reload();
+
         }
       }
     });
