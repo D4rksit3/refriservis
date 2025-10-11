@@ -543,7 +543,7 @@ $(document).ready(function(){
     e.preventDefault();
 
     $.ajax({
-      url: '/ruta/a/equipos_acciones.php', // archivo PHP que guarda el equipo
+      url: '/../../admin/equipos_add_crud.php', // archivo PHP que guarda el equipo
       type: 'POST',
       data: $(this).serialize(),
       success: function(resp) {
