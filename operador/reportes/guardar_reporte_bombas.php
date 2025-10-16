@@ -341,9 +341,9 @@ function generarPDF(PDO $pdo, int $id) {
  
    // ---------- ACTIVIDADES A REALIZAR ----------
 // ---------- ACTIVIDADES A REALIZAR ----------
-$pdf->AddPage(); 
+$pdf->AddPage();
 $pdf->SetFont('Arial','B',9);
-$pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
+$pdf->Cell(0,6, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C'); // 🔹 altura ajustada a 6 mm
 
 $pdf->SetFont('Arial','',7);
 
@@ -352,27 +352,24 @@ $nameW = 80;
 $dayW  = 10;
 $freqW = 8;
 $lineH = 5;
-
-// Margen inferior definido manualmente (FPDF no tiene método para obtenerlo)
 $bottomMargin = 15;
 
 // Función cabecera
 $printHeader = function() use ($pdf, $nameW, $dayW, $freqW) {
     $pdf->SetFont('Arial','B',7);
-    $pdf->Cell($nameW,7, txt("Actividad"), 1, 0, 'C');
+    $pdf->Cell($nameW,6, txt("Actividad"), 1, 0, 'C');
     for ($i = 1; $i <= 7; $i++) {
-        $pdf->Cell($dayW,7, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
+        $pdf->Cell($dayW,6, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
     }
-    $pdf->Cell($freqW,7,"B",1,0,'C');
-    $pdf->Cell($freqW,7,"T",1,0,'C');
-    $pdf->Cell($freqW,7,"S",1,0,'C');
-    $pdf->Cell($freqW,7,"A",1,1,'C');
+    $pdf->Cell($freqW,6,"B",1,0,'C');
+    $pdf->Cell($freqW,6,"T",1,0,'C');
+    $pdf->Cell($freqW,6,"S",1,0,'C');
+    $pdf->Cell($freqW,6,"A",1,1,'C');
     $pdf->SetFont('Arial','',7);
 };
 
 $printHeader();
 
-// Lista de actividades
 $actividadesList = [
     "Inspección ocular del equipo en funcionamiento",
     "Verificación del estado de superficies y aseo general del equipo",
@@ -400,31 +397,25 @@ $actividadesList = [
 $actividadesBD = json_decode($m['actividades'] ?? '[]', true);
 if (!is_array($actividadesBD)) $actividadesBD = [];
 
-// Función auxiliar para contar líneas
+// Función auxiliar para contar líneas (sin saltos falsos)
 $getNbLines = function($pdf, $w, $txt) use ($lineH) {
-    $txt = str_replace("\r", '', $txt);
-    $lines = explode("\n", $txt);
-    $nb = 0;
-    foreach ($lines as $l) {
-        $l = trim($l);
-        if ($l === '') { $nb++; continue; }
-        $words = explode(' ', $l);
-        $lineWidth = 0;
-        foreach ($words as $word) {
-            $wordWidth = $pdf->GetStringWidth($word . ' ');
-            if ($lineWidth + $wordWidth <= $w) {
-                $lineWidth += $wordWidth;
-            } else {
-                $nb++;
-                $lineWidth = $wordWidth;
-            }
+    $txt = trim(str_replace("\r", '', $txt));
+    if ($txt === '') return 1;
+    $words = explode(' ', $txt);
+    $nb = 1;
+    $lineWidth = 0;
+    foreach ($words as $word) {
+        $wordWidth = $pdf->GetStringWidth($word . ' ');
+        if ($lineWidth + $wordWidth <= $w) {
+            $lineWidth += $wordWidth;
+        } else {
+            $nb++;
+            $lineWidth = $wordWidth;
         }
-        if ($lineWidth > 0) $nb++;
     }
-    return max(1, $nb);
+    return $nb;
 };
 
-// Iterar actividades
 foreach ($actividadesList as $idx => $nombreRaw) {
     $actividadBD = $actividadesBD[$idx] ?? ["dias" => [], "frecuencia" => null];
     $diasMarcados = $actividadBD['dias'] ?? [];
@@ -436,36 +427,40 @@ foreach ($actividadesList as $idx => $nombreRaw) {
     $nb = $getNbLines($pdf, $nameW - 2, $nombre);
     $h = $nb * $lineH;
 
-    // Calcular espacio restante en la hoja
+    // Control de salto de página
     $pageHeight = 297; // A4
     if ($pdf->GetY() + $h + $bottomMargin > $pageHeight) {
         $pdf->AddPage();
         $printHeader();
     }
 
+    // Guardar posición
     $x = $pdf->GetX();
     $y = $pdf->GetY();
 
-    // Columna nombre
+    // Actividad
     $pdf->MultiCell($nameW, $lineH, $nombre, 1, 'L');
+
+    // Altura real usada (ajuste por MultiCell)
+    $usedHeight = $pdf->GetY() - $y;
     $pdf->SetXY($x + $nameW, $y);
 
-    // Columnas 01–07
+    // Días
     for ($d = 1; $d <= 7; $d++) {
         $marca = in_array($d, $diasMarcados, true) ? "X" : "";
-        $pdf->Cell($dayW, $h, $marca, 1, 0, 'C');
+        $pdf->Cell($dayW, $usedHeight, $marca, 1, 0, 'C');
     }
 
-    // Frecuencia B–T–S–A
+    // Frecuencias
     foreach (["B","T","S","A"] as $f) {
         $marca = ($actividadBD['frecuencia'] === $f) ? "X" : "";
-        $pdf->Cell($freqW, $h, $marca, 1, 0, 'C');
+        $pdf->Cell($freqW, $usedHeight, $marca, 1, 0, 'C');
     }
 
-    $pdf->Ln($h);
+    $pdf->Ln($usedHeight);
 }
 
-$pdf->Ln(3);
+$pdf->Ln(2);
 
 
 
