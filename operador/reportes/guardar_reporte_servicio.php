@@ -158,25 +158,7 @@ function generarPDF(PDO $pdo, int $id) {
             $this->SetFont('Arial','I',8);
             $this->Cell(0,10,'Página '.$this->PageNo().'/{nb}',0,0,'C');
         } */
-        public function Footer()
-        {
-            // Posición del footer (15 mm del final)
-            $this->SetY(-15);
-            $this->SetFont('Arial', 'I', 8);
-
-            // Zona horaria y fecha/hora actual
-            date_default_timezone_set('America/Lima');
-            $fechaHora = date('d/m/Y H:i:s');
-
-            // Usuario generador del PDF
-            $usuario = isset($this->user) ? $this->user : 'Desconocido';
-
-            // Texto del pie
-            $texto = utf8_decode("Página " . $this->PageNo() . " de {nb}    |    Generado por: $usuario    |    {$this->fechaModificacion}");
-
-            // Mostrar centrado
-            $this->Cell(0, 10, $texto, 0, 0, 'C');
-        }
+       
 
         public function Footer()
         {
