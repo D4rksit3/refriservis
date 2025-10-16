@@ -41,11 +41,20 @@ function saveSignatureFile(string $dataUrl = null, string $namePrefix = 'firma')
 function generarPDF(PDO $pdo, int $id) {
     // Traer datos del mantenimiento y cliente
     $stmt = $pdo->prepare("
-      SELECT m.*, c.cliente, c.direccion, c.responsable, c.telefono
-      FROM mantenimientos m
-      LEFT JOIN clientes c ON c.id = m.cliente_id
-      WHERE m.id = ?
-    ");
+    SELECT 
+        m.*, 
+        c.cliente, 
+        c.direccion, 
+        c.responsable, 
+        c.telefono, 
+        sup.nombre AS supervisor,
+        tec.nombre AS tecnico
+    FROM mantenimientos m
+    LEFT JOIN clientes c ON c.id = m.cliente_id
+    LEFT JOIN usuarios sup ON sup.id = m.digitador_id
+    LEFT JOIN usuarios tec ON tec.id = m.operador_id
+    WHERE m.id = ?
+");
     $stmt->execute([$id]);
     $m = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$m) {
@@ -554,6 +563,8 @@ $pdf->Ln(3);
         $m['firma_supervisor'] ?? null,
         $m['firma_tecnico'] ?? null
     ];
+
+    // Dibujar los recuadros e imágenes de las firmas
     foreach ($sigFiles as $sfile) {
         $x = $pdf->GetX();
         $y = $pdf->GetY();
@@ -569,11 +580,19 @@ $pdf->Ln(3);
         }
         $pdf->SetXY($x + $sigW + 2, $y);
     }
+
     $pdf->Ln($sigH + 2);
 
+    // Etiquetas “Firma de...”
     $pdf->Cell($sigW, 8, txt("Firma Cliente"), 1, 0, 'C');
     $pdf->Cell($sigW, 8, txt("Firma Supervisor"), 1, 0, 'C');
     $pdf->Cell($sigW, 8, txt("Firma Técnico"), 1, 1, 'C');
+
+    // Nombres debajo de las firmas
+    $pdf->SetFont('Arial','I',8);
+    $pdf->Cell($sigW, 6, txt($m['nombre_cliente'] ?? ''), 0, 0, 'C');
+    $pdf->Cell($sigW, 6, txt($m['nombre_supervisor'] ?? ''), 0, 0, 'C');
+    $pdf->Cell($sigW, 6, txt($m['tecnico'] ?? ''), 0, 1, 'C');
 
     // ----------------- Forzar descarga -----------------
     if (ob_get_length()) {
