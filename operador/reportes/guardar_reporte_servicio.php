@@ -243,20 +243,26 @@ function generarPDF(PDO $pdo, int $id) {
     $pdf->SetFont('Arial','B',9);
     $pdf->Cell(0,7, txt("Parámetros de Funcionamiento (Antes / Después)"), 1, 1, 'C');
 
+    // Etiquetas
     $labels = [
         'Corriente eléctrica nominal (Amperios) L1',
-        'Corriente L2','Corriente L3',
-        'Tensión eléctrica nominal V1','Tensión V2','Tensión V3',
-        'Presión de descarga (PSI)','Presión de succión (PSI)'
+        'Corriente L2', 'Corriente L3',
+        'Tensión eléctrica nominal V1', 'Tensión V2', 'Tensión V3',
+        'Presión de descarga (PSI)', 'Presión de succión (PSI)'
     ];
 
+    // Medidas de la página
     $pageWidth   = $pdf->GetPageWidth();
     $leftMargin  = $pdf->getLeftMargin();
     $rightMargin = $pdf->getRightMargin();
     $usableW     = $pageWidth - $leftMargin - $rightMargin;
-    $labelW  = 50;
-    $colW    = floor(($usableW - $labelW) / (7 * 2));
 
+    // Ajuste de anchos
+    $labelW  = 55; // ancho para la columna de texto
+    $totalCols = 7 * 2; // Eq1A, Eq1D, Eq2A, Eq2D, etc.
+    $colW = ($usableW - $labelW) / $totalCols; // ajusta todo el ancho exacto
+
+    // Encabezado de columnas
     $pdf->SetFont('Arial','B',7);
     $pdf->Cell($labelW,7, txt("Medida"), 1, 0, 'C');
     for ($i = 1; $i <= 7; $i++) {
@@ -265,19 +271,22 @@ function generarPDF(PDO $pdo, int $id) {
     }
     $pdf->Ln();
 
+    // Cuerpo de la tabla
     $pdf->SetFont('Arial','',7);
     foreach ($labels as $label) {
-        $pdf->Cell($labelW,7, txt($label), 1, 0);
+        $pdf->Cell($labelW,7, txt($label), 1, 0, 'L');
         $hash = md5($label);
         for ($i = 1; $i <= 7; $i++) {
             $antes = $parametrosStored[$hash][$i]['antes'] ?? ($parametrosStored[$label][$i]['antes'] ?? "");
             $desp  = $parametrosStored[$hash][$i]['despues'] ?? ($parametrosStored[$label][$i]['despues'] ?? "");
-            $pdf->Cell($colW,7, txt((string)$antes), 1, 0);
-            $pdf->Cell($colW,7, txt((string)$desp), 1, 0);
+            $pdf->Cell($colW,7, txt((string)$antes), 1, 0, 'C');
+            $pdf->Cell($colW,7, txt((string)$desp), 1, 0, 'C');
         }
         $pdf->Ln();
     }
+
     $pdf->Ln(4);
+
 
 
 
