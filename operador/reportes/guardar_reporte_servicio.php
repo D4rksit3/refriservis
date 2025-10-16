@@ -174,7 +174,7 @@ function generarPDF(PDO $pdo, int $id) {
             $usuario = isset($this->user) ? $this->user : 'Desconocido';
 
             // Texto del pie
-            $texto = utf8_decode("Página " . $this->PageNo() . " de {nb}    |    Generado por: $usuario    |    {$this->fechaModificacion}");
+            $texto = iconv('UTF-8', 'ISO-8859-1//TRANSLIT', "Página " . $this->PageNo() . " de {nb}    |    Generado por: $usuario    |    {$this->fechaModificacion}");
 
             // Mostrar centrado
             $this->Cell(0, 10, $texto, 0, 0, 'C');
