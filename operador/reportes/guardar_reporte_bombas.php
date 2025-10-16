@@ -347,24 +347,22 @@ $pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
 
 $pdf->SetFont('Arial','',7);
 
-// Valores de ancho
-$pageWidth   = $pdf->GetPageWidth();
-$pageHeight  = $pdf->GetPageHeight();
-$bottomMargin = $pdf->GetBottomMargin();
-$leftMargin  = $pdf->getLeftMargin();
-$rightMargin = $pdf->getRightMargin();
-$usableW     = $pageWidth - $leftMargin - $rightMargin;
-
+// Anchos
 $nameW = 80;
 $dayW  = 10;
 $freqW = 8;
 $lineH = 5;
 
-// Función para la cabecera
-$printActivitiesHeader = function() use ($pdf, $nameW, $dayW, $freqW) {
+// Margen inferior definido manualmente (FPDF no tiene método para obtenerlo)
+$bottomMargin = 15;
+
+// Función cabecera
+$printHeader = function() use ($pdf, $nameW, $dayW, $freqW) {
     $pdf->SetFont('Arial','B',7);
     $pdf->Cell($nameW,7, txt("Actividad"), 1, 0, 'C');
-    for ($i = 1; $i <= 7; $i++) $pdf->Cell($dayW,7, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
+    for ($i = 1; $i <= 7; $i++) {
+        $pdf->Cell($dayW,7, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
+    }
     $pdf->Cell($freqW,7,"B",1,0,'C');
     $pdf->Cell($freqW,7,"T",1,0,'C');
     $pdf->Cell($freqW,7,"S",1,0,'C');
@@ -372,7 +370,7 @@ $printActivitiesHeader = function() use ($pdf, $nameW, $dayW, $freqW) {
     $pdf->SetFont('Arial','',7);
 };
 
-$printActivitiesHeader();
+$printHeader();
 
 // Lista de actividades
 $actividadesList = [
@@ -402,63 +400,63 @@ $actividadesList = [
 $actividadesBD = json_decode($m['actividades'] ?? '[]', true);
 if (!is_array($actividadesBD)) $actividadesBD = [];
 
-// Calculador de líneas
-$pdf_nb_lines = function($pdf, $w, $text) use ($lineH) {
-    $s = str_replace("\r", '', (string)$text);
-    $lines = explode("\n", $s);
-    $total = 0;
-    foreach ($lines as $line) {
-        $line = trim($line);
-        if ($line === '') { $total++; continue; }
-        $words = preg_split('/\s+/', $line);
-        $curw = 0.0;
+// Función auxiliar para contar líneas
+$getNbLines = function($pdf, $w, $txt) use ($lineH) {
+    $txt = str_replace("\r", '', $txt);
+    $lines = explode("\n", $txt);
+    $nb = 0;
+    foreach ($lines as $l) {
+        $l = trim($l);
+        if ($l === '') { $nb++; continue; }
+        $words = explode(' ', $l);
+        $lineWidth = 0;
         foreach ($words as $word) {
-            $wordEnc = mb_convert_encoding($word . ' ', 'ISO-8859-1', 'UTF-8');
-            $wWord = $pdf->GetStringWidth($wordEnc);
-            if ($curw + $wWord <= $w) {
-                $curw += $wWord;
+            $wordWidth = $pdf->GetStringWidth($word . ' ');
+            if ($lineWidth + $wordWidth <= $w) {
+                $lineWidth += $wordWidth;
             } else {
-                $total++;
-                $curw = $wWord;
+                $nb++;
+                $lineWidth = $wordWidth;
             }
         }
-        if ($curw > 0) $total++;
+        if ($lineWidth > 0) $nb++;
     }
-    return max(1, $total);
+    return max(1, $nb);
 };
 
-// Recorremos todas las actividades
+// Iterar actividades
 foreach ($actividadesList as $idx => $nombreRaw) {
     $actividadBD = $actividadesBD[$idx] ?? ["dias" => [], "frecuencia" => null];
-
     $diasMarcados = $actividadBD['dias'] ?? [];
     if (!is_array($diasMarcados)) {
         $diasMarcados = json_decode($diasMarcados, true) ?: [];
     }
 
     $nombre = txt($nombreRaw);
-    $cellInnerW = $nameW - 2;
-    $nb = $pdf_nb_lines($pdf, $cellInnerW, $nombre);
-    $h = $lineH * $nb;
+    $nb = $getNbLines($pdf, $nameW - 2, $nombre);
+    $h = $nb * $lineH;
 
-    // ✅ Control de salto de página sin tocar $PageBreakTrigger
-    $bottomY = $pageHeight - $bottomMargin;
-    if ($pdf->GetY() + $h > $bottomY) {
+    // Calcular espacio restante en la hoja
+    $pageHeight = 297; // A4
+    if ($pdf->GetY() + $h + $bottomMargin > $pageHeight) {
         $pdf->AddPage();
-        $printActivitiesHeader();
+        $printHeader();
     }
 
     $x = $pdf->GetX();
     $y = $pdf->GetY();
 
+    // Columna nombre
     $pdf->MultiCell($nameW, $lineH, $nombre, 1, 'L');
     $pdf->SetXY($x + $nameW, $y);
 
+    // Columnas 01–07
     for ($d = 1; $d <= 7; $d++) {
         $marca = in_array($d, $diasMarcados, true) ? "X" : "";
         $pdf->Cell($dayW, $h, $marca, 1, 0, 'C');
     }
 
+    // Frecuencia B–T–S–A
     foreach (["B","T","S","A"] as $f) {
         $marca = ($actividadBD['frecuencia'] === $f) ? "X" : "";
         $pdf->Cell($freqW, $h, $marca, 1, 0, 'C');
