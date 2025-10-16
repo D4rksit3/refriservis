@@ -41,10 +41,19 @@ function saveSignatureFile(string $dataUrl = null, string $namePrefix = 'firma')
 function generarPDF(PDO $pdo, int $id) {
     // Traer datos del mantenimiento y cliente
     $stmt = $pdo->prepare("
-      SELECT m.*, c.cliente, c.direccion, c.responsable, c.telefono
-      FROM mantenimientos m
-      LEFT JOIN clientes c ON c.id = m.cliente_id
-      WHERE m.id = ?
+        SELECT 
+            m.*, 
+            c.cliente, 
+            c.direccion, 
+            c.responsable, 
+            c.telefono, 
+            sup.nombre AS supervisor,
+            tec.nombre AS tecnico
+        FROM mantenimientos m
+        LEFT JOIN clientes c ON c.id = m.cliente_id
+        LEFT JOIN usuarios sup ON sup.id = m.digitador_id
+        LEFT JOIN usuarios tec ON tec.id = m.operador_id
+        WHERE m.id = ?
     ");
     $stmt->execute([$id]);
     $m = $stmt->fetch(PDO::FETCH_ASSOC);
