@@ -2,11 +2,10 @@
 // guardar_reporte_servicio.php
 // --- Descarga inmediata del PDF con diseño de "FORMATO DE CALIDAD" ---
 // Debe colocarse sin ningún output previo (sin espacios antes de <?php)
-
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
-// Evitamos que las funciones deprecated salgan en el PDF (previene "Some data has already been output")
-error_reporting(E_ALL & ~E_DEPRECATED);
+error_reporting(E_ALL);
+
 
 session_start();
 if (!isset($_SESSION['usuario']) || !in_array($_SESSION['rol'], ['operador', 'digitador', 'admin'])) {
