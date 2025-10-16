@@ -51,7 +51,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $val = $equipos[$i]['id_equipo'] ?? null;
         $equiposGuardados[$i] = ($val === '' ? null : $val); // si es '', guardamos NULL
     }
-        
+          
+  $nombre_cliente = $_POST['nombre_cliente'] ?? null;
+  $nombre_supervisor = $_POST['nombre_supervisor'] ?? null;
 
 
     // ✅ UPDATE en la tabla mantenimientos
@@ -134,8 +136,6 @@ if (!$m) die('Mantenimiento no encontrado');
 
 $nombre_tecnico = $m['nombre_tecnico'] ?? '';
 
-$nombre_cliente = $_POST['nombre_cliente'] ?? null;
-$nombre_supervisor = $_POST['nombre_supervisor'] ?? null;
 
 
 // Lista de equipos desde inventario
