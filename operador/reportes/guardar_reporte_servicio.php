@@ -504,19 +504,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    $update = $pdo->prepare("
-        UPDATE mantenimientos 
-        SET trabajos = ?, 
-            observaciones = ?, 
-            estado = 'finalizado', 
-            parametros = ?, 
-            firma_cliente = COALESCE(?, firma_cliente), 
-            firma_supervisor = COALESCE(?, firma_supervisor), 
-            firma_tecnico = COALESCE(?, firma_tecnico), 
-            fotos = ?
-        WHERE id = ?
-    ");
-
     $update = $pdo->prepare("UPDATE mantenimientos SET trabajos=?, actividades=?, observaciones=?, estado='finalizado' , parametros=?, firma_cliente=COALESCE(?,firma_cliente), firma_supervisor=COALESCE(?,firma_supervisor), firma_tecnico=COALESCE(?,firma_tecnico), fotos=? WHERE id=?");
     $update->execute([
         $trabajos,
