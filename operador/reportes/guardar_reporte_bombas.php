@@ -340,6 +340,7 @@ function generarPDF(PDO $pdo, int $id) {
     // ---------- NUEVA PÁGINA ----------
  
    // ---------- ACTIVIDADES A REALIZAR ----------
+// ---------- ACTIVIDADES A REALIZAR ----------
 $pdf->AddPage(); // 👉 que empiece en una nueva hoja
 $pdf->SetFont('Arial','B',9);
 $pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
@@ -347,7 +348,7 @@ $pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
 // Cabecera
 $pdf->SetFont('Arial','B',7);
 $pdf->Cell(80,7, txt("Actividad"), 1, 0, 'C');
-for ($i=1;$i<=7;$i++) {
+for ($i=1; $i<=7; $i++) {
     $pdf->Cell(10,7, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
 }
 $pdf->Cell(8,7,"B",1,0,'C');
@@ -388,46 +389,80 @@ if (!is_array($actividadesBD)) {
     $actividadesBD = [];
 }
 
+// Función auxiliar para calcular líneas
+if (!method_exists($pdf, 'NbLines')) {
+    $pdf->NbLines = function($w, $txt) use ($pdf) {
+        $cw = &$pdf->CurrentFont['cw'];
+        if ($w == 0)
+            $w = $pdf->w - $pdf->rMargin - $pdf->x;
+        $wmax = ($w - 2 * $pdf->cMargin) * 1000 / $pdf->FontSize;
+        $s = str_replace("\r", '', $txt);
+        $nb = strlen($s);
+        if ($nb > 0 && $s[$nb - 1] == "\n")
+            $nb--;
+        $sep = -1;
+        $i = 0; $j = 0; $l = 0; $nl = 1;
+        while ($i < $nb) {
+            $c = $s[$i];
+            if ($c == "\n") { $i++; $sep = -1; $j = $i; $l = 0; $nl++; continue; }
+            if ($c == ' ') $sep = $i;
+            $l += $cw[$c] ?? 0;
+            if ($l > $wmax) {
+                if ($sep == -1) {
+                    if ($i == $j) $i++;
+                } else {
+                    $i = $sep + 1;
+                }
+                $sep = -1; $j = $i; $l = 0; $nl++;
+            } else {
+                $i++;
+            }
+        }
+        return $nl;
+    };
+}
+
 // Recorremos la lista fija
 foreach ($actividadesList as $idx => $nombre) {
     $actividadBD = $actividadesBD[$idx] ?? ["dias"=>[], "frecuencia"=>null];
 
-    // Normalizar dias
     $diasMarcados = $actividadBD['dias'] ?? [];
     if (!is_array($diasMarcados)) {
         $diasMarcados = json_decode($diasMarcados, true) ?: [];
     }
 
-    // Guardar posición inicial
+    // Calcular altura de la celda
+    $nb = $pdf->NbLines(80, txt($nombre));
+    $h = 5 * $nb;
+
+    // Posición inicial
     $x = $pdf->GetX();
     $y = $pdf->GetY();
 
-    // MultiCell SOLO para el nombre (80 de ancho)
-    $pdf->MultiCell(80,5, txt($nombre),1,'L');
+    // Celda de nombre
+    $pdf->MultiCell(80, 5, txt($nombre), 1, 'L');
 
-    // Altura real que ocupó el texto
-    $altura = $pdf->GetY() - $y;
+    // Posicionar para las demás celdas
+    $pdf->SetXY($x + 80, $y);
 
-    // Regresar posición a la derecha del texto
-    $pdf->SetXY($x+80,$y);
-
-    // Columnas de días (01-07)
-    for ($i=1;$i<=7;$i++) {
+    // Días (01–07)
+    for ($i = 1; $i <= 7; $i++) {
         $marca = in_array($i, $diasMarcados) ? "X" : "";
-        $pdf->Cell(10,$altura, $marca, 1, 0, 'C');
+        $pdf->Cell(10, $h, $marca, 1, 0, 'C');
     }
 
-    // Columnas de frecuencia (B, T, S, A)
+    // Frecuencias (B, T, S, A)
     foreach (["B","T","S","A"] as $f) {
         $marca = ($actividadBD['frecuencia'] === $f) ? "X" : "";
-        $pdf->Cell(8,$altura, $marca, 1, 0, 'C');
+        $pdf->Cell(8, $h, $marca, 1, 0, 'C');
     }
 
-    // Bajar cursor a la siguiente fila
-    $pdf->Ln();
+    // Salto de línea controlado
+    $pdf->Ln($h);
 }
 
 $pdf->Ln(3);
+
 
 
 
