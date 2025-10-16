@@ -343,33 +343,31 @@ function generarPDF(PDO $pdo, int $id) {
 // ---------- ACTIVIDADES A REALIZAR ----------
 $pdf->AddPage();
 $pdf->SetFont('Arial','B',9);
-$pdf->Cell(0,6, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C'); // 🔹 altura ajustada a 6 mm
 
+// Título centrado sin borde inferior (para alinearlo visualmente)
+$pdf->Cell(0,8, txt("ACTIVIDADES A REALIZAR"), 'LTR', 1, 'C');
+
+// Anchos y estilos
 $pdf->SetFont('Arial','',7);
-
-// Anchos
 $nameW = 80;
 $dayW  = 10;
 $freqW = 8;
 $lineH = 5;
 $bottomMargin = 15;
 
-// Función cabecera
-$printHeader = function() use ($pdf, $nameW, $dayW, $freqW) {
-    $pdf->SetFont('Arial','B',7);
-    $pdf->Cell($nameW,6, txt("Actividad"), 1, 0, 'C');
-    for ($i = 1; $i <= 7; $i++) {
-        $pdf->Cell($dayW,6, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
-    }
-    $pdf->Cell($freqW,6,"B",1,0,'C');
-    $pdf->Cell($freqW,6,"T",1,0,'C');
-    $pdf->Cell($freqW,6,"S",1,0,'C');
-    $pdf->Cell($freqW,6,"A",1,1,'C');
-    $pdf->SetFont('Arial','',7);
-};
+// Cabecera uniforme
+$pdf->SetFont('Arial','B',7);
+$pdf->Cell($nameW,6, txt("Actividad"), 'LBR', 0, 'C');
+for ($i = 1; $i <= 7; $i++) {
+    $pdf->Cell($dayW,6, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
+}
+$pdf->Cell($freqW,6,"B",1,0,'C');
+$pdf->Cell($freqW,6,"T",1,0,'C');
+$pdf->Cell($freqW,6,"S",1,0,'C');
+$pdf->Cell($freqW,6,"A",1,1,'C');
+$pdf->SetFont('Arial','',7);
 
-$printHeader();
-
+// Lista de actividades
 $actividadesList = [
     "Inspección ocular del equipo en funcionamiento",
     "Verificación del estado de superficies y aseo general del equipo",
@@ -397,7 +395,7 @@ $actividadesList = [
 $actividadesBD = json_decode($m['actividades'] ?? '[]', true);
 if (!is_array($actividadesBD)) $actividadesBD = [];
 
-// Función auxiliar para contar líneas (sin saltos falsos)
+// Función para calcular el número de líneas
 $getNbLines = function($pdf, $w, $txt) use ($lineH) {
     $txt = trim(str_replace("\r", '', $txt));
     if ($txt === '') return 1;
@@ -416,6 +414,20 @@ $getNbLines = function($pdf, $w, $txt) use ($lineH) {
     return $nb;
 };
 
+// Función para reimprimir cabecera al hacer salto de página
+$printHeader = function() use ($pdf, $nameW, $dayW, $freqW) {
+    $pdf->SetFont('Arial','B',7);
+    $pdf->Cell($nameW,6, txt("Actividad"), 1, 0, 'C');
+    for ($i = 1; $i <= 7; $i++) {
+        $pdf->Cell($dayW,6, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
+    }
+    $pdf->Cell($freqW,6,"B",1,0,'C');
+    $pdf->Cell($freqW,6,"T",1,0,'C');
+    $pdf->Cell($freqW,6,"S",1,0,'C');
+    $pdf->Cell($freqW,6,"A",1,1,'C');
+    $pdf->SetFont('Arial','',7);
+};
+
 foreach ($actividadesList as $idx => $nombreRaw) {
     $actividadBD = $actividadesBD[$idx] ?? ["dias" => [], "frecuencia" => null];
     $diasMarcados = $actividadBD['dias'] ?? [];
@@ -427,31 +439,28 @@ foreach ($actividadesList as $idx => $nombreRaw) {
     $nb = $getNbLines($pdf, $nameW - 2, $nombre);
     $h = $nb * $lineH;
 
-    // Control de salto de página
     $pageHeight = 297; // A4
     if ($pdf->GetY() + $h + $bottomMargin > $pageHeight) {
         $pdf->AddPage();
+        // título en la nueva hoja también
+        $pdf->SetFont('Arial','B',9);
+        $pdf->Cell(0,8, txt("ACTIVIDADES A REALIZAR"), 'LTR', 1, 'C');
         $printHeader();
     }
 
-    // Guardar posición
     $x = $pdf->GetX();
     $y = $pdf->GetY();
 
-    // Actividad
     $pdf->MultiCell($nameW, $lineH, $nombre, 1, 'L');
 
-    // Altura real usada (ajuste por MultiCell)
     $usedHeight = $pdf->GetY() - $y;
     $pdf->SetXY($x + $nameW, $y);
 
-    // Días
     for ($d = 1; $d <= 7; $d++) {
         $marca = in_array($d, $diasMarcados, true) ? "X" : "";
         $pdf->Cell($dayW, $usedHeight, $marca, 1, 0, 'C');
     }
 
-    // Frecuencias
     foreach (["B","T","S","A"] as $f) {
         $marca = ($actividadBD['frecuencia'] === $f) ? "X" : "";
         $pdf->Cell($freqW, $usedHeight, $marca, 1, 0, 'C');
