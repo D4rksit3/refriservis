@@ -504,23 +504,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    $update = $pdo->prepare("UPDATE mantenimientos SET trabajos=?, observaciones=?, estado='finalizado' , parametros=?, firma_cliente=COALESCE(?,firma_cliente), firma_supervisor=COALESCE(?,firma_supervisor), firma_tecnico=COALESCE(?,firma_tecnico), fotos=? WHERE id=?");
+    $update = $pdo->prepare("
+        UPDATE mantenimientos 
+        SET trabajos = ?, 
+            observaciones = ?, 
+            estado = 'finalizado', 
+            parametros = ?, 
+            firma_cliente = COALESCE(?, firma_cliente), 
+            firma_supervisor = COALESCE(?, firma_supervisor), 
+            firma_tecnico = COALESCE(?, firma_tecnico), 
+            fotos = ?
+        WHERE id = ?
+    ");
+
     $update->execute([
         $trabajos,
         $observaciones,
-        json_encode($parametros),
+        json_encode($parametros, JSON_UNESCAPED_UNICODE),
         $firma_cliente,
         $firma_supervisor,
         $firma_tecnico,
-        json_encode($fotosExistArr),
+        json_encode($fotosExistArr, JSON_UNESCAPED_UNICODE),
         $mantenimiento_id
     ]);
 
+    // Generar PDF y forzar descarga
     generarPDF($pdo, $mantenimiento_id);
+    exit;
 
-} elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
-    generarPDF($pdo, intval($_GET['id']));
+} elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $id = intval($_GET['id'] ?? 0);
+    if (!$id) {
+        http_response_code(400);
+        exit("ID de mantenimiento no proporcionado en GET.");
+    }
+    generarPDF($pdo, $id);
+    exit;
 } else {
-    http_response_code(400);
-    echo "Método inválido.";
+    http_response_code(405);
+    exit("Método no permitido.");
 }
