@@ -341,7 +341,7 @@ function generarPDF(PDO $pdo, int $id) {
  
    // ---------- ACTIVIDADES A REALIZAR ----------
 // ---------- ACTIVIDADES A REALIZAR ----------
-$pdf->AddPage(); // 👉 que empiece en una nueva hoja
+$pdf->AddPage(); 
 $pdf->SetFont('Arial','B',9);
 $pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
 
@@ -349,16 +349,18 @@ $pdf->SetFont('Arial','',7);
 
 // Valores de ancho
 $pageWidth   = $pdf->GetPageWidth();
+$pageHeight  = $pdf->GetPageHeight();
+$bottomMargin = $pdf->GetBottomMargin();
 $leftMargin  = $pdf->getLeftMargin();
 $rightMargin = $pdf->getRightMargin();
 $usableW     = $pageWidth - $leftMargin - $rightMargin;
 
-$nameW = 80;                // ancho fijo para la columna "Actividad"
-$dayW  = 10;                // ancho por columna día (01-07)
-$freqW = 8;                 // ancho para B/T/S/A
-$lineH = 5;                 // altura por línea de texto
+$nameW = 80;
+$dayW  = 10;
+$freqW = 8;
+$lineH = 5;
 
-// Función: pintar la cabecera (útil si hay salto de página)
+// Función para la cabecera
 $printActivitiesHeader = function() use ($pdf, $nameW, $dayW, $freqW) {
     $pdf->SetFont('Arial','B',7);
     $pdf->Cell($nameW,7, txt("Actividad"), 1, 0, 'C');
@@ -370,10 +372,9 @@ $printActivitiesHeader = function() use ($pdf, $nameW, $dayW, $freqW) {
     $pdf->SetFont('Arial','',7);
 };
 
-// Imprimir cabecera inicial
 $printActivitiesHeader();
 
-// Lista fija de actividades
+// Lista de actividades
 $actividadesList = [
     "Inspección ocular del equipo en funcionamiento",
     "Verificación del estado de superficies y aseo general del equipo",
@@ -398,48 +399,27 @@ $actividadesList = [
     "Megar y registrar el estado del aislamiento del motor eléctrico",
 ];
 
-// Decodificar JSON de la BD
 $actividadesBD = json_decode($m['actividades'] ?? '[]', true);
 if (!is_array($actividadesBD)) $actividadesBD = [];
 
-// Función que calcula cuántas líneas ocupará un texto en un ancho (usa GetStringWidth)
+// Calculador de líneas
 $pdf_nb_lines = function($pdf, $w, $text) use ($lineH) {
-    // Convertir saltos CRLF y asegurar string
     $s = str_replace("\r", '', (string)$text);
     $lines = explode("\n", $s);
     $total = 0;
     foreach ($lines as $line) {
         $line = trim($line);
         if ($line === '') { $total++; continue; }
-        // dividir en palabras
         $words = preg_split('/\s+/', $line);
         $curw = 0.0;
         foreach ($words as $word) {
-            // Convertir a encoding de salida para medir correctamente
             $wordEnc = mb_convert_encoding($word . ' ', 'ISO-8859-1', 'UTF-8');
             $wWord = $pdf->GetStringWidth($wordEnc);
             if ($curw + $wWord <= $w) {
                 $curw += $wWord;
             } else {
-                // nueva línea
                 $total++;
                 $curw = $wWord;
-                // caso palabra más ancha que w -> seguir contando (queda en la nueva línea)
-                if ($wWord > $w) {
-                    // aproximación: dividir la palabra en caracteres (muy raro)
-                    $chars = mb_str_split($word);
-                    $curw = 0;
-                    foreach ($chars as $ch) {
-                        $cEnc = mb_convert_encoding($ch, 'ISO-8859-1', 'UTF-8');
-                        $cw = $pdf->GetStringWidth($cEnc);
-                        if ($curw + $cw <= $w) {
-                            $curw += $cw;
-                        } else {
-                            $total++;
-                            $curw = $cw;
-                        }
-                    }
-                }
             }
         }
         if ($curw > 0) $total++;
@@ -447,54 +427,43 @@ $pdf_nb_lines = function($pdf, $w, $text) use ($lineH) {
     return max(1, $total);
 };
 
-// Recorrer actividades
+// Recorremos todas las actividades
 foreach ($actividadesList as $idx => $nombreRaw) {
-
     $actividadBD = $actividadesBD[$idx] ?? ["dias" => [], "frecuencia" => null];
 
-    // Normalizar dias
     $diasMarcados = $actividadBD['dias'] ?? [];
     if (!is_array($diasMarcados)) {
         $diasMarcados = json_decode($diasMarcados, true) ?: [];
     }
 
-    // Preparar texto ya en encoding FPDF
     $nombre = txt($nombreRaw);
-
-    // Calcular cantidad de líneas (restar 2mm de "padding" aproximado)
-    $cellInnerW = $nameW - 2; // margen interno aproximado
+    $cellInnerW = $nameW - 2;
     $nb = $pdf_nb_lines($pdf, $cellInnerW, $nombre);
     $h = $lineH * $nb;
 
-    // Si no cabe en la página, crear nueva y reimprimir cabecera
-    if ($pdf->GetY() + $h > $pdf->PageBreakTrigger) {
+    // ✅ Control de salto de página sin tocar $PageBreakTrigger
+    $bottomY = $pageHeight - $bottomMargin;
+    if ($pdf->GetY() + $h > $bottomY) {
         $pdf->AddPage();
         $printActivitiesHeader();
     }
 
-    // Guardar x,y
     $x = $pdf->GetX();
     $y = $pdf->GetY();
 
-    // MultiCell para el nombre con borde (esto mueve el cursor a la siguiente línea)
     $pdf->MultiCell($nameW, $lineH, $nombre, 1, 'L');
-
-    // Posicionar a la derecha del nombre
     $pdf->SetXY($x + $nameW, $y);
 
-    // Imprimir columnas de días (01-07)
     for ($d = 1; $d <= 7; $d++) {
         $marca = in_array($d, $diasMarcados, true) ? "X" : "";
         $pdf->Cell($dayW, $h, $marca, 1, 0, 'C');
     }
 
-    // Imprimir frecuencias B,T,S,A
     foreach (["B","T","S","A"] as $f) {
         $marca = ($actividadBD['frecuencia'] === $f) ? "X" : "";
         $pdf->Cell($freqW, $h, $marca, 1, 0, 'C');
     }
 
-    // Saltar a la siguiente fila (altura exacta)
     $pdf->Ln($h);
 }
 
