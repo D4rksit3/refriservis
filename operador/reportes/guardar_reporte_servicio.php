@@ -118,40 +118,40 @@ function generarPDF(PDO $pdo, int $id) {
             $left = $this->GetX();
             $top = $this->GetY();
 
-            // Marco total
-$totalW = $logoW + $titleW + $numW + 4; // sumando los espacios entre celdas
-$this->Rect($left, $top, $logoW + $titleW + $numW + 4, $cellH); // borde general (opcional)
+            // Logo
+            $cellW = 40; $cellH = 25;
+            $this->Rect($left, $top, $cellW, $cellH);
+            if (file_exists(__DIR__ . '/../../lib/logo.jpeg')) {
+                $imgW = 30; $imgH = 18;
+                $imgX = $left + ($cellW - $imgW) / 2;
+                $imgY = $top + ($cellH - $imgH) / 2;
+                $this->Image(__DIR__ . '/../../lib/logo.jpeg', $imgX, $imgY, $imgW, $imgH);
+            }
+            $this->SetXY($left + $cellW + 2, $top);
 
-// --- BLOQUE LOGO ---
-$this->Rect($left, $top, $logoW, $cellH);
-if (file_exists(__DIR__ . '/../../lib/logo.jpeg')) {
-    $imgW = 30; $imgH = 18;
-    $imgX = $left + ($logoW - $imgW) / 2;
-    $imgY = $top + ($cellH - $imgH) / 2;
-    $this->Image(__DIR__ . '/../../lib/logo.jpeg', $imgX, $imgY, $imgW, $imgH);
-}
+            // Título
+            $this->SetFont('Arial', 'B', 10);
+            $this->SetFillColor(207, 226, 243);
+            $this->Cell(110, 7, txt("FORMATO DE CALIDAD"), 1, 1, 'C', true);
+            $this->SetX($left + $cellW + 2);
+            $this->SetFont('Arial','B',12);
+            $this->Cell(110, 10, txt("REPORTE DE SERVICIO TÉCNICO"), 1, 1, 'C');
+            $this->SetX($left + $cellW + 2);
+            $this->SetFont('Arial','',8);
+            $this->Cell(110, 8, txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"), 1, 0, 'C');
 
-// --- BLOQUE TÍTULO ---
-$this->SetXY($left + $logoW + 2, $top);
-$this->SetFont('Arial', 'B', 10);
-$this->SetFillColor(207, 226, 243);
-$this->Cell($titleW, 7, txt("FORMATO DE CALIDAD"), 1, 1, 'C', true);
-$this->SetX($left + $logoW + 2);
-$this->SetFont('Arial','B',12);
-$this->Cell($titleW, 10, txt("REPORTE DE SERVICIO TÉCNICO"), 1, 1, 'C');
-$this->SetX($left + $logoW + 2);
-$this->SetFont('Arial','',8);
-$this->Cell($titleW, 8, txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com"), 1, 0, 'C');
+            // Número
+            $this->SetXY($left + $cellW + 2 + 110 + 4, $top);
+            $this->SetFont('Arial','',9);
+            $numCellW = 40; $numCellH = 25;
+            $this->Rect($this->GetX(), $this->GetY(), $numCellW, $numCellH);
+            $this->SetXY($this->GetX(), $this->GetY() + 6);
+            $this->Cell($numCellW, 6, "001-N" . chr(176) . str_pad($this->mantenimientoId ?? '', 6, "0", STR_PAD_LEFT), 0, 1, 'C');
 
-// --- BLOQUE NÚMERO ---
-$this->SetXY($left + $logoW + 2 + $titleW + 2, $top);
-$this->Rect($this->GetX(), $this->GetY(), $numW, $cellH);
-$this->SetFont('Arial','B',10);
-$this->SetXY($this->GetX(), $this->GetY() + 6);
-$this->Cell($numW, 6, "001-N" . chr(176) . str_pad($this->mantenimientoId ?? '', 6, "0", STR_PAD_LEFT), 0, 1, 'C');
+            $this->Ln(6);
 
-// --- Separación después del encabezado ---
-$this->SetY($top + $cellH + 10);
+            // 👉 ESTA LÍNEA ES CLAVE: baja el cursor debajo del header
+            $this->SetY($top + $cellH + 15);
         }
         /* public function Footer() {
             $this->SetY(-15);
