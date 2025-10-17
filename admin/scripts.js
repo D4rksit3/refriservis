@@ -33,7 +33,7 @@ $(document).ready(function(){
                 {data:'acciones', orderable:false, searchable:false}
             ],
             language:{ url:'//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
-        });
+        }).destroy;
     }
 
     // ---------------- UTILS: CERRAR MODAL ----------------
