@@ -1,6 +1,11 @@
 // scripts.js - unificado para equipos y productos
 $(document).ready(function(){
 
+
+    $('#btnExportar').click(function(){
+    window.location.href = 'exportar_equipos.php';
+    });
+
     let enviando = false; // declarar variable de control global para evitar doble envío
 
 
