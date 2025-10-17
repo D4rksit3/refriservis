@@ -14,6 +14,9 @@ require_once __DIR__.'/../includes/header.php';
     <button class="btn btn-success btn-sm mb-2" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
       ➕ Nuevo
     </button>
+    <button class="btn btn-primary btn-sm mb-2" id="btnExportar">
+  📥 Exportar a Excel
+</button>
   </div>
 
   <div class="table-responsive shadow-sm rounded">
@@ -46,9 +49,7 @@ require_once __DIR__.'/../includes/header.php';
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <form id="formAgregarEquipo" method="post">
-        <button class="btn btn-primary btn-sm mb-2" id="btnExportar">
-  📥 Exportar a Excel
-</button>
+        
         <div class="modal-header bg-success text-white">
           <h5 class="modal-title">➕ Nuevo Equipo</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
