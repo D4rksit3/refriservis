@@ -75,11 +75,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
 
+     // ✅ UPDATE en la tabla mantenimientos
     $stmt = $pdo->prepare("UPDATE mantenimientos SET 
         trabajos = ?, 
         observaciones = ?, 
         parametros = ?, 
-        actividades = ?, 
         firma_cliente = ?, 
         firma_supervisor = ?, 
         firma_tecnico = ?, 
@@ -97,18 +97,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         modificado_en = NOW(),
         modificado_por = ?,
         estado = 'finalizado'
-        WHERE id = ?");
+    WHERE id = ?");
     $stmt->execute([
         $trabajos,
         $observaciones,
-        json_encode($parametros, JSON_UNESCAPED_UNICODE),
-        json_encode($actividadesLimpias, JSON_UNESCAPED_UNICODE),
+        json_encode($parametros),
         $firma_cliente,
         $firma_supervisor,
         $firma_tecnico,
         $nombre_cliente,
         $nombre_supervisor,
-        json_encode($fotos_guardadas, JSON_UNESCAPED_UNICODE),
+        json_encode($fotos_guardadas),
         $equiposGuardados[1],
         $equiposGuardados[2],
         $equiposGuardados[3],
@@ -437,7 +436,6 @@ include __DIR__ . '/modal_equipo.php';
         <div class="firma-box"><canvas id="firmaClienteCanvas"></canvas></div>
         <div class="mt-1">
           <input type="text" id="nombreCliente" name="nombre_cliente" class="form-control mt-2" placeholder="Nombre del cliente">
-         
           <button type="button" class="btn btn-sm btn-secondary" onclick="sigCliente.clear()">Limpiar</button>
         </div>
         
@@ -447,8 +445,7 @@ include __DIR__ . '/modal_equipo.php';
         <label class="form-label">Firma Supervisor</label>
         <div class="firma-box"><canvas id="firmaSupervisorCanvas"></canvas></div>
           <div class="mt-1">
-            <input type="text" id="nombreSupervisor" name="nombre_supervisor" class="form-control mt-2" placeholder="Nombre del supervisor">
-        
+             <input type="text" id="nombreSupervisor" name="nombre_supervisor" class="form-control mt-2" placeholder="Nombre del supervisor">
         <button type="button" class="btn btn-sm btn-secondary" onclick="sigSupervisor.clear()">Limpiar</button>
       </div>
         <input type="hidden" name="firma_supervisor" id="firma_supervisor_input">
