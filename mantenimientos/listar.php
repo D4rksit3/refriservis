@@ -142,30 +142,86 @@ require_once __DIR__.'/../includes/header.php';
 
 <!-- Modal Editar -->
 <div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Editar Mantenimiento</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <form id="formEditar">
+        <form id="formEditar" class="row g-2">
           <input type="hidden" name="id" id="edit_id">
-          <div class="mb-3">
-            <label>Título</label>
-            <input type="text" class="form-control" name="titulo" id="edit_titulo">
+
+          <div class="col-12">
+            <label class="form-label">Título</label>
+            <input class="form-control" name="titulo" id="edit_titulo" required>
           </div>
-          <div class="mb-3">
-            <label>Fecha</label>
+
+          <div class="col-12">
+            <label class="form-label">Descripción</label>
+            <textarea class="form-control" name="descripcion" id="edit_descripcion"></textarea>
+          </div>
+
+          <div class="col-4">
+            <label class="form-label">Fecha</label>
             <input type="date" class="form-control" name="fecha" id="edit_fecha">
           </div>
-          <div class="mb-3">
-            <label>Cliente</label>
-            <select class="form-control" name="cliente_id" id="edit_cliente">
+
+          <div class="col-4">
+            <label class="form-label">Cliente</label>
+            <div class="input-group">
+              <select name="cliente_id" id="edit_cliente"
+                      class="form-select selectpicker"
+                      data-live-search="true"
+                      title="Selecciona un cliente...">
+                <option value="">-- Ninguno --</option>
+                <?php
+                  $clientes = $pdo->query("SELECT id, cliente, direccion, telefono FROM clientes ORDER BY cliente")->fetchAll();
+                  foreach($clientes as $c) {
+                    echo "<option value='{$c['id']}'>"
+                        .htmlspecialchars($c['cliente'].' - '.$c['direccion'].' - '.$c['telefono'])
+                        ."</option>";
+                  }
+                ?>
+              </select>
+              <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoCliente">+ Nuevo</button>
+            </div>
+          </div>
+
+          <div class="col-4">
+            <label class="form-label">Operador</label>
+            <select name="operador_id" id="edit_operador" class="form-select selectpicker" data-live-search="true">
+              <option value="">-- Ninguno --</option>
               <?php
-                $clientes = $pdo->query("SELECT id, cliente FROM clientes")->fetchAll(PDO::FETCH_ASSOC);
-                foreach($clientes as $c) {
-                  echo "<option value='{$c['id']}'>{$c['cliente']}</option>";
+                $operadores = $pdo->query("SELECT id, nombre FROM usuarios WHERE rol='operador'")->fetchAll();
+                foreach($operadores as $o) {
+                  echo "<option value='{$o['id']}'>".htmlspecialchars($o['nombre'])."</option>";
+                }
+              ?>
+            </select>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Categoría</label>
+            <select name="categoria" id="edit_categoria" class="form-select selectpicker" data-live-search="true">
+              <?php
+                $categorias = $pdo->query("SELECT nombre FROM categoria ORDER BY nombre")->fetchAll();
+                foreach($categorias as $cat) {
+                  echo "<option value='".htmlspecialchars($cat['nombre'])."'>".htmlspecialchars($cat['nombre'])."</option>";
+                }
+              ?>
+            </select>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Equipos (máx 7)</label>
+            <select name="equipos[]" id="edit_equipos" class="form-select selectpicker" multiple data-live-search="true" data-max-options="7" title="Selecciona equipos...">
+              <?php
+                $equipos = $pdo->query("SELECT id_equipo, Identificador, Nombre, Categoria, Estatus FROM equipos ORDER BY Nombre")->fetchAll();
+                foreach($equipos as $e) {
+                  echo "<option value='{$e['id_equipo']}'>"
+                      .htmlspecialchars($e['Identificador'].' | '.$e['Nombre'].' | '.$e['Categoria'].' | '.$e['Estatus'])
+                      ."</option>";
                 }
               ?>
             </select>
@@ -179,6 +235,48 @@ require_once __DIR__.'/../includes/header.php';
     </div>
   </div>
 </div>
+
+<!-- Modal Nuevo Cliente -->
+<div class="modal fade" id="modalNuevoCliente" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="formNuevoCliente" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Agregar Cliente</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body row g-2">
+        <div class="col-12">
+          <label class="form-label">Cliente*</label>
+          <input type="text" name="cliente" class="form-control" required>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Dirección*</label>
+          <input type="text" name="direccion" class="form-control" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Teléfono*</label>
+          <input type="text" name="telefono" class="form-control" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-control">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Responsable</label>
+          <input type="text" name="responsable" class="form-control">
+        </div>
+        <input type="hidden" name="estatus" value="1">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
@@ -300,4 +398,69 @@ document.getElementById('buscar').addEventListener('input', () => { pagina = 1; 
 
 // Cargar tabla inicialmente
 cargarMantenimientos();
+
+
+$(document).ready(function(){
+  // Inicializar los selectpicker
+  $('.selectpicker').selectpicker();
+
+  // Abrir modal editar con datos cargados
+  $('#tabla-mantenimientos').on('click', '.btn-editar', function(){
+    const id = $(this).data('id');
+
+    $.getJSON('/mantenimientos/obtener.php', { id }, function(data){
+      if(!data.success){ alert('No se encontró el mantenimiento'); return; }
+
+      $('#edit_id').val(data.id);
+      $('#edit_titulo').val(data.titulo);
+      $('#edit_descripcion').val(data.descripcion);
+      $('#edit_fecha').val(data.fecha);
+      $('#edit_cliente').val(data.cliente_id).selectpicker('refresh');
+      $('#edit_operador').val(data.operador_id).selectpicker('refresh');
+      $('#edit_categoria').val(data.categoria).selectpicker('refresh');
+      $('#edit_equipos').val(data.equipos).selectpicker('refresh');
+
+      new bootstrap.Modal('#modalEditar').show();
+    });
+  });
+
+  // Guardar cambios
+  $('#guardarEditar').on('click', function(){
+    const formData = new FormData($('#formEditar')[0]);
+    $.ajax({
+      url: '/mantenimientos/editar_ajax.php',
+      type: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      dataType: 'json',
+      success: function(res){
+        if(res.success){
+          alert('Cambios guardados correctamente');
+          bootstrap.Modal.getInstance(document.getElementById('modalEditar')).hide();
+          cargarMantenimientos();
+        } else {
+          alert(res.error || 'Error al guardar los cambios');
+        }
+      }
+    });
+  });
+
+  // Crear cliente nuevo
+  $('#formNuevoCliente').on('submit', function(e){
+    e.preventDefault();
+    $.post('/mantenimientos/guardar_cliente.php', $(this).serialize(), function(data){
+      if(data.success){
+        $('#edit_cliente')
+          .append($('<option>', { value: data.id, text: data.text }))
+          .val(data.id)
+          .selectpicker('refresh');
+        $('#modalNuevoCliente').modal('hide');
+      } else {
+        alert(data.error || 'Error al guardar cliente');
+      }
+    }, 'json');
+  });
+});
+
 </script>
