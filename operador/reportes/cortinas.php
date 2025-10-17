@@ -79,6 +79,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         firma_cliente = ?, 
         firma_supervisor = ?, 
         firma_tecnico = ?, 
+        nombre_cliente = ?, 
+        nombre_supervisor = ?, 
         fotos = ?, 
         equipo1 = ?, 
         equipo2 = ?, 
@@ -100,6 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $firma_cliente,
         $firma_supervisor,
         $firma_tecnico,
+        $nombre_cliente,
+        $nombre_supervisor,
         json_encode($fotos_guardadas, JSON_UNESCAPED_UNICODE),
         $equiposGuardados[1],
         $equiposGuardados[2],
@@ -111,7 +115,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['usuario_id'],
         $mantenimiento_id
     ]);
-
 
     // Si confirmación viene por POST, redirige al dashboard
     $confirmado = $_POST['confirmado'] ?? 'no';
@@ -129,9 +132,16 @@ $id = $_GET['id'] ?? null;
 if (!$id) die('ID no proporcionado');
 
 $stmt = $pdo->prepare("
-  SELECT m.*, c.cliente, c.direccion, c.responsable, c.telefono
+  SELECT 
+      m.*, 
+      c.cliente, 
+      c.direccion, 
+      c.responsable, 
+      c.telefono,
+      u.nombre AS nombre_tecnico
   FROM mantenimientos m
   LEFT JOIN clientes c ON c.id = m.cliente_id
+  LEFT JOIN usuarios u ON u.id = m.operador_id
   WHERE m.id = ?
 ");
 $stmt->execute([$id]);
@@ -143,6 +153,8 @@ $actividadesGuardadas = [];
 if (!empty($m['actividades'])) {
     $actividadesGuardadas = json_decode($m['actividades'], true) ?: [];
 }
+
+$nombre_tecnico = $m['nombre_tecnico'] ?? '';
 
 // Lista de equipos desde inventario
 $equiposList = $pdo->query("SELECT id_equipo AS id_equipo, Identificador, Marca, Modelo, Ubicacion, Voltaje 

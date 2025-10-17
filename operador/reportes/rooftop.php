@@ -79,6 +79,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         firma_cliente = ?, 
         firma_supervisor = ?, 
         firma_tecnico = ?, 
+        nombre_cliente = ?, 
+        nombre_supervisor = ?, 
         fotos = ?, 
         equipo1 = ?, 
         equipo2 = ?, 
@@ -100,6 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $firma_cliente,
         $firma_supervisor,
         $firma_tecnico,
+        $nombre_cliente,
+        $nombre_supervisor,
         json_encode($fotos_guardadas, JSON_UNESCAPED_UNICODE),
         $equiposGuardados[1],
         $equiposGuardados[2],
@@ -129,9 +133,16 @@ $id = $_GET['id'] ?? null;
 if (!$id) die('ID no proporcionado');
 
 $stmt = $pdo->prepare("
-  SELECT m.*, c.cliente, c.direccion, c.responsable, c.telefono
+  SELECT 
+      m.*, 
+      c.cliente, 
+      c.direccion, 
+      c.responsable, 
+      c.telefono,
+      u.nombre AS nombre_tecnico
   FROM mantenimientos m
   LEFT JOIN clientes c ON c.id = m.cliente_id
+  LEFT JOIN usuarios u ON u.id = m.operador_id
   WHERE m.id = ?
 ");
 $stmt->execute([$id]);
@@ -143,6 +154,8 @@ $actividadesGuardadas = [];
 if (!empty($m['actividades'])) {
     $actividadesGuardadas = json_decode($m['actividades'], true) ?: [];
 }
+
+$nombre_tecnico = $m['nombre_tecnico'] ?? '';
 
 // Lista de equipos desde inventario
 $equiposList = $pdo->query("SELECT id_equipo AS id_equipo, Identificador, Marca, Modelo, Ubicacion, Voltaje 
@@ -419,6 +432,8 @@ include __DIR__ . '/modal_equipo.php';
         <label class="form-label">Firma Cliente</label>
         <div class="firma-box"><canvas id="firmaClienteCanvas"></canvas></div>
         <div class="mt-1">
+          <input type="text" id="nombreCliente" name="nombre_cliente" class="form-control mt-2" placeholder="Nombre del cliente">
+         
           <button type="button" class="btn btn-sm btn-secondary" onclick="sigCliente.clear()">Limpiar</button>
         </div>
         
@@ -428,6 +443,8 @@ include __DIR__ . '/modal_equipo.php';
         <label class="form-label">Firma Supervisor</label>
         <div class="firma-box"><canvas id="firmaSupervisorCanvas"></canvas></div>
           <div class="mt-1">
+            <input type="text" id="nombreSupervisor" name="nombre_supervisor" class="form-control mt-2" placeholder="Nombre del supervisor">
+        
         <button type="button" class="btn btn-sm btn-secondary" onclick="sigSupervisor.clear()">Limpiar</button>
       </div>
         <input type="hidden" name="firma_supervisor" id="firma_supervisor_input">
@@ -436,6 +453,8 @@ include __DIR__ . '/modal_equipo.php';
         <label class="form-label">Firma Técnico</label>
         <div class="firma-box"><canvas id="firmaTecnicoCanvas"></canvas></div>
         <div class="mt-1">
+          <input type="text" class="form-control" id="nombre_tecnico" name="nombre_tecnico" 
+         value="<?= htmlspecialchars($nombre_tecnico ?? '') ?>" readonly>
     <button type="button" class="btn btn-sm btn-secondary" onclick="sigTecnico.clear()">Limpiar</button>
   </div>
         <input type="hidden" name="firma_tecnico" id="firma_tecnico_input">
