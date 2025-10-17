@@ -189,12 +189,7 @@ require_once __DIR__.'/../includes/header.php';
             <label class="form-label">Operador</label>
             <select name="operador_id" id="edit_operador" class="form-select selectpicker" data-live-search="true">
               <option value="">-- Ninguno --</option>
-              <?php
-                $operadores = $pdo->query("SELECT id, nombre FROM usuarios WHERE rol='operador'")->fetchAll();
-                foreach($operadores as $o) {
-                  echo "<option value='{$o['id']}'>".htmlspecialchars($o['nombre'])."</option>";
-                }
-              ?>
+              
             </select>
           </div>
 
