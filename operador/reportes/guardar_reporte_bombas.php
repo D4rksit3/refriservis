@@ -345,20 +345,20 @@ function generarPDF(PDO $pdo, int $id) {
 // ---------- ACTIVIDADES A REALIZAR ----------
 $pdf->AddPage();
 
-// Título alineado con la tabla
-$pdf->SetFont('Arial','B',9);
-$totalWidth = $nameW + ($dayW * 7) + ($freqW * 4);
-$pdf->Cell($totalWidth,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
-
-// Anchos y estilos
-$pdf->SetFont('Arial','',7);
 $nameW = 80;
 $dayW  = 10;
 $freqW = 8;
 $lineH = 5;
 $bottomMargin = 15;
 
-// Cabecera uniforme (alineada justo debajo del título)
+// Calcular ancho total exacto
+$totalWidth = $nameW + ($dayW * 7) + ($freqW * 4);
+
+// Título alineado con el cuadro
+$pdf->SetFont('Arial','B',9);
+$pdf->Cell($totalWidth,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
+
+// Cabecera
 $pdf->SetFont('Arial','B',7);
 $pdf->Cell($nameW,6, txt("Actividad"), 1, 0, 'C');
 for ($i = 1; $i <= 7; $i++) {
@@ -368,7 +368,6 @@ $pdf->Cell($freqW,6,"B",1,0,'C');
 $pdf->Cell($freqW,6,"T",1,0,'C');
 $pdf->Cell($freqW,6,"S",1,0,'C');
 $pdf->Cell($freqW,6,"A",1,1,'C');
-$pdf->SetFont('Arial','',7);
 
 // Lista de actividades
 $actividadesList = [
