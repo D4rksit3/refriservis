@@ -75,5 +75,7 @@ $(document).ready(function(){
             } else alert('Error al eliminar');
         }, 'json');
     });
-
+$('#btnExportar').click(function(){
+    window.location.href = 'exportar_equipos.php';
+});
 });
