@@ -324,7 +324,7 @@ function generarPDF(PDO $pdo, int $id) {
 
         if (is_array($observaciones)) {
             foreach ($observaciones as $obs) {
-
+                $pdf->AddPage();
                 // === Dibuja el marco general ===
                 $xStart = 10;
                 $yStart = $pdf->GetY();
