@@ -371,25 +371,25 @@ $(document).ready(function(){
   // Editar mantenimiento
   $('#tabla-mantenimientos').on('click', '.btn-editar', function(){
     const id = $(this).data('id');
-    $$.getJSON('/mantenimientos/obtener.php', { id }, function(data){
-      if(!data.success){ alert('No se encontró el mantenimiento'); return; }
+    $.getJSON('/mantenimientos/obtener.php', { id }, function(data){
+    if(!data.success){ alert('No se encontró el mantenimiento'); return; }
 
-      $('#edit_id').val(data.id);
-      $('#edit_titulo').val(data.titulo);
-      $('#edit_descripcion').val(data.descripcion);
-      $('#edit_fecha').val(data.fecha);
-      $('#edit_cliente').val(data.cliente_id);
-      $('#edit_operador').val(data.operador_id);
-      $('#edit_categoria').val(data.categoria);
-      $('#edit_equipos').val(data.equipos);
+    $('#edit_id').val(data.id);
+    $('#edit_titulo').val(data.titulo);
+    $('#edit_descripcion').val(data.descripcion);
+    $('#edit_fecha').val(data.fecha);
+    $('#edit_cliente').val(data.cliente_id);
+    $('#edit_operador').val(data.operador_id);
+    $('#edit_categoria').val(data.categoria);
+    $('#edit_equipos').val(data.equipos);
 
-      // 🔹 Evita duplicación
-      $('#edit_cliente, #edit_operador, #edit_categoria, #edit_equipos')
-          .selectpicker('destroy')
-          .selectpicker();
+    // 🔹 Evita duplicación
+    $('#edit_cliente, #edit_operador, #edit_categoria, #edit_equipos')
+        .selectpicker('destroy')
+        .selectpicker();
 
-      new bootstrap.Modal('#modalEditar').show();
-    });
+    new bootstrap.Modal('#modalEditar').show();
+  });
   });
 
   // Guardar edición
