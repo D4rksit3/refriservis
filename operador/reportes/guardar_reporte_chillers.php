@@ -233,15 +233,24 @@ function generarPDF(PDO $pdo, int $id) {
     // ---------- DATOS DEL CLIENTE ----------
     $pdf->SetFont('Arial','B',9);
     $pdf->Cell(0,7, txt("Datos del Cliente"), 1, 1, 'C');
+
+    // Fila: Cliente + Supervisor
     $pdf->SetFont('Arial','',9);
-    $pdf->Cell(40,7, txt("Cliente:"), 1, 0);
-    $pdf->Cell(150,7, txt($m['cliente'] ?? ''), 1, 1);
-    $pdf->Cell(40,7, txt("Dirección:"), 1, 0);
-    $pdf->Cell(150,7, txt($m['direccion'] ?? ''), 1, 1);
-    $pdf->Cell(40,7, txt("Responsable:"), 1, 0);
-    $pdf->Cell(70,7, txt($m['responsable'] ?? ''), 1, 0);
-    $pdf->Cell(40,7, txt("Teléfono:"), 1, 0);
-    $pdf->Cell(40,7, txt($m['telefono'] ?? ''), 1, 1);
+    $pdf->Cell(25,7, txt("Cliente:"), 1, 0);
+    $pdf->Cell(90,7, txt($m['cliente'] ?? ''), 1, 0);
+    $pdf->Cell(25,7, txt("Supervisor:"), 1, 0);
+    $pdf->Cell(50,7, txt($m['supervisor'] ?? ''), 1, 1);
+
+    // Fila: Dirección
+    $pdf->Cell(25,7, txt("Dirección:"), 1, 0);
+    $pdf->Cell(165,7, txt($m['direccion'] ?? ''), 1, 1);
+
+    // Fila: Responsable + Teléfono
+    $pdf->Cell(25,7, txt("Responsable:"), 1, 0);
+    $pdf->Cell(90,7, txt($m['responsable'] ?? ''), 1, 0);
+    $pdf->Cell(25,7, txt("Teléfono:"), 1, 0);
+    $pdf->Cell(50,7, txt($m['telefono'] ?? ''), 1, 1);
+
     $pdf->Ln(4);
 
     // ---------- EQUIPOS ----------
@@ -345,22 +354,31 @@ function generarPDF(PDO $pdo, int $id) {
     // ---------- NUEVA PÁGINA ----------
  
    // ---------- ACTIVIDADES A REALIZAR ----------
-$pdf->AddPage(); // 👉 empieza en una nueva hoja
+$pdf->AddPage();
+
+$nameW = 80;
+$dayW  = 10;
+$freqW = 8;
+$lineH = 5;
+$bottomMargin = 15;
+
+// Calcular ancho total exacto
+$totalWidth = $nameW + ($dayW * 7) + ($freqW * 4);
+
+// Título alineado con el cuadro
 $pdf->SetFont('Arial','B',9);
-$pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
+$pdf->Cell($totalWidth,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
 
 // Cabecera
 $pdf->SetFont('Arial','B',7);
-$pdf->Cell(80,7, txt("Actividad"), 1, 0, 'C');
+$pdf->Cell($nameW,6, txt("Actividad"), 1, 0, 'C');
 for ($i = 1; $i <= 7; $i++) {
-    $pdf->Cell(10,7, str_pad($i, 2, '0', STR_PAD_LEFT), 1, 0, 'C');
+    $pdf->Cell($dayW,6, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
 }
-$pdf->Cell(8,7, "B", 1, 0, 'C');
-$pdf->Cell(8,7, "T", 1, 0, 'C');
-$pdf->Cell(8,7, "S", 1, 0, 'C');
-$pdf->Cell(8,7, "A", 1, 1, 'C');
-
-$pdf->SetFont('Arial','',7);
+$pdf->Cell($freqW,6,"B",1,0,'C');
+$pdf->Cell($freqW,6,"T",1,0,'C');
+$pdf->Cell($freqW,6,"S",1,0,'C');
+$pdf->Cell($freqW,6,"A",1,1,'C');
 
 // Lista fija de actividades
 $actividadesList = [
