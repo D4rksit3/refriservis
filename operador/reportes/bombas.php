@@ -71,6 +71,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
 
+          
+  $nombre_cliente = $_POST['nombre_cliente'] ?? null;
+  $nombre_supervisor = $_POST['nombre_supervisor'] ?? null;
+
 
 
 
