@@ -295,8 +295,10 @@ function generarPDF(PDO $pdo, int $id) {
     $leftMargin  = $pdf->getLeftMargin();
     $rightMargin = $pdf->getRightMargin();
     $usableW     = $pageWidth - $leftMargin - $rightMargin;
-    $labelW  = 50;
-    $colW    = floor(($usableW - $labelW) / (7 * 2));
+    
+    $labelW  = 55; // ancho para la columna de texto
+    $totalCols = 7 * 2; // Eq1A, Eq1D, Eq2A, Eq2D, etc.
+    $colW = ($usableW - $labelW) / $totalCols; // ajusta todo el ancho exacto
 
     $pdf->SetFont('Arial','B',7);
     $pdf->Cell($labelW,7, txt("Medida"), 1, 0, 'C');
