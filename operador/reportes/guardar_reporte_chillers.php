@@ -292,9 +292,10 @@ function generarPDF(PDO $pdo, int $id) {
     $rightMargin = $pdf->GetRightMargin();
     $usableW     = $pageWidth - $leftMargin - $rightMargin;
 
-    // Asignar 30% para la etiqueta y 70% para los valores
-    $labelW = round($usableW * 0.30, 2);
-    $colW   = round(($usableW - $labelW) / (7 * 2), 2); // 7 equipos * 2 columnas (A/D)
+    // Ajuste de anchos
+    $labelW  = 55; // ancho para la columna de texto
+    $totalCols = 7 * 2; // Eq1A, Eq1D, Eq2A, Eq2D, etc.
+    $colW = ($usableW - $labelW) / $totalCols; // ajusta todo el ancho exacto
 
     // Encabezado
     $pdf->SetFont('Arial','B',7);

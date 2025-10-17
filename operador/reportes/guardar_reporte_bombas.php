@@ -344,10 +344,10 @@ function generarPDF(PDO $pdo, int $id) {
    // ---------- ACTIVIDADES A REALIZAR ----------
 // ---------- ACTIVIDADES A REALIZAR ----------
 $pdf->AddPage();
-$pdf->SetFont('Arial','B',9);
 
-// Título centrado sin borde inferior (para alinearlo visualmente)
-$pdf->Cell(0,8, txt("ACTIVIDADES A REALIZAR"), 'LTR', 1, 'C');
+// Título alineado con la tabla
+$pdf->SetFont('Arial','B',9);
+$pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
 
 // Anchos y estilos
 $pdf->SetFont('Arial','',7);
@@ -357,9 +357,9 @@ $freqW = 8;
 $lineH = 5;
 $bottomMargin = 15;
 
-// Cabecera uniforme
+// Cabecera uniforme (alineada justo debajo del título)
 $pdf->SetFont('Arial','B',7);
-$pdf->Cell($nameW,6, txt("Actividad"), 'LBR', 0, 'C');
+$pdf->Cell($nameW,6, txt("Actividad"), 1, 0, 'C');
 for ($i = 1; $i <= 7; $i++) {
     $pdf->Cell($dayW,6, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
 }
@@ -418,6 +418,8 @@ $getNbLines = function($pdf, $w, $txt) use ($lineH) {
 
 // Función para reimprimir cabecera al hacer salto de página
 $printHeader = function() use ($pdf, $nameW, $dayW, $freqW) {
+    $pdf->SetFont('Arial','B',9);
+    $pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
     $pdf->SetFont('Arial','B',7);
     $pdf->Cell($nameW,6, txt("Actividad"), 1, 0, 'C');
     for ($i = 1; $i <= 7; $i++) {
@@ -430,6 +432,7 @@ $printHeader = function() use ($pdf, $nameW, $dayW, $freqW) {
     $pdf->SetFont('Arial','',7);
 };
 
+// Generar filas
 foreach ($actividadesList as $idx => $nombreRaw) {
     $actividadBD = $actividadesBD[$idx] ?? ["dias" => [], "frecuencia" => null];
     $diasMarcados = $actividadBD['dias'] ?? [];
@@ -444,9 +447,6 @@ foreach ($actividadesList as $idx => $nombreRaw) {
     $pageHeight = 297; // A4
     if ($pdf->GetY() + $h + $bottomMargin > $pageHeight) {
         $pdf->AddPage();
-        // título en la nueva hoja también
-        $pdf->SetFont('Arial','B',9);
-        $pdf->Cell(0,8, txt("ACTIVIDADES A REALIZAR"), 'LTR', 1, 'C');
         $printHeader();
     }
 
