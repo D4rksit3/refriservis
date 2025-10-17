@@ -14,7 +14,7 @@ require_once __DIR__.'/../includes/header.php';
     <button class="btn btn-success btn-sm mb-2" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
       ➕ Nuevo
     </button>
-    <button class="btn btn-primary btn-sm mb-2" id="btnExportar">
+    <button class="btn btn-primary btn-sm mb-3" id="btnExportar">
   📥 Exportar a Excel
 </button>
   </div>
