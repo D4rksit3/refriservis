@@ -431,6 +431,8 @@ include __DIR__ . '/modal_equipo.php';
         <label class="form-label">Firma Cliente</label>
         <div class="firma-box"><canvas id="firmaClienteCanvas"></canvas></div>
         <div class="mt-1">
+          <input type="text" id="nombreCliente" name="nombre_cliente" class="form-control mt-2" placeholder="Nombre del cliente">
+            
           <button type="button" class="btn btn-sm btn-secondary" onclick="sigCliente.clear()">Limpiar</button>
         </div>
         
@@ -440,6 +442,8 @@ include __DIR__ . '/modal_equipo.php';
         <label class="form-label">Firma Supervisor</label>
         <div class="firma-box"><canvas id="firmaSupervisorCanvas"></canvas></div>
           <div class="mt-1">
+            <input type="text" id="nombreSupervisor" name="nombre_supervisor" class="form-control mt-2" placeholder="Nombre del supervisor">
+        
         <button type="button" class="btn btn-sm btn-secondary" onclick="sigSupervisor.clear()">Limpiar</button>
       </div>
         <input type="hidden" name="firma_supervisor" id="firma_supervisor_input">
@@ -448,6 +452,8 @@ include __DIR__ . '/modal_equipo.php';
         <label class="form-label">Firma Técnico</label>
         <div class="firma-box"><canvas id="firmaTecnicoCanvas"></canvas></div>
         <div class="mt-1">
+          <input type="text" class="form-control" id="nombre_tecnico" name="nombre_tecnico" 
+         value="<?= htmlspecialchars($nombre_tecnico ?? '') ?>" readonly>
     <button type="button" class="btn btn-sm btn-secondary" onclick="sigTecnico.clear()">Limpiar</button>
   </div>
         <input type="hidden" name="firma_tecnico" id="firma_tecnico_input">
