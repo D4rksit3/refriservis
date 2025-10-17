@@ -21,9 +21,9 @@ require_once __DIR__.'/../includes/header.php';
       📥 Exportar a Excel
     </button>
 
-    <button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalImportar">
+    <!-- <button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalImportar">
       📤 Importar desde Excel
-    </button>
+    </button> -->
   </div>
 
 
