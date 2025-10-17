@@ -5,7 +5,7 @@ $(document).ready(function(){
     $('#btnExportar').click(function(){
     window.location.href = 'exportar_equipos.php';
     });
-
+    var tablaEquipos;
     let enviando = false; // declarar variable de control global para evitar doble envío
 
 
