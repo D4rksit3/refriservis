@@ -633,6 +633,12 @@ $pdf->Ln(2);
     $pdf->Cell($sigW, 8, txt("Firma Supervisor"), 1, 0, 'C');
     $pdf->Cell($sigW, 8, txt("Firma Técnico"), 1, 1, 'C');
 
+    // Nombres debajo de las firmas
+    $pdf->SetFont('Arial','I',8);
+    $pdf->Cell($sigW, 6, txt($m['nombre_cliente'] ?? ''), 0, 0, 'C');
+    $pdf->Cell($sigW, 6, txt($m['nombre_supervisor'] ?? ''), 0, 0, 'C');
+    $pdf->Cell($sigW, 6, txt($m['tecnico'] ?? ''), 0, 1, 'C');
+
     // ----------------- Forzar descarga -----------------
     if (ob_get_length()) {
         @ob_end_clean();
