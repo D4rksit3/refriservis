@@ -470,7 +470,7 @@ $pdf->Ln(3);
 
         if (is_array($observaciones)) {
             foreach ($observaciones as $obs) {
-
+                $pdf->AddPage();
                 // === Dibuja el marco general ===
                 $xStart = 10;
                 $yStart = $pdf->GetY();
