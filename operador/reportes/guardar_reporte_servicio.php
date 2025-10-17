@@ -315,15 +315,16 @@ function generarPDF(PDO $pdo, int $id) {
 
     // ---------- OBSERVACIONES ----------
    $pdf->AddPage();
-    $pdf->SetFont('Arial','B',10);
-    $pdf->Cell(0,8, utf8_decode("Observaciones y Recomendaciones:"), 0, 1, 'L');
-    $pdf->Ln(2);
+    
 
     if (!empty($m['observaciones'])) {
         $observaciones = json_decode($m['observaciones'], true);
 
         if (is_array($observaciones)) {
             foreach ($observaciones as $obs) {
+                $pdf->SetFont('Arial','B',10);
+                $pdf->Cell(0,8, utf8_decode("Observaciones y Recomendaciones:"), 0, 1, 'L');
+                $pdf->Ln(2);
                 $pdf->AddPage();
                 // === Dibuja el marco general ===
                 $xStart = 10;
