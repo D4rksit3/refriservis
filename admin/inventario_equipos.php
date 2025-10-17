@@ -10,14 +10,23 @@ require_once __DIR__.'/../includes/header.php';
 <div class="container my-4">
 
   <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-    <h2 class="h4 mb-2">📋 Inventario de Equipos</h2>
-    <button class="btn btn-success btn-sm mb-2" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
+  <h2 class="h4 mb-2">📋 Inventario de Equipos</h2>
+
+  <div class="d-flex gap-2 mb-2">
+    <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
       ➕ Nuevo
     </button>
-    <button class="btn btn-primary btn-sm mb-3" id="btnExportar">
-  📥 Exportar a Excel
-</button>
+
+    <button class="btn btn-primary btn-sm" id="btnExportar">
+      📥 Exportar a Excel
+    </button>
+
+    <button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalImportar">
+      📤 Importar desde Excel
+    </button>
   </div>
+
+
 
   <div class="table-responsive shadow-sm rounded">
     <table id="tablaEquipos" class="table table-striped table-bordered align-middle">
