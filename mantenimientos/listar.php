@@ -401,6 +401,28 @@ cargarMantenimientos();
 
 
 $(document).ready(function(){
+
+
+
+
+    // Enviar formulario nuevo cliente por AJAX
+    $('#formNuevoCliente').on('submit', function(e){
+        e.preventDefault();
+        $.post('/mantenimientos/guardar_cliente.php', $(this).serialize(), function(data){
+            if(data.success){
+                // Agregar el nuevo cliente al select y refrescar
+                $('#cliente_id')
+                    .append($('<option>', { value: data.id, text: data.text }))
+                    .val(data.id)
+                    .selectpicker('refresh');
+
+                $('#modalNuevoCliente').modal('hide');
+            } else {
+                alert(data.error || 'Error al guardar cliente');
+            }
+        }, 'json');
+    });
+
   // Inicializar los selectpicker
   $('.selectpicker').selectpicker();
 
@@ -462,5 +484,6 @@ $(document).ready(function(){
     }, 'json');
   });
 });
+
 
 </script>
