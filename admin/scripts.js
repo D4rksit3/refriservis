@@ -5,18 +5,19 @@ $(document).ready(function(){
     $('#btnExportar').click(function(){
     window.location.href = 'exportar_equipos.php';
     });
-    var tablaEquipos;
+    var tablaEquipos = null; // declarada solo una vez
+
     let enviando = false; // declarar variable de control global para evitar doble envío
 
 
     // ---------- TABLE: EQUIPOS ----------
-    var tablaEquipos = $('#tablaEquipos').length ? $('#tablaEquipos').DataTable({
+    if ($('#tablaEquipos').length && !$.fn.DataTable.isDataTable('#tablaEquipos')) {
+    tablaEquipos = $('#tablaEquipos').DataTable({
         processing: true,
-       serverSide: true,
+        serverSide: true,
         ajax: {
             url: 'equipos_data.php',
             type: 'GET'
-
         },
         columns: [
             {data:'id_equipo'},
@@ -26,15 +27,13 @@ $(document).ready(function(){
             {data:'modelo'},
             {data:'ubicacion'},
             {data:'voltaje'},
-            /* {data:'Descripcion'}, */
             {data:'Cliente'},
-            /* {data:'Categoria'}, */
-            /* {data:'Estatus'}, */
-            /* {data:'Fecha_validad'}, */
             {data:'acciones', orderable:false, searchable:false}
         ],
         language:{ url:'//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
-    }) : null;
+    });
+}
+
 
 
 
