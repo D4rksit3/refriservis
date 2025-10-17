@@ -347,7 +347,8 @@ $pdf->AddPage();
 
 // Título alineado con la tabla
 $pdf->SetFont('Arial','B',9);
-$pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
+$totalWidth = $nameW + ($dayW * 7) + ($freqW * 4);
+$pdf->Cell($totalWidth,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
 
 // Anchos y estilos
 $pdf->SetFont('Arial','',7);
