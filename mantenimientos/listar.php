@@ -68,7 +68,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 
         $estado_color = $r['estado']==='finalizado' ? 'success' : 'warning text-dark';
         $cliente = $r['cliente_id'] ? $pdo->query("SELECT cliente FROM clientes WHERE id=".$r['cliente_id'])->fetchColumn() : null;
-        $digitador = $r['digitador_id'] ? $pdo->query("SELECT nombre FROM usuarios WHERE id=".$r['digitador_id'])->fetchColumn() : null;
+        $digitador = $r['digitador_id'] ? $pdo->query("SELECT nombre FROM refriservis.usuarios WHERE id=".$r['digitador_id'])->fetchColumn() : null;
         $operador = $r['operador_id'] ? $pdo->query("SELECT nombre FROM usuarios WHERE id=".$r['operador_id'])->fetchColumn() : null;
         $categoria = $r['categoria'] ?? null;
         $urlDescarga = $categoria && isset($mapaDescargas[$categoria]) ? $mapaDescargas[$categoria] : null;
@@ -189,7 +189,12 @@ require_once __DIR__.'/../includes/header.php';
             <label class="form-label">Operador</label>
             <select name="operador_id" id="edit_operador" class="form-select selectpicker" data-live-search="true">
               <option value="">-- Ninguno --</option>
-              
+              <?php
+                $operadores = $pdo->query("SELECT id, nombre FROM usuarios WHERE rol='operador'")->fetchAll();
+                foreach($operadores as $o) {
+                  echo "<option value='{$o['id']}'>".htmlspecialchars($o['nombre'])."</option>";
+                }
+              ?>
             </select>
           </div>
 
