@@ -66,14 +66,11 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
             if ($eqId && isset($equiposAll[$eqId])) $equipoNombres[] = $equiposAll[$eqId];
         }
 
-        $estado_color = $r['estado']==='finalizado' ? 'success' : ($r['estado']==='en proceso' ? 'warning text-dark' : 'warning text-dark');
-
+        $estado_color = $r['estado']==='finalizado' ? 'success' : 'warning text-dark';
         $cliente = $r['cliente_id'] ? $pdo->query("SELECT cliente FROM clientes WHERE id=".$r['cliente_id'])->fetchColumn() : null;
         $digitador = $r['digitador_id'] ? $pdo->query("SELECT nombre FROM usuarios WHERE id=".$r['digitador_id'])->fetchColumn() : null;
         $operador = $r['operador_id'] ? $pdo->query("SELECT nombre FROM usuarios WHERE id=".$r['operador_id'])->fetchColumn() : null;
-
-        // URL de descarga según categoría
-        $categoria = $r['categoria'] ?? null; // asegúrate de que la tabla mantenimientos tenga columna 'categoria'
+        $categoria = $r['categoria'] ?? null;
         $urlDescarga = $categoria && isset($mapaDescargas[$categoria]) ? $mapaDescargas[$categoria] : null;
 
         $result[] = [
@@ -275,16 +272,10 @@ require_once __DIR__.'/../includes/header.php';
   </div>
 </div>
 
-
-
-<!-- jQuery primero -->
+<!-- jQuery y Bootstrap -->
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-
-<!-- Bootstrap CSS y JS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Bootstrap Select CSS y JS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
 
@@ -292,6 +283,9 @@ require_once __DIR__.'/../includes/header.php';
 let pagina = 1;
 const porPagina = 10;
 
+// ============================
+// Cargar Mantenimientos (AJAX)
+// ============================
 function cargarMantenimientos() {
   const buscar = document.getElementById('buscar').value;
 
@@ -331,7 +325,7 @@ function cargarMantenimientos() {
       const finRegistro = inicioRegistro + data.rows.length - 1;
       document.getElementById('info-registros').innerText = `Mostrando ${inicioRegistro} a ${finRegistro} de ${data.total_registros} registros`;
 
-      // Paginación bloques de 10
+      // Paginación
       const pagUl = document.getElementById('paginacion');
       pagUl.innerHTML = '';
       let bloque = Math.floor((pagina - 1) / 10);
@@ -364,81 +358,19 @@ function cargarMantenimientos() {
     });
 }
 
-// Abrir modal editar
-document.querySelector('#tabla-mantenimientos').addEventListener('click', e => {
-  if(e.target.classList.contains('btn-editar')) {
-    const id = e.target.dataset.id;
-    const fila = e.target.closest('tr');
-    document.getElementById('edit_id').value = id;
-    document.getElementById('edit_titulo').value = fila.children[1].innerText;
-    document.getElementById('edit_fecha').value = fila.children[2].innerText;
-    const cliente = fila.children[3].innerText;
-    const selectCliente = document.getElementById('edit_cliente');
-    for(let opt of selectCliente.options) opt.selected = (opt.text === cliente);
-    new bootstrap.Modal(document.getElementById('modalEditar')).show();
-  }
-
-  // Descargar reporte
-  if(e.target.classList.contains('btn-reporte')) {
-    const id = e.target.dataset.id;
-    const url = e.target.dataset.url;
-    if(url) window.open(`${url}?id=${id}`, '_blank');
-  }
-});
-
-// Guardar cambios
-document.getElementById('guardarEditar').addEventListener('click', () => {
-  const formData = new FormData(document.getElementById('formEditar'));
-  fetch('/mantenimientos/editar_ajax.php', { method: 'POST', body: formData })
-    .then(res => res.json())
-    .then(res => {
-      if(res.success) {
-        alert('Guardado correctamente');
-        cargarMantenimientos();
-        bootstrap.Modal.getInstance(document.getElementById('modalEditar')).hide();
-      } else {
-        alert('Error al guardar');
-      }
-    });
-});
-
-// Búsqueda en tiempo real
-document.getElementById('buscar').addEventListener('input', () => { pagina = 1; cargarMantenimientos(); });
-
-// Cargar tabla inicialmente
-cargarMantenimientos();
-
-
+// ============================
+// Eventos
+// ============================
 $(document).ready(function(){
-
-
-
-
-    // Enviar formulario nuevo cliente por AJAX
-    $('#formNuevoCliente').on('submit', function(e){
-        e.preventDefault();
-        $.post('/mantenimientos/guardar_cliente.php', $(this).serialize(), function(data){
-            if(data.success){
-                // Agregar el nuevo cliente al select y refrescar
-                $('#cliente_id')
-                    .append($('<option>', { value: data.id, text: data.text }))
-                    .val(data.id)
-                    .selectpicker('refresh');
-
-                $('#modalNuevoCliente').modal('hide');
-            } else {
-                alert(data.error || 'Error al guardar cliente');
-            }
-        }, 'json');
-    });
-
-  // Inicializar los selectpicker
   $('.selectpicker').selectpicker();
+  cargarMantenimientos();
 
-  // Abrir modal editar con datos cargados
+  // Búsqueda
+  $('#buscar').on('input', () => { pagina = 1; cargarMantenimientos(); });
+
+  // Editar mantenimiento
   $('#tabla-mantenimientos').on('click', '.btn-editar', function(){
     const id = $(this).data('id');
-
     $.getJSON('/mantenimientos/obtener.php', { id }, function(data){
       if(!data.success){ alert('No se encontró el mantenimiento'); return; }
 
@@ -455,7 +387,7 @@ $(document).ready(function(){
     });
   });
 
-  // Guardar cambios
+  // Guardar edición
   $('#guardarEditar').on('click', function(){
     const formData = new FormData($('#formEditar')[0]);
     $.ajax({
@@ -477,7 +409,7 @@ $(document).ready(function(){
     });
   });
 
-  // Crear cliente nuevo
+  // Nuevo cliente
   $('#formNuevoCliente').on('submit', function(e){
     e.preventDefault();
     $.post('/mantenimientos/guardar_cliente.php', $(this).serialize(), function(data){
@@ -492,7 +424,12 @@ $(document).ready(function(){
       }
     }, 'json');
   });
+
+  // Descargar reporte
+  $('#tabla-mantenimientos').on('click', '.btn-reporte', function(){
+    const id = $(this).data('id');
+    const url = $(this).data('url');
+    if(url) window.open(`${url}?id=${id}`, '_blank');
+  });
 });
-
-
 </script>
