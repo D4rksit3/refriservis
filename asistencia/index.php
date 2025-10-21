@@ -8,117 +8,130 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     :root {
-      --color-bg: #f5f7fa;
+      --color-bg: #f9fafb;
       --color-primary: #004085;
-      --color-border: #e0e3e7;
-      --color-text: #2c3e50;
+      --color-text: #1a1a1a;
+      --color-placeholder: #999;
     }
 
     body {
       background-color: var(--color-bg);
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
       display: flex;
-      align-items: center;
+      flex-direction: column;
       justify-content: center;
+      align-items: center;
       height: 100vh;
       margin: 0;
+      padding: 20px;
     }
 
-    .attendance-card {
-      background: #fff;
-      border: 1px solid var(--color-border);
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-      padding: 2.5rem 2rem;
+    .container-form {
       width: 100%;
       max-width: 420px;
-      transition: box-shadow 0.3s ease;
     }
 
-    .attendance-card:hover {
-      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.08);
+    .brand {
+      text-align: center;
+      margin-bottom: 1.5rem;
     }
 
-    .attendance-card h4 {
+    .brand img {
+      height: 60px;
+      object-fit: contain;
+    }
+
+    h4 {
       font-weight: 600;
       color: var(--color-text);
       text-align: center;
-      margin-bottom: 1.8rem;
-      letter-spacing: 0.3px;
-    }
-
-    .form-label {
-      font-weight: 500;
-      color: var(--color-text);
+      margin-bottom: 2rem;
     }
 
     .form-control, .form-select {
-      border-radius: 10px;
-      border: 1px solid var(--color-border);
+      border: none;
+      border-bottom: 1.5px solid #ccc;
+      border-radius: 0;
+      background: transparent;
+      font-size: 1rem;
+      padding: 10px 5px;
       box-shadow: none !important;
-      font-size: 0.95rem;
+      color: var(--color-text);
     }
 
     .form-control:focus, .form-select:focus {
       border-color: var(--color-primary);
+      outline: none;
+    }
+
+    label {
+      font-size: 0.9rem;
+      color: var(--color-placeholder);
+      margin-top: 10px;
     }
 
     .btn-submit {
       background-color: var(--color-primary);
       color: #fff;
-      font-weight: 600;
-      border-radius: 10px;
       border: none;
+      border-radius: 8px;
+      padding: 12px;
       width: 100%;
-      padding: 0.8rem;
-      margin-top: 1rem;
+      font-weight: 600;
+      margin-top: 1.8rem;
       transition: background 0.3s ease;
     }
 
     .btn-submit:hover {
-      background-color: #00336d;
+      background-color: #002e66;
     }
 
     .link-muted {
       text-decoration: none;
-      color: #6c757d;
+      color: #777;
       font-size: 0.9rem;
+      display: inline-block;
+      margin-top: 15px;
     }
 
     .link-muted:hover {
       color: var(--color-primary);
     }
 
-    .brand {
-      text-align: center;
-      margin-bottom: 1.2rem;
-    }
-
-    .brand img {
-      height: 60px;
-      border-radius: 12px;
-      object-fit: contain;
+    @media (max-width: 576px) {
+      body {
+        height: auto;
+        padding: 40px 20px;
+      }
+      h4 {
+        font-size: 1.3rem;
+        margin-bottom: 1.5rem;
+      }
+      .btn-submit {
+        font-size: 1rem;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="attendance-card">
+
+  <div class="container-form">
     <div class="brand">
-      <img src="logo.jpeg" alt="Logo">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Logo-placeholder.svg" alt="Logo">
     </div>
 
     <h4>Registro de Asistencia</h4>
 
     <form action="marcar.php" method="POST" autocomplete="off">
       <div class="mb-3">
-        <label class="form-label">Documento del empleado</label>
-        <input type="text" name="documento" class="form-control" placeholder="Ej. 12345678" required>
+        <label>Documento del empleado</label>
+        <input type="text" name="documento" class="form-control" placeholder="Ingrese su DNI o código" required>
       </div>
 
       <div class="mb-3">
-        <label class="form-label">Tipo de marcación</label>
+        <label>Tipo de marcación</label>
         <select name="tipo" class="form-select" required>
-          <option value="">Seleccione una opción</option>
+          <option value="">Seleccione...</option>
           <option value="entrada">Entrada</option>
           <option value="salida">Salida</option>
           <option value="visita">Visita</option>
@@ -131,7 +144,7 @@
       <button type="submit" class="btn-submit">Marcar Asistencia</button>
     </form>
 
-    <div class="text-center mt-3">
+    <div class="text-center">
       <a href="historial.php" class="link-muted">📋 Ver historial</a>
     </div>
   </div>
