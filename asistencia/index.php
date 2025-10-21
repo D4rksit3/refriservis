@@ -15,7 +15,7 @@
     }
 
     body {
-      background-color: var(--color-bg);
+      background-color: #ffffff;
       font-family: "Inter", system-ui, -apple-system, sans-serif;
       display: flex;
       flex-direction: column;
