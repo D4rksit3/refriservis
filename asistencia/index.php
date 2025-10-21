@@ -37,7 +37,7 @@
     }
 
     .brand img {
-      height: 60px;
+      height: 100px;
       object-fit: contain;
     }
 
