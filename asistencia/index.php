@@ -3,56 +3,119 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Sistema de Asistencia</title>
+  <title>Registro de Asistencia | Refriservis</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
+    :root {
+      --color-bg: #f5f7fa;
+      --color-primary: #004085;
+      --color-border: #e0e3e7;
+      --color-text: #2c3e50;
+    }
+
     body {
-      background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
-      min-height: 100vh;
+      background-color: var(--color-bg);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: "Segoe UI", sans-serif;
+      height: 100vh;
+      margin: 0;
     }
-    .card {
-      max-width: 400px;
+
+    .attendance-card {
+      background: #fff;
+      border: 1px solid var(--color-border);
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      padding: 2.5rem 2rem;
       width: 100%;
+      max-width: 420px;
+      transition: box-shadow 0.3s ease;
+    }
+
+    .attendance-card:hover {
+      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.08);
+    }
+
+    .attendance-card h4 {
+      font-weight: 600;
+      color: var(--color-text);
+      text-align: center;
+      margin-bottom: 1.8rem;
+      letter-spacing: 0.3px;
+    }
+
+    .form-label {
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    .form-control, .form-select {
+      border-radius: 10px;
+      border: 1px solid var(--color-border);
+      box-shadow: none !important;
+      font-size: 0.95rem;
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--color-primary);
+    }
+
+    .btn-submit {
+      background-color: var(--color-primary);
+      color: #fff;
+      font-weight: 600;
+      border-radius: 10px;
       border: none;
-      border-radius: 20px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-      animation: fadeIn 0.6s ease;
+      width: 100%;
+      padding: 0.8rem;
+      margin-top: 1rem;
+      transition: background 0.3s ease;
     }
-    @keyframes fadeIn {
-      from {opacity: 0; transform: translateY(20px);}
-      to {opacity: 1; transform: translateY(0);}
+
+    .btn-submit:hover {
+      background-color: #00336d;
     }
-    .btn-primary {
-      background-color: #4e73df;
-      border: none;
-      transition: background-color 0.3s;
-    }
-    .btn-primary:hover {
-      background-color: #2e59d9;
-    }
-    .text-muted a {
+
+    .link-muted {
       text-decoration: none;
+      color: #6c757d;
+      font-size: 0.9rem;
     }
-    .text-muted a:hover {
-      text-decoration: underline;
+
+    .link-muted:hover {
+      color: var(--color-primary);
+    }
+
+    .brand {
+      text-align: center;
+      margin-bottom: 1.2rem;
+    }
+
+    .brand img {
+      height: 60px;
+      border-radius: 12px;
+      object-fit: contain;
     }
   </style>
 </head>
 <body>
-  <div class="card p-4 text-center bg-white">
-    <h4 class="mb-3 text-dark fw-bold">Registro de Asistencia</h4>
-    <form action="marcar.php" method="POST">
-      <div class="mb-3 text-start">
+  <div class="attendance-card">
+    <div class="brand">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Logo-placeholder.svg" alt="Logo">
+    </div>
+
+    <h4>Registro de Asistencia</h4>
+
+    <form action="marcar.php" method="POST" autocomplete="off">
+      <div class="mb-3">
         <label class="form-label">Documento del empleado</label>
-        <input type="text" name="documento" class="form-control" placeholder="Ingrese su DNI o código" required>
+        <input type="text" name="documento" class="form-control" placeholder="Ej. 12345678" required>
       </div>
 
-      <div class="mb-3 text-start">
+      <div class="mb-3">
         <label class="form-label">Tipo de marcación</label>
         <select name="tipo" class="form-select" required>
           <option value="">Seleccione una opción</option>
@@ -65,11 +128,11 @@
       <input type="hidden" name="latitud" id="latitud">
       <input type="hidden" name="longitud" id="longitud">
 
-      <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">Marcar Asistencia</button>
+      <button type="submit" class="btn-submit">Marcar Asistencia</button>
     </form>
 
-    <div class="mt-3 text-muted">
-      <a href="historial.php">📋 Ver historial</a>
+    <div class="text-center mt-3">
+      <a href="historial.php" class="link-muted">📋 Ver historial</a>
     </div>
   </div>
 
@@ -79,7 +142,7 @@
         document.getElementById("latitud").value = pos.coords.latitude;
         document.getElementById("longitud").value = pos.coords.longitude;
       },
-      (err) => alert("No se pudo obtener la ubicación. Habilite el GPS o permisos de ubicación.")
+      () => alert("No se pudo obtener la ubicación. Active permisos de GPS.")
     );
   </script>
 </body>
