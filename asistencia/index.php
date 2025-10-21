@@ -50,7 +50,7 @@
 
     .form-control, .form-select {
       border: none;
-      border-bottom: 1.5px solid #ccc;
+      border-bottom: 1.5px solid #ffffffff;
       border-radius: 0;
       background: transparent;
       font-size: 1rem;
