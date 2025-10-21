@@ -104,7 +104,7 @@
 <body>
   <div class="attendance-card">
     <div class="brand">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Logo-placeholder.svg" alt="Logo">
+      <img src="logo.jpeg" alt="Logo">
     </div>
 
     <h4>Registro de Asistencia</h4>
