@@ -72,7 +72,7 @@
 
     .btn-submit {
       background-color: var(--color-primary);
-      color: #fff;
+      color: #ffffffff;
       border: none;
       border-radius: 8px;
       padding: 12px;
