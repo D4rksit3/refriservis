@@ -58,6 +58,7 @@ $stmtTotal = $pdo->prepare('
     SELECT COUNT(*) 
     FROM mantenimientos m
     WHERE m.operador_id = ?
+      AND LOWER(m.estado) = "pendiente"
       AND m.creado_en >= (NOW() - INTERVAL 24 HOUR)
 ');
 $stmtTotal->execute([$_SESSION['usuario_id']]);
