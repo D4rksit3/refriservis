@@ -1,38 +1,38 @@
 <?php
 header('Content-Type: application/json');
-require_once __DIR__ . '/../config/db.php';
+require_once '../db.php'; // o la ruta correcta a tu archivo de conexión
 
-$idCliente = $_GET['id'] ?? 0;
-if (!$idCliente) {
+if (!isset($_GET['id'])) {
     echo json_encode([]);
     exit;
 }
 
-// Obtener el nombre del cliente
-$stmt = $pdo->prepare("SELECT cliente FROM clientes WHERE id = ?");
-$stmt->execute([$idCliente]);
-$cliente = $stmt->fetchColumn();
+$id_cliente = intval($_GET['id']);
 
-if (!$cliente) {
-    echo json_encode([]);
-    exit;
+try {
+    $stmt = $pdo->prepare("
+        SELECT 
+            e.id_equipo,
+            e.Identificador,
+            e.Nombre AS nombre_equipo,
+            e.marca,
+            e.modelo,
+            e.ubicacion,
+            e.voltaje,
+            e.Descripcion,
+            e.Categoria,
+            e.Estatus
+        FROM refriservis.equipos e
+        INNER JOIN refriservis.clientes c 
+            ON TRIM(LOWER(c.cliente)) = TRIM(LOWER(e.Cliente))
+        WHERE c.id = :id
+        ORDER BY e.Nombre
+    ");
+    $stmt->execute([':id' => $id_cliente]);
+    $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo json_encode($equipos);
+} catch (Exception $e) {
+    echo json_encode(['error' => $e->getMessage()]);
 }
-
-// Buscar equipos relacionados (por nombre de cliente)
-$sql = "
-SELECT 
-  e.id_equipo,
-  e.Identificador,
-  e.Nombre AS nombre_equipo,
-  e.Categoria,
-  e.Estatus
-FROM refriservis.equipos e
-WHERE TRIM(LOWER(e.Cliente)) = TRIM(LOWER(:cliente))
-ORDER BY e.Nombre
-";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute([':cliente' => $cliente]);
-$equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-echo json_encode($equipos);
+?>
