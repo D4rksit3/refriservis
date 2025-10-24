@@ -13,6 +13,19 @@ if (!isset($_GET['id'])) {
 
 $idCliente = intval($_GET['id']);
 
+// Primero obtenemos el nombre del cliente según su id
+$stmtCliente = $pdo->prepare("SELECT cliente FROM clientes WHERE id = ?");
+$stmtCliente->execute([$idCliente]);
+$cliente = $stmtCliente->fetch(PDO::FETCH_ASSOC);
+
+if (!$cliente) {
+  echo json_encode([]);
+  exit;
+}
+
+$nombreCliente = trim($cliente['cliente']);
+
+
 try {
   $sql = "SELECT 
           e.id_equipo,
