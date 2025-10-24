@@ -41,12 +41,8 @@ try {
         FROM equipos e
         WHERE TRIM(LOWER(e.Cliente)) LIKE TRIM(LOWER(:nombreCliente))";
 
-  $stmt = $pdo->prepare($sql);
-  $stmt->bindParam(':idCliente', $idCliente, PDO::PARAM_INT);
-  $stmt->execute();
-  $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+ $stmtEquipos = $pdo->prepare($sql);
+$stmtEquipos->execute([':nombreCliente' => $nombreCliente]);
+$equipos = $stmtEquipos->fetchAll(PDO::FETCH_ASSOC);
 
-  echo json_encode($equipos);
-} catch (PDOException $e) {
-  echo json_encode(["error" => $e->getMessage()]);
-}
+echo json_encode($equipos);
