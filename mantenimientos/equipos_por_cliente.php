@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json');
-require_once '../db.php'; // o la ruta correcta a tu archivo de conexión
+require_once __DIR__.'/../config/db.php';// o la ruta correcta a tu archivo de conexión
 
 if (!isset($_GET['id'])) {
     echo json_encode([]);
