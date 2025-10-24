@@ -20,10 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['titulo'])) {
     $operador_id = $_POST['operador_id'] ?: null;
     $categoria = $_POST['categoria'] ?? 'REPORTE DE SERVICIO TECNICO';
 
-    // Recoger equipos seleccionados (hasta 7)
+    // Equipos seleccionados
     $equipos = $_POST['equipos'] ?? [];
     if(count($equipos) > 7) $errors[] = "Solo puedes seleccionar hasta 7 equipos.";
-
     if ($titulo === '') $errors[] = 'Título es obligatorio.';
 
     if (empty($errors)) {
@@ -32,33 +31,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['titulo'])) {
             (titulo, descripcion, fecha, cliente_id, operador_id, categoria, equipo1, equipo2, equipo3, equipo4, equipo5, equipo6, equipo7, estado, digitador_id) 
             VALUES (?,?,?,?,?, ?,?,?,?,?,?,?,?,"pendiente",?)
         ');
-
-        $equipos_pad = array_pad($equipos, 7, null); // rellenar hasta 7
+        $equipos_pad = array_pad($equipos, 7, null);
         $stmt->execute([
-            $titulo,
-            $descripcion,
-            $fecha,
-            $cliente_id,
-            $operador_id,
-            $categoria,
-            $equipos_pad[0],
-            $equipos_pad[1],
-            $equipos_pad[2],
-            $equipos_pad[3],
-            $equipos_pad[4],
-            $equipos_pad[5],
-            $equipos_pad[6],
+            $titulo, $descripcion, $fecha, $cliente_id, $operador_id, $categoria,
+            $equipos_pad[0], $equipos_pad[1], $equipos_pad[2],
+            $equipos_pad[3], $equipos_pad[4], $equipos_pad[5], $equipos_pad[6],
             $_SESSION['usuario_id']
         ]);
-
         header('Location: /mantenimientos/listar.php'); 
         exit;
     }
 }
 
 // Datos para selects
-$clientes = $pdo->query('SELECT id, cliente, direccion, telefono, responsable, email, ultima_visita, estatus FROM clientes ORDER BY cliente')->fetchAll();
-$equipos = $pdo->query('SELECT id_equipo,Identificador, Nombre, Categoria, Estatus FROM equipos ORDER BY Nombre')->fetchAll();
+$clientes = $pdo->query('SELECT id, cliente, direccion, telefono, responsable FROM clientes ORDER BY cliente')->fetchAll();
 $operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"')->fetchAll();
 $categorias = $pdo->query('SELECT nombre FROM categoria ORDER BY nombre')->fetchAll();
 ?>
@@ -121,14 +107,12 @@ $categorias = $pdo->query('SELECT nombre FROM categoria ORDER BY nombre')->fetch
             </select>
         </div>
 
+        <!-- Select de Equipos vacío al inicio -->
         <div class="col-12">
             <label class="form-label">Equipos (máx 7)</label>
-            <select name="equipos[]" class="form-select selectpicker" multiple data-live-search="true" data-max-options="7" title="Selecciona equipos...">
-                <?php foreach($equipos as $e): ?>
-                    <option value="<?=$e['id_equipo']?>">
-                        <?=htmlspecialchars($e['Identificador'].' | '.$e['Nombre'].' | '.$e['Categoria'].' | '.$e['Estatus'])?>
-                    </option>
-                <?php endforeach; ?>
+            <select name="equipos[]" id="equipos" class="form-select selectpicker" multiple 
+                    data-live-search="true" data-max-options="7" title="Selecciona equipos...">
+                <option disabled>Selecciona un cliente primero</option>
             </select>
         </div>
 
@@ -177,33 +161,26 @@ $categorias = $pdo->query('SELECT nombre FROM categoria ORDER BY nombre')->fetch
   </div>
 </div>
 
-<!-- jQuery primero -->
+<!-- jQuery y dependencias -->
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-
-<!-- Bootstrap CSS y JS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Bootstrap Select CSS y JS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
 
 <script>
 $(document).ready(function(){
-    // Inicializar los selectpicker
     $('.selectpicker').selectpicker();
 
-    // Enviar formulario nuevo cliente por AJAX
+    // Guardar cliente vía AJAX
     $('#formNuevoCliente').on('submit', function(e){
         e.preventDefault();
         $.post('/mantenimientos/guardar_cliente.php', $(this).serialize(), function(data){
             if(data.success){
-                // Agregar el nuevo cliente al select y refrescar
                 $('#cliente_id')
                     .append($('<option>', { value: data.id, text: data.text }))
                     .val(data.id)
                     .selectpicker('refresh');
-
                 $('#modalNuevoCliente').modal('hide');
             } else {
                 alert(data.error || 'Error al guardar cliente');
@@ -211,37 +188,33 @@ $(document).ready(function(){
         }, 'json');
     });
 
-    // Cuando cambia el cliente, actualizar los equipos asociados
-$('#cliente_id').on('changed.bs.select', function(){
-    let idCliente = $(this).val();
-    let selectEquipos = $('select[name="equipos[]"]');
-
-    if(!idCliente) {
-        selectEquipos.empty().selectpicker('refresh');
-        return;
-    }
-
-    $.getJSON('/mantenimientos/equipos_por_cliente.php', { id: idCliente }, function(data){
+    // Al cambiar cliente, cargar sus equipos
+    $('#cliente_id').on('changed.bs.select', function(){
+        const idCliente = $(this).val();
+        const selectEquipos = $('#equipos');
         selectEquipos.empty();
 
-        if(data.length === 0){
-            selectEquipos.append('<option disabled>(Sin equipos registrados)</option>');
-        } else {
-            $.each(data, function(_, e){
-                selectEquipos.append(
-                    $('<option>', { 
-                        value: e.id_equipo, 
-                        text: e.Identificador + ' | ' + e.nombre_equipo + ' | ' + e.Categoria + ' | ' + e.Estatus
-                    })
-                );
-            });
+        if(!idCliente){
+            selectEquipos.append('<option disabled>Selecciona un cliente primero</option>');
+            selectEquipos.selectpicker('refresh');
+            return;
         }
 
-        selectEquipos.selectpicker('refresh');
+        $.getJSON('/mantenimientos/equipos_por_cliente.php', { id: idCliente }, function(data){
+            if(data.length === 0){
+                selectEquipos.append('<option disabled>(Sin equipos registrados)</option>');
+            } else {
+                $.each(data, function(_, e){
+                    selectEquipos.append(
+                        $('<option>', {
+                            value: e.id_equipo,
+                            text: e.Identificador + ' | ' + e.nombre_equipo + ' | ' + e.Categoria + ' | ' + e.Estatus
+                        })
+                    );
+                });
+            }
+            selectEquipos.selectpicker('refresh');
+        });
     });
-});
-
-
-
 });
 </script>

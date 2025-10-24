@@ -3,7 +3,6 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/../config/db.php';
 
 $idCliente = $_GET['id'] ?? 0;
-
 if (!$idCliente) {
     echo json_encode([]);
     exit;
@@ -19,17 +18,16 @@ if (!$cliente) {
     exit;
 }
 
-// Buscar equipos que coincidan con el cliente (ignorando mayúsculas y espacios)
+// Buscar equipos relacionados (por nombre de cliente)
 $sql = "
 SELECT 
   e.id_equipo,
   e.Identificador,
   e.Nombre AS nombre_equipo,
   e.Categoria,
-  e.Estatus,
-  e.ubicacion
+  e.Estatus
 FROM refriservis.equipos e
-WHERE TRIM(LOWER(CONCAT(e.Cliente, ' ', e.ubicacion))) = TRIM(LOWER(:cliente))
+WHERE TRIM(LOWER(e.Cliente)) = TRIM(LOWER(:cliente))
 ORDER BY e.Nombre
 ";
 
