@@ -188,33 +188,56 @@ $(document).ready(function(){
         }, 'json');
     });
 
-    // Al cambiar cliente, cargar sus equipos
-    $('#cliente_id').on('changed.bs.select', function(){
-        const idCliente = $(this).val();
-        const selectEquipos = $('#equipos');
-        selectEquipos.empty();
+    $('#cliente_id').off('changed.bs.select');
 
-        if(!idCliente){
-            selectEquipos.append('<option disabled>Selecciona un cliente primero</option>');
-            selectEquipos.selectpicker('refresh');
-            return;
+// Handler seguro y que destruye/reinicia selectpicker para evitar duplicados
+$('#cliente_id').on('changed.bs.select', function () {
+    const idCliente = $(this).val();
+    const $selectEquipos = $('#equipos');
+
+    console.log('cliente cambiado ->', idCliente); // debug: ver en consola
+
+    // Destruir plugin para evitar que mantenga estados antiguos
+    try {
+        $selectEquipos.selectpicker('destroy');
+    } catch (e) {
+        // ignore si no estaba inicializado
+    }
+
+    // Vaciar y poner opción de estado
+    $selectEquipos.empty();
+
+    if (!idCliente) {
+        $selectEquipos.append('<option disabled>Selecciona un cliente primero</option>');
+        $selectEquipos.selectpicker(); // re-inicializar
+        return;
+    }
+
+    // Petición AJAX (ver en network cuántas se lanzan)
+    $.getJSON('/mantenimientos/equipos_por_cliente.php', { id: idCliente })
+    .done(function (data) {
+        console.log('equipos recibidos:', data); // debug
+        if (!Array.isArray(data) || data.length === 0) {
+            $selectEquipos.append('<option disabled>(Sin equipos registrados)</option>');
+        } else {
+            $.each(data, function (_, e) {
+                $selectEquipos.append(
+                    $('<option>', {
+                        value: e.id_equipo,
+                        text: e.Identificador + ' | ' + e.nombre_equipo + ' | ' + e.Categoria + ' | ' + e.Estatus
+                    })
+                );
+            });
         }
-
-        $.getJSON('/mantenimientos/equipos_por_cliente.php', { id: idCliente }, function(data){
-            if(data.length === 0){
-                selectEquipos.append('<option disabled>(Sin equipos registrados)</option>');
-            } else {
-                $.each(data, function(_, e){
-                    selectEquipos.append(
-                        $('<option>', {
-                            value: e.id_equipo,
-                            text: e.Identificador + ' | ' + e.nombre_equipo + ' | ' + e.Categoria + ' | ' + e.Estatus
-                        })
-                    );
-                });
-            }
-            selectEquipos.selectpicker('refresh');
-        });
+    })
+    .fail(function (jqxhr, textStatus, error) {
+        console.error('Error AJAX equipos_por_cliente:', textStatus, error);
+        $selectEquipos.append('<option disabled>(Error al cargar equipos)</option>');
+    })
+    .always(function () {
+        // Re-inicializar selectpicker después de modificar opciones
+        $selectEquipos.selectpicker();
     });
+});
 });
 </script>
