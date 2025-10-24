@@ -4,7 +4,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 header('Content-Type: application/json; charset=utf-8');
-require_once __DIR__.'/../config/db.php'; // Asegúrate de que aquí se define $pdo
+require_once __DIR__.'/../config/db.php'; // Asegúrate de que define $pdo
 
 try {
   if (!isset($_GET['id'])) {
@@ -14,8 +14,8 @@ try {
 
   $idCliente = intval($_GET['id']);
 
-  // Obtener nombre del cliente
-  $stmtCliente = $pdo->prepare("SELECT cliente FROM clientes WHERE id = ?");
+  // Obtener nombre completo del cliente (ej: "FALABELLA Bellavista AP")
+  $stmtCliente = $pdo->prepare("SELECT cliente FROM refriservis.clientes WHERE id = ?");
   $stmtCliente->execute([$idCliente]);
   $cliente = $stmtCliente->fetch(PDO::FETCH_ASSOC);
 
@@ -24,9 +24,9 @@ try {
     exit;
   }
 
-  $nombreCliente = trim($cliente['cliente']);
+  $nombreCliente = trim($cliente['cliente']); // "FALABELLA Bellavista AP"
 
-  // Buscar equipos asociados
+  // Buscar equipos donde el CONCAT(Cliente + ubicacion) esté dentro del nombre completo
   $sql = "SELECT 
             e.id_equipo,
             e.Identificador,
@@ -38,8 +38,9 @@ try {
             e.Descripcion,
             e.Categoria,
             e.Estatus
-          FROM equipos e
-          WHERE TRIM(LOWER(e.Cliente)) LIKE TRIM(LOWER(:nombreCliente))";
+          FROM refriservis.equipos e
+          WHERE LOWER(:nombreCliente) LIKE LOWER(CONCAT('%', e.Cliente, '%'))
+             OR LOWER(:nombreCliente) LIKE LOWER(CONCAT('%', e.Cliente, ' ', e.ubicacion, '%'))";
 
   $stmtEquipos = $pdo->prepare($sql);
   $stmtEquipos->execute([':nombreCliente' => $nombreCliente]);
