@@ -4,7 +4,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 header('Content-Type: application/json; charset=utf-8');
-require_once __DIR__.'/../config/db.php'; // conexión PDO
+require_once __DIR__.'/../config/db.php';
 
 try {
   if (!isset($_GET['id'])) {
@@ -14,7 +14,7 @@ try {
 
   $idCliente = intval($_GET['id']);
 
-  // Obtener nombre completo del cliente (ej: "FALABELLA Bellavista AP")
+  // Obtener nombre del cliente
   $stmtCliente = $pdo->prepare("SELECT cliente FROM refriservis.clientes WHERE id = ?");
   $stmtCliente->execute([$idCliente]);
   $cliente = $stmtCliente->fetch(PDO::FETCH_ASSOC);
@@ -24,9 +24,11 @@ try {
     exit;
   }
 
-  $nombreCliente = trim($cliente['cliente']); // ej: "FALABELLA Bellavista AP"
+  $nombreCliente = trim($cliente['cliente']);
+  // Extraemos la parte después del primer espacio (por ejemplo: "FALABELLA Bellavista AP" -> "Bellavista AP")
+  $partes = explode(' ', $nombreCliente, 2);
+  $ubicacionClave = isset($partes[1]) ? $partes[1] : $nombreCliente;
 
-  // Buscar equipos donde cliente + ubicación coincida exactamente
   $sql = "SELECT 
             e.id_equipo,
             e.Identificador,
@@ -38,11 +40,16 @@ try {
             e.Descripcion,
             e.Categoria,
             e.Estatus
-          FROM refriservis.equipos e
-          WHERE TRIM(LOWER(CONCAT(e.Cliente, ' ', e.ubicacion))) = TRIM(LOWER(:nombreCliente))";
+          FROM equipos e
+          WHERE LOWER(e.ubicacion) LIKE LOWER(CONCAT('%', :ubicacionClave, '%'))
+             OR LOWER(e.Cliente) LIKE LOWER(CONCAT('%', :nombreCliente, '%'))";
 
   $stmtEquipos = $pdo->prepare($sql);
-  $stmtEquipos->execute([':nombreCliente' => $nombreCliente]);
+  $stmtEquipos->execute([
+    ':ubicacionClave' => $ubicacionClave,
+    ':nombreCliente' => $nombreCliente
+  ]);
+
   $equipos = $stmtEquipos->fetchAll(PDO::FETCH_ASSOC);
 
   echo json_encode($equipos);
