@@ -15,19 +15,18 @@ $idCliente = intval($_GET['id']);
 
 try {
   $sql = "SELECT 
-            e.id_equipo,
-            e.Identificador,
-            e.Nombre AS nombre_equipo,
-            e.marca,
-            e.modelo,
-            e.ubicacion,
-            e.voltaje,
-            e.Descripcion,
-            e.Categoria,
-            e.Estatus
-          FROM refriservis.equipos e
-          INNER JOIN refriservis.clientes c ON e.Cliente = c.cliente
-          WHERE c.id = :idCliente";
+          e.id_equipo,
+          e.Identificador,
+          e.Nombre AS nombre_equipo,
+          e.marca,
+          e.modelo,
+          e.ubicacion,
+          e.voltaje,
+          e.Descripcion,
+          e.Categoria,
+          e.Estatus
+        FROM equipos e
+        WHERE TRIM(LOWER(e.Cliente)) LIKE TRIM(LOWER(:nombreCliente))";
 
   $stmt = $pdo->prepare($sql);
   $stmt->bindParam(':idCliente', $idCliente, PDO::PARAM_INT);
