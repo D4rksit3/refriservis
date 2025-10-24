@@ -25,8 +25,8 @@ try {
             e.Descripcion,
             e.Categoria,
             e.Estatus
-          FROM equipos e
-          INNER JOIN clientes c ON e.Cliente = c.cliente
+          FROM refriservis.equipos e
+          INNER JOIN refriservis.clientes c ON e.Cliente = c.cliente
           WHERE c.id = :idCliente";
 
   $stmt = $pdo->prepare($sql);
