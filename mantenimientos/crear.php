@@ -210,5 +210,38 @@ $(document).ready(function(){
             }
         }, 'json');
     });
+
+    // Cuando cambia el cliente, actualizar los equipos asociados
+$('#cliente_id').on('changed.bs.select', function(){
+    let idCliente = $(this).val();
+    let selectEquipos = $('select[name="equipos[]"]');
+
+    if(!idCliente) {
+        selectEquipos.empty().selectpicker('refresh');
+        return;
+    }
+
+    $.getJSON('/mantenimientos/equipos_por_cliente.php', { id: idCliente }, function(data){
+        selectEquipos.empty();
+
+        if(data.length === 0){
+            selectEquipos.append('<option disabled>(Sin equipos registrados)</option>');
+        } else {
+            $.each(data, function(_, e){
+                selectEquipos.append(
+                    $('<option>', { 
+                        value: e.id_equipo, 
+                        text: e.Identificador + ' | ' + e.nombre_equipo + ' | ' + e.Categoria + ' | ' + e.Estatus
+                    })
+                );
+            });
+        }
+
+        selectEquipos.selectpicker('refresh');
+    });
+});
+
+
+
 });
 </script>
