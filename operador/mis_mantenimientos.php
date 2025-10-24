@@ -40,6 +40,7 @@ $sql = '
     LEFT JOIN inventario i ON i.id = m.inventario_id
     LEFT JOIN usuarios u ON u.id = m.digitador_id
     WHERE m.operador_id = :operador_id
+      AND m.estado = "Pendiente"
       AND m.creado_en >= (NOW() - INTERVAL 24 HOUR)
     ORDER BY m.creado_en DESC
     LIMIT :limit OFFSET :offset
