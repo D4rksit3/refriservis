@@ -29,7 +29,7 @@ try {
           INNER JOIN clientes c ON e.Cliente = c.cliente
           WHERE c.id = :idCliente";
 
-  $stmt = $conn->prepare($sql);
+  $stmt = $pdo->prepare($sql);
   $stmt->bindParam(':idCliente', $idCliente, PDO::PARAM_INT);
   $stmt->execute();
   $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
