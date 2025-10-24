@@ -172,11 +172,11 @@ $categorias = $pdo->query('SELECT nombre FROM categoria ORDER BY nombre')->fetch
 $(document).ready(function(){
     $('.selectpicker').selectpicker();
 
-    // Guardar cliente vía AJAX
+    // Guardar nuevo cliente
     $('#formNuevoCliente').on('submit', function(e){
         e.preventDefault();
         $.post('/mantenimientos/guardar_cliente.php', $(this).serialize(), function(data){
-            if(data.success){
+            if (data.success) {
                 $('#cliente_id')
                     .append($('<option>', { value: data.id, text: data.text }))
                     .val(data.id)
@@ -188,52 +188,41 @@ $(document).ready(function(){
         }, 'json');
     });
 
-    $('#cliente_id').off('changed.bs.select');
+    // Cambio de cliente -> cargar equipos
+    $('#cliente_id').off('changed.bs.select').on('changed.bs.select', function(){
+        let idCliente = $(this).val();
+        let selectEquipos = $('select[name="equipos[]"]');
+        console.log("cliente cambiado ->", idCliente);
 
-    $('#cliente_id').on('changed.bs.select', function(){
-    let idCliente = $(this).val();
-    let selectEquipos = $('select[name="equipos[]"]');
-    console.log("cliente cambiado ->", idCliente);
-
-    if(!idCliente) {
+        // Limpia antes de cargar
         selectEquipos.empty().selectpicker('refresh');
-        return;
-    }
 
-    $.getJSON('/mantenimientos/equipos_por_cliente.php', { id: idCliente })
-        .done(function(data){
-            console.log("equipos recibidos:", data);
-            selectEquipos.empty();
+        if (!idCliente) return;
 
-            if (!data || data.length === 0 || data.error) {
-                selectEquipos.append('<option disabled>(Sin equipos registrados)</option>');
-            } else {
-                $.each(data, function(_, e){
-                    selectEquipos.append(
-                        $('<option>', {
-                            value: e.id_equipo,
-                            text: e.Identificador + ' | ' + e.nombre_equipo + ' | ' + e.Categoria + ' | ' + e.Estatus
-                        })
-                    );
-                });
-            }
+        $.getJSON('/mantenimientos/equipos_por_cliente.php', { id: idCliente })
+            .done(function(data){
+                console.log("equipos recibidos:", data);
 
-            selectEquipos.selectpicker('refresh');
-        })
-        .fail(function(xhr, status, error){
-            console.error("Error AJAX equipos_por_cliente:", status, error);
-        });
-});
+                selectEquipos.empty(); // Limpia definitivamente
 
+                if (!data || data.length === 0 || data.error) {
+                    selectEquipos.append('<option disabled>(Sin equipos registrados)</option>');
+                } else {
+                    $.each(data, function(_, e){
+                        selectEquipos.append(
+                            $('<option>', {
+                                value: e.id_equipo,
+                                text: `${e.Identificador} | ${e.nombre_equipo} | ${e.Categoria} | ${e.Estatus}`
+                            })
+                        );
+                    });
+                }
 
-
-
-
-
-
-
-
-
-
+                selectEquipos.selectpicker('refresh');
+            })
+            .fail(function(xhr, status, error){
+                console.error("Error AJAX equipos_por_cliente:", status, error);
+            });
+    });
 });
 </script>
