@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-include("db.php"); // tu conexión PDO o mysqli
+require_once __DIR__.'/../config/db.php';// tu conexión PDO o mysqli
 
 if (!isset($_GET['id'])) {
   echo json_encode(["error" => "Falta parámetro id"]);
