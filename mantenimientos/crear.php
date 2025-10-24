@@ -188,14 +188,14 @@ $(document).ready(function(){
         }, 'json');
     });
 
-    // Cambio de cliente -> cargar equipos
+    // Al cambiar el cliente
     $('#cliente_id').off('changed.bs.select').on('changed.bs.select', function(){
         let idCliente = $(this).val();
         let selectEquipos = $('select[name="equipos[]"]');
         console.log("cliente cambiado ->", idCliente);
 
-        // Limpia antes de cargar
-        selectEquipos.empty().selectpicker('refresh');
+        // 🔹 Limpia completamente el selectpicker (interno y visible)
+        selectEquipos.html('').selectpicker('destroy').selectpicker();
 
         if (!idCliente) return;
 
@@ -203,7 +203,8 @@ $(document).ready(function(){
             .done(function(data){
                 console.log("equipos recibidos:", data);
 
-                selectEquipos.empty(); // Limpia definitivamente
+                // Limpia otra vez por si acaso
+                selectEquipos.html('');
 
                 if (!data || data.length === 0 || data.error) {
                     selectEquipos.append('<option disabled>(Sin equipos registrados)</option>');
@@ -218,6 +219,7 @@ $(document).ready(function(){
                     });
                 }
 
+                // 🔹 Refresca correctamente el componente visual
                 selectEquipos.selectpicker('refresh');
             })
             .fail(function(xhr, status, error){
