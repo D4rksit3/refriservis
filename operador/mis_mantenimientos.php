@@ -41,7 +41,7 @@ $sql = '
     LEFT JOIN usuarios u ON u.id = m.digitador_id
     WHERE m.operador_id = :operador_id
       AND LOWER(m.estado) = "pendiente"
-      AND m.creado_en >= (NOW() - INTERVAL 24 HOUR)
+      AND m.creado_en >= (NOW() - INTERVAL 48 HOUR)
     ORDER BY m.creado_en DESC
     LIMIT :limit OFFSET :offset
 ';
@@ -59,7 +59,7 @@ $stmtTotal = $pdo->prepare('
     FROM mantenimientos m
     WHERE m.operador_id = ?
       AND m.estado = "pendiente"
-      AND m.creado_en >= (NOW() - INTERVAL 24 HOUR)
+      AND m.creado_en >= (NOW() - INTERVAL 48 HOUR)
 ');
 $stmtTotal->execute([$_SESSION['usuario_id']]);
 $totalRegistros = $stmtTotal->fetchColumn();
