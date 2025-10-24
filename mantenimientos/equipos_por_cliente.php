@@ -4,7 +4,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 header('Content-Type: application/json; charset=utf-8');
-require_once __DIR__.'/../config/db.php'; // Asegúrate de que define $pdo
+require_once __DIR__.'/../config/db.php'; // conexión PDO
 
 try {
   if (!isset($_GET['id'])) {
@@ -24,9 +24,9 @@ try {
     exit;
   }
 
-  $nombreCliente = trim($cliente['cliente']); // "FALABELLA Bellavista AP"
+  $nombreCliente = trim($cliente['cliente']); // ej: "FALABELLA Bellavista AP"
 
-  // Buscar equipos donde el CONCAT(Cliente + ubicacion) esté dentro del nombre completo
+  // Buscar equipos donde cliente + ubicación coincida exactamente
   $sql = "SELECT 
             e.id_equipo,
             e.Identificador,
@@ -39,8 +39,7 @@ try {
             e.Categoria,
             e.Estatus
           FROM refriservis.equipos e
-          WHERE LOWER(:nombreCliente) LIKE LOWER(CONCAT('%', e.Cliente, '%'))
-             OR LOWER(:nombreCliente) LIKE LOWER(CONCAT('%', e.Cliente, ' ', e.ubicacion, '%'))";
+          WHERE TRIM(LOWER(CONCAT(e.Cliente, ' ', e.ubicacion))) = TRIM(LOWER(:nombreCliente))";
 
   $stmtEquipos = $pdo->prepare($sql);
   $stmtEquipos->execute([':nombreCliente' => $nombreCliente]);
