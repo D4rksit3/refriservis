@@ -190,54 +190,50 @@ $(document).ready(function(){
 
     $('#cliente_id').off('changed.bs.select');
 
-// Handler seguro y que destruye/reinicia selectpicker para evitar duplicados
-$('#cliente_id').on('changed.bs.select', function () {
-    const idCliente = $(this).val();
-    const $selectEquipos = $('#equipos');
+    $('#cliente_id').on('changed.bs.select', function(){
+    let idCliente = $(this).val();
+    let selectEquipos = $('select[name="equipos[]"]');
+    console.log("cliente cambiado ->", idCliente);
 
-    console.log('cliente cambiado ->', idCliente); // debug: ver en consola
-
-    // Destruir plugin para evitar que mantenga estados antiguos
-    try {
-        $selectEquipos.selectpicker('destroy');
-    } catch (e) {
-        // ignore si no estaba inicializado
-    }
-
-    // Vaciar y poner opción de estado
-    $selectEquipos.empty();
-
-    if (!idCliente) {
-        $selectEquipos.append('<option disabled>Selecciona un cliente primero</option>');
-        $selectEquipos.selectpicker(); // re-inicializar
+    if(!idCliente) {
+        selectEquipos.empty().selectpicker('refresh');
         return;
     }
 
-    // Petición AJAX (ver en network cuántas se lanzan)
     $.getJSON('/mantenimientos/equipos_por_cliente.php', { id: idCliente })
-    .done(function (data) {
-        console.log('equipos recibidos:', data); // debug
-        if (!Array.isArray(data) || data.length === 0) {
-            $selectEquipos.append('<option disabled>(Sin equipos registrados)</option>');
-        } else {
-            $.each(data, function (_, e) {
-                $selectEquipos.append(
-                    $('<option>', {
-                        value: e.id_equipo,
-                        text: e.Identificador + ' | ' + e.nombre_equipo + ' | ' + e.Categoria + ' | ' + e.Estatus
-                    })
-                );
-            });
-        }
-    })
-    .fail(function (jqxhr, textStatus, error) {
-        console.error('Error AJAX equipos_por_cliente:', textStatus, error);
-        $selectEquipos.append('<option disabled>(Error al cargar equipos)</option>');
-    })
-    .always(function () {
-        // Re-inicializar selectpicker después de modificar opciones
-        $selectEquipos.selectpicker();
-    });
+        .done(function(data){
+            console.log("equipos recibidos:", data);
+            selectEquipos.empty();
+
+            if (!data || data.length === 0 || data.error) {
+                selectEquipos.append('<option disabled>(Sin equipos registrados)</option>');
+            } else {
+                $.each(data, function(_, e){
+                    selectEquipos.append(
+                        $('<option>', {
+                            value: e.id_equipo,
+                            text: e.Identificador + ' | ' + e.nombre_equipo + ' | ' + e.Categoria + ' | ' + e.Estatus
+                        })
+                    );
+                });
+            }
+
+            selectEquipos.selectpicker('refresh');
+        })
+        .fail(function(xhr, status, error){
+            console.error("Error AJAX equipos_por_cliente:", status, error);
+        });
 });
+
+
+
+
+
+
+
+
+
+
+
 });
 </script>

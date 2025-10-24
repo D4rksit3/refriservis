@@ -1,34 +1,42 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 header('Content-Type: application/json');
-require_once __DIR__.'/../config/db.php';// o la ruta correcta a tu archivo de conexión
+
+require_once '../config/db.php';
 
 if (!isset($_GET['id'])) {
-    echo json_encode([]);
+    echo json_encode(['error' => 'Falta parámetro id']);
     exit;
 }
 
 $id_cliente = intval($_GET['id']);
 
 try {
+    // 1️⃣ Buscar el nombre exacto del cliente por ID
+    $stmt = $pdo->prepare("SELECT cliente FROM clientes WHERE id = ?");
+    $stmt->execute([$id_cliente]);
+    $cliente_nombre = $stmt->fetchColumn();
+
+    if (!$cliente_nombre) {
+        echo json_encode([]);
+        exit;
+    }
+
+    // 2️⃣ Buscar equipos cuyo campo Cliente (sin ubicación) coincida con el nombre
     $stmt = $pdo->prepare("
         SELECT 
-            e.id_equipo,
-            e.Identificador,
-            e.Nombre AS nombre_equipo,
-            e.marca,
-            e.modelo,
-            e.ubicacion,
-            e.voltaje,
-            e.Descripcion,
-            e.Categoria,
-            e.Estatus
-        FROM refriservis.equipos e
-        INNER JOIN refriservis.clientes c 
-            ON TRIM(LOWER(c.cliente)) = TRIM(LOWER(e.Cliente))
-        WHERE c.id = :id
-        ORDER BY e.Nombre
+            id_equipo,
+            Identificador,
+            Nombre AS nombre_equipo,
+            Categoria,
+            Estatus,
+            ubicacion
+        FROM equipos
+        WHERE TRIM(LOWER(Cliente)) = TRIM(LOWER(?))
+        ORDER BY Nombre
     ");
-    $stmt->execute([':id' => $id_cliente]);
+    $stmt->execute([$cliente_nombre]);
     $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode($equipos);
