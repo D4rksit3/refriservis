@@ -5,7 +5,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador') {
+if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'operador' || $_SESSION['rol'] !== 'digitador') {
     header('Location: /index.php');
     exit;
 }
