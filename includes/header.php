@@ -70,6 +70,7 @@ $rol = $_SESSION['rol'] ?? null;
             <li class="nav-item"><a class="nav-link" href="/digitador/index.php">Mi Panel</a></li>
             <li class="nav-item"><a class="nav-link" href="/digitador/subir_mantenimiento.php">Subir Mantenimiento (CSV)</a></li>
             <li class="nav-item"><a class="nav-link" href="/mantenimientos/listar.php">Mis Registros</a></li>
+            <li class="nav-item"><a class="nav-link" href="/operador/mis_mantenimientos.php">Tareas</a></li>
           <?php elseif($rol==='operador'): ?>
             <li class="nav-item"><a class="nav-link" href="/operador/index.php">Mi Panel</a></li>
             <li class="nav-item"><a class="nav-link" href="/operador/mis_mantenimientos.php">Tareas</a></li>
