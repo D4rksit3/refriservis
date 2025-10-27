@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['titulo'])) {
 
 // Datos para selects
 $clientes = $pdo->query('SELECT id, cliente, direccion, telefono, responsable FROM clientes ORDER BY cliente')->fetchAll();
-$operadores = $pdo->query('SELECT id, nombre FROM usuarios WHERE rol="operador"')->fetchAll();
+$operadores = $pdo->query('SELECT id, nombre FROM usuarios')->fetchAll();
 $categorias = $pdo->query('SELECT nombre FROM categoria ORDER BY nombre')->fetchAll();
 ?>
 
