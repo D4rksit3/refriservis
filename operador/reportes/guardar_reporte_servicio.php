@@ -342,7 +342,7 @@ function generarPDF(PDO $pdo, int $id) {
                 $nombreEquipo = '';
 
                 if (!empty($codigoEquipo)) {
-                    $stmtEq = $pdo->prepare("SELECT Nombre FROM equipos WHERE Codigo = ? LIMIT 1");
+                    $stmtEq = $pdo->prepare("SELECT Nombre FROM equipos WHERE id_equipo = ? LIMIT 1");
                     $stmtEq->execute([$codigoEquipo]);
                     $rowEq = $stmtEq->fetch(PDO::FETCH_ASSOC);
                     if ($rowEq) {
