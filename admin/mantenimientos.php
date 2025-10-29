@@ -289,6 +289,9 @@ document.querySelector('#tabla-mantenimientos').addEventListener('click', e => {
     const url = e.target.dataset.url;
     if(url) window.open(`${url}?id=${id}`, '_blank');
   }
+
+
+
 });
 
 // Guardar cambios
@@ -305,13 +308,7 @@ document.getElementById('guardarEditar').addEventListener('click', () => {
         alert('Error al guardar');
       }
     });
-});
 
-// Búsqueda en tiempo real
-document.getElementById('buscar').addEventListener('input', () => { pagina = 1; cargarMantenimientos(); });
-
-// Cargar tabla inicialmente
-cargarMantenimientos();
 
 
 $('#tabla-mantenimientos').on('click', '.btn-eliminar, .btn-eliminar i', function(e){
@@ -336,5 +333,17 @@ $('#tabla-mantenimientos').on('click', '.btn-eliminar, .btn-eliminar i', functio
     });
   }
 });
+
+
+
+});
+
+// Búsqueda en tiempo real
+document.getElementById('buscar').addEventListener('input', () => { pagina = 1; cargarMantenimientos(); });
+
+// Cargar tabla inicialmente
+cargarMantenimientos();
+
+
 
 </script>
