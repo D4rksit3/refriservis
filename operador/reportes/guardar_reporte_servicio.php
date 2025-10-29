@@ -241,31 +241,51 @@ function generarPDF(PDO $pdo, int $id) {
     for ($i = 1; $i <= 7; $i++) {
         $pdf->Cell(10,7, $i, 1, 0, 'C');
         if (!empty($equipos[$i])) {
-            $eq = $equipos[$i];
-            $identificador = $eq['Identificador'] ?? '';
-            $nombre = $eq['Nombre'] ?? '';
-            $texto = $identificador . ' - ' . $nombre;
+    $eq = $equipos[$i];
+    $identificador = $eq['Identificador'] ?? '';
+    $nombre = $eq['Nombre'] ?? '';
+    $texto = $identificador . ' - ' . $nombre;
 
-            // Guarda la posición actual
-            $x = $pdf->GetX();
-            $y = $pdf->GetY();
+    // Ancho de la primera celda
+    $w = 40;
+    $lineHeight = 7;
 
-            // Dibuja la MultiCell (ajusta ancho 40)
-            $pdf->MultiCell(40, 7, utf8_decode($texto), 1, 'L');
+    // Guardamos posición inicial
+    $x = $pdf->GetX();
+    $y = $pdf->GetY();
 
-            // Regresa a la misma línea para continuar con las siguientes celdas
-            $pdf->SetXY($x + 40, $y);
-            $pdf->Cell(40,7, txt($eq['marca'] ?? ''), 1, 0);
-            $pdf->Cell(40,7, txt($eq['modelo'] ?? ''), 1, 0);
-            $pdf->Cell(35,7, txt($eq['ubicacion'] ?? ''), 1, 0);
-            $pdf->Cell(25,7, txt($eq['voltaje'] ?? ''), 1, 1);
-        } else {
-            $pdf->Cell(40,7, "", 1, 0);
-            $pdf->Cell(40,7, "", 1, 0);
-            $pdf->Cell(40,7, "", 1, 0);
-            $pdf->Cell(35,7, "", 1, 0);
-            $pdf->Cell(25,7, "", 1, 1);
-        }
+    // Calculamos la altura que ocupará el texto
+    $nb = $pdf->GetStringWidth($texto) / ($w - 2);
+    $nb = ceil($nb / 5); // aproximación a número de líneas
+    $cellHeight = $lineHeight * max(1, $nb);
+
+    // Dibujamos la celda del identificador + nombre
+    $pdf->MultiCell($w, $lineHeight, utf8_decode($texto), 1, 'L');
+
+    // Guardamos la nueva posición Y después del multicell
+    $newY = $pdf->GetY();
+
+    // Volvemos al tope de la fila para las demás celdas
+    $pdf->SetXY($x + $w, $y);
+
+    // Otras columnas, todas con la misma altura $cellHeight
+    $pdf->Cell(40, $cellHeight, txt($eq['marca'] ?? ''), 1, 0);
+    $pdf->Cell(40, $cellHeight, txt($eq['modelo'] ?? ''), 1, 0);
+    $pdf->Cell(35, $cellHeight, txt($eq['ubicacion'] ?? ''), 1, 0);
+    $pdf->Cell(25, $cellHeight, txt($eq['voltaje'] ?? ''), 1, 1);
+
+    // Aseguramos que la siguiente fila empiece donde debe
+    $pdf->SetY($newY);
+
+} else {
+    // Fila vacía
+    $pdf->Cell(40,7, "", 1, 0);
+    $pdf->Cell(40,7, "", 1, 0);
+    $pdf->Cell(40,7, "", 1, 0);
+    $pdf->Cell(35,7, "", 1, 0);
+    $pdf->Cell(25,7, "", 1, 1);
+}
+
     }
     $pdf->Ln(4);
 
