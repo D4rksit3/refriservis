@@ -338,7 +338,7 @@ function generarPDF(PDO $pdo, int $id) {
                 $pdf->SetFont('Arial','B',9);
 
                 $eqNum = intval($obs['equipo'] ?? 0);
-                $nombreEquipo = $equipos[$eqNum]['nombre_equipo'] ?? ''; // ajusta el campo según tu tabla
+                $nombreEquipo = $equipos[$eqNum]['Nombre'] ?? ''; // ajusta el campo según tu tabla
 
                 $pdf->MultiCell(0,6, utf8_decode("Equipo: " . ($obs['equipo'] ?? '') . " - " . $nombreEquipo), 0, 'L');
 
