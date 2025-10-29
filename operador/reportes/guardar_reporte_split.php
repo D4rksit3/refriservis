@@ -470,9 +470,8 @@ $pdf->Ln(3);
                 $pdf->MultiCell(0,6, utf8_decode("Equipo: " . ($obs['equipo'] ?? '')), 0, 'L');
 
                 $pdf->SetFont('Arial','',9);
-                $texto = isset($obs['texto']) ? utf8_decode($obs['texto']) : '';
-                $pdf->MultiCell(0,6, utf8_decode("Observación: " . $texto), 0, 'L');
-
+                $texto = isset($obs['texto']) ? $obs['texto'] : '';
+                $pdf->MultiCell(0,6, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', "Observación: " . $texto), 0, 'L');
                 $pdf->Ln(2);
 
                 // --- Imágenes (2 por fila) ---
