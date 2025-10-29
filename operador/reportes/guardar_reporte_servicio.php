@@ -242,7 +242,9 @@ function generarPDF(PDO $pdo, int $id) {
         $pdf->Cell(10,7, $i, 1, 0, 'C');
         if (!empty($equipos[$i])) {
             $eq = $equipos[$i];
-            $pdf->Cell(40,7, txt($eq['Identificador'] ?? ''), 1, 0);
+            $identificador = $eq['Identificador'] ?? '';
+            $nombre = $eq['Nombre'] ?? '';
+            $pdf->Cell(60,7, txt($identificador . ' - ' . $nombre), 1, 0);
             $pdf->Cell(40,7, txt($eq['marca'] ?? ''), 1, 0);
             $pdf->Cell(40,7, txt($eq['modelo'] ?? ''), 1, 0);
             $pdf->Cell(35,7, txt($eq['ubicacion'] ?? ''), 1, 0);
