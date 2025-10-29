@@ -310,4 +310,26 @@ document.getElementById('buscar').addEventListener('input', () => { pagina = 1; 
 
 // Cargar tabla inicialmente
 cargarMantenimientos();
+
+
+// Eliminar mantenimiento
+$('#tabla-mantenimientos').on('click', '.btn-eliminar', function(){
+  const id = $(this).data('id');
+  if(confirm('¿Seguro que deseas eliminar este mantenimiento? Esta acción no se puede deshacer.')) {
+    $.ajax({
+      url: '/mantenimientos/eliminar.php',
+      type: 'POST',
+      data: { id },
+      dataType: 'json',
+      success: function(res){
+        if(res.success){
+          alert('Mantenimiento eliminado correctamente');
+          cargarMantenimientos();
+        } else {
+          alert(res.error || 'Error al eliminar el mantenimiento');
+        }
+      }
+    });
+  }
+});
 </script>
