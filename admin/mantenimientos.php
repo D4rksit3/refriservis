@@ -314,9 +314,11 @@ document.getElementById('buscar').addEventListener('input', () => { pagina = 1; 
 cargarMantenimientos();
 
 
-// Eliminar mantenimiento
-$('#tabla-mantenimientos').on('click', '.btn-eliminar', function(){
-  const id = $(this).data('id');
+$('#tabla-mantenimientos').on('click', '.btn-eliminar, .btn-eliminar i', function(e){
+  e.preventDefault();
+  const button = $(this).closest('.btn-eliminar');
+  const id = button.data('id');
+  
   if(confirm('¿Seguro que deseas eliminar este mantenimiento? Esta acción no se puede deshacer.')) {
     $.ajax({
       url: '/mantenimientos/eliminar.php',
@@ -334,4 +336,5 @@ $('#tabla-mantenimientos').on('click', '.btn-eliminar', function(){
     });
   }
 });
+
 </script>
