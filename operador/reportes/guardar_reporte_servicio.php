@@ -338,17 +338,20 @@ function generarPDF(PDO $pdo, int $id) {
                 
               $pdf->SetFont('Arial','B',9);
 
-            $codigoEquipo = $obs['equipo'] ?? '';
-            $nombreEquipo = '';
+                $codigoEquipo = $obs['equipo'] ?? '';
+                $nombreEquipo = '';
 
-            foreach ($equipos as $eq) {
-                if ($eq && isset($eq['Codigo']) && $eq['Codigo'] === $codigoEquipo) {
-                    $nombreEquipo = $eq['Nombre'] ?? '';
-                    break;
+                if (!empty($codigoEquipo)) {
+                    $stmtEq = $pdo->prepare("SELECT Nombre FROM equipos WHERE Codigo = ? LIMIT 1");
+                    $stmtEq->execute([$codigoEquipo]);
+                    $rowEq = $stmtEq->fetch(PDO::FETCH_ASSOC);
+                    if ($rowEq) {
+                        $nombreEquipo = $rowEq['Nombre'] ?? '';
+                    }
                 }
-            }
 
-            $pdf->Cell(0,6, utf8_decode("Equipo: " . $codigoEquipo . " - " . $nombreEquipo), 0, 1, 'L');
+                $pdf->Cell(0,6, utf8_decode("Equipo: " . $codigoEquipo . " - " . $nombreEquipo), 0, 1, 'L');
+                ✅ Resultado esperado
 
 
 
