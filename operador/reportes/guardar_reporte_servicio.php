@@ -351,7 +351,7 @@ function generarPDF(PDO $pdo, int $id) {
                 }
 
                 $pdf->Cell(0,6, utf8_decode("Equipo: " . $codigoEquipo . " - " . $nombreEquipo), 0, 1, 'L');
-                ✅ Resultado esperado
+                
 
 
 
