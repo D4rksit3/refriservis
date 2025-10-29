@@ -336,19 +336,20 @@ function generarPDF(PDO $pdo, int $id) {
 
 
                 
-                $pdf->SetFont('Arial','B',9);
+              $pdf->SetFont('Arial','B',9);
 
-                $codigoEquipo = $obs['equipo'] ?? '';
-                $nombreEquipo = '';
+            $codigoEquipo = $obs['equipo'] ?? '';
+            $nombreEquipo = '';
 
-                foreach ($equipos as $eq) {
-                    if ($eq && $eq['codigo_equipo'] === $codigoEquipo) { // ajusta el campo real
-                        $nombreEquipo = $eq['Nombre'] ?? '';
-                        break;
-                    }
+            foreach ($equipos as $eq) {
+                if ($eq && isset($eq['Codigo']) && $eq['Codigo'] === $codigoEquipo) {
+                    $nombreEquipo = $eq['Nombre'] ?? '';
+                    break;
                 }
+            }
 
-                $pdf->Cell(0,6, utf8_decode("Equipo: " . $codigoEquipo . " - " . $nombreEquipo), 0, 1, 'L');
+            $pdf->Cell(0,6, utf8_decode("Equipo: " . $codigoEquipo . " - " . $nombreEquipo), 0, 1, 'L');
+
 
 
                 $pdf->SetFont('Arial','',9);
