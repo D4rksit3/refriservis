@@ -244,7 +244,17 @@ function generarPDF(PDO $pdo, int $id) {
             $eq = $equipos[$i];
             $identificador = $eq['Identificador'] ?? '';
             $nombre = $eq['Nombre'] ?? '';
-            $pdf->Cell(60,7, txt($identificador . ' - ' . $nombre), 1, 0);
+            $texto = $identificador . ' - ' . $nombre;
+
+            // Guarda la posición actual
+            $x = $pdf->GetX();
+            $y = $pdf->GetY();
+
+            // Dibuja la MultiCell (ajusta ancho 40)
+            $pdf->MultiCell(40, 7, utf8_decode($texto), 1, 'L');
+
+            // Regresa a la misma línea para continuar con las siguientes celdas
+            $pdf->SetXY($x + 40, $y);
             $pdf->Cell(40,7, txt($eq['marca'] ?? ''), 1, 0);
             $pdf->Cell(40,7, txt($eq['modelo'] ?? ''), 1, 0);
             $pdf->Cell(35,7, txt($eq['ubicacion'] ?? ''), 1, 0);
