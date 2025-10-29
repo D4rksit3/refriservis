@@ -297,7 +297,7 @@ function generarPDF(PDO $pdo, int $id) {
     }
 
 
-    }
+    
     $pdf->Ln(4);
 
     // ---------- PARÁMETROS ----------
