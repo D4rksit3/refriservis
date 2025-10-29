@@ -228,28 +228,29 @@ function cargarMantenimientos() {
       });
 
 
-      $('#tabla-mantenimientos').on('click', '.btn-eliminar, .btn-eliminar i', function(e){
-      e.preventDefault();
-      const button = $(this).closest('.btn-eliminar');
-      const id = button.data('id');
-      
-      if(confirm('¿Seguro que deseas eliminar este mantenimiento? Esta acción no se puede deshacer.')) {
-        $.ajax({
-          url: '/mantenimientos/eliminar.php',
-          type: 'POST',
-          data: { id },
-          dataType: 'json',
-          success: function(res){
-            if(res.success){
-              alert('Mantenimiento eliminado correctamente');
-              cargarMantenimientos();
-            } else {
-              alert(res.error || 'Error al eliminar el mantenimiento');
-            }
+      document.querySelector('#tabla-mantenimientos tbody').addEventListener('click', e => {
+      const btn = e.target.closest('.btn-eliminar');
+      if (!btn) return;
+
+      const id = btn.dataset.id;
+      if (confirm('¿Seguro que deseas eliminar este mantenimiento? Esta acción no se puede deshacer.')) {
+        fetch('/mantenimientos/eliminar.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `id=${encodeURIComponent(id)}`
+        })
+        .then(res => res.json())
+        .then(res => {
+          if(res.success){
+            alert('Mantenimiento eliminado correctamente');
+            cargarMantenimientos();
+          } else {
+            alert(res.error || 'Error al eliminar');
           }
         });
       }
     });
+
 
 
 
