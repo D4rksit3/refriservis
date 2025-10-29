@@ -96,7 +96,12 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 // ============================
 require_once __DIR__.'/../includes/header.php';
 ?>
+<style>
 
+  .btn-reporte i {
+  pointer-events: none;
+}
+</style>
 <div class="card p-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h5>Mantenimientos</h5>
