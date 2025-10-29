@@ -229,70 +229,73 @@ function generarPDF(PDO $pdo, int $id) {
     // ---------- EQUIPOS ----------
     $pdf->SetFont('Arial','B',9);
     $pdf->Cell(0,7, txt("Datos de Identificación de los Equipos"), 1, 1, 'C');
+    // --- ENCABEZADO DE TABLA ---
     $pdf->SetFont('Arial','B',8);
     $pdf->Cell(10,7,"#",1,0,'C');
-    $pdf->Cell(40,7, txt("Identificador"), 1, 0, 'C');
+    $pdf->Cell(40,7, txt("Identificador / Nombre"), 1, 0, 'C');
     $pdf->Cell(40,7, txt("Marca"), 1, 0, 'C');
     $pdf->Cell(40,7, txt("Modelo"), 1, 0, 'C');
     $pdf->Cell(35,7, txt("Ubicación"), 1, 0, 'C');
     $pdf->Cell(25,7, txt("Voltaje"), 1, 1, 'C');
     $pdf->SetFont('Arial','',8);
 
+    // --- FILAS ---
     for ($i = 1; $i <= 7; $i++) {
-        $pdf->Cell(10,7, $i, 1, 0, 'C');
         if (!empty($equipos[$i])) {
-    $eq = $equipos[$i];
-    $identificador = $eq['Identificador'] ?? '';
-    $nombre = $eq['Nombre'] ?? '';
-    $texto = $identificador . ' - ' . $nombre;
+            $eq = $equipos[$i];
+            $identificador = $eq['Identificador'] ?? '';
+            $nombre = $eq['Nombre'] ?? '';
+            $texto = trim($identificador . ' - ' . $nombre);
 
-    // Configuración general
-    $lineHeight = 7;
-    $colAnchos = [40, 40, 40, 35, 25];
+            // Configuración general
+            $lineHeight = 6;
+            $colAnchos = [10, 40, 40, 40, 35, 25];
 
-    // Guarda posición inicial
-    $x = $pdf->GetX();
-    $y = $pdf->GetY();
+            // Posición inicial de la fila
+            $x = $pdf->GetX();
+            $y = $pdf->GetY();
 
-    // --- 1️⃣ Calcular altura real del texto en la primera celda ---
-    // Creamos un multicell "de prueba" sin dibujar para medir la altura
-    $pdf->SetXY($x, $y);
-    $pdf->MultiCell($colAnchos[0], $lineHeight, utf8_decode($texto), 0, 'L');
-    $alturaTexto = $pdf->GetY() - $y;
+            // --- 1️⃣ Calcular altura real del texto en la celda "Identificador / Nombre" ---
+            $pdf->SetXY($x + $colAnchos[0], $y); // después de la columna #
+            $pdf->MultiCell($colAnchos[1], $lineHeight, utf8_decode($texto), 0, 'L');
+            $alturaTexto = $pdf->GetY() - $y;
 
-    // Altura de la fila completa
-    $cellHeight = max($lineHeight, $alturaTexto);
+            // Altura final de la fila
+            $cellHeight = max($lineHeight, $alturaTexto);
 
-    // --- 2️⃣ Dibujar todas las celdas con la misma altura ---
-    // Volvemos al inicio
-    $pdf->SetXY($x, $y);
+            // --- 2️⃣ Dibujar las celdas ---
+            // Celda #
+            $pdf->SetXY($x, $y);
+            $pdf->Cell($colAnchos[0], $cellHeight, $i, 1, 0, 'C');
 
-    // Primera celda (Identificador + Nombre)
-    $pdf->MultiCell($colAnchos[0], $lineHeight, utf8_decode($texto), 1, 'L');
+            // Celda Identificador / Nombre
+            $pdf->SetXY($x + $colAnchos[0], $y);
+            $pdf->MultiCell($colAnchos[1], $lineHeight, utf8_decode($texto), 1, 'L');
 
-    // Guardamos la nueva posición después del multicell
-    $newY = $pdf->GetY();
+            // Guardar nueva Y luego del MultiCell
+            $newY = $pdf->GetY();
 
-    // Volvemos al inicio de la fila
-    $pdf->SetXY($x + $colAnchos[0], $y);
+            // Otras celdas alineadas horizontalmente
+            $pdf->SetXY($x + $colAnchos[0] + $colAnchos[1], $y);
+            $pdf->Cell($colAnchos[2], $cellHeight, txt($eq['marca'] ?? ''), 1, 0, 'L');
+            $pdf->Cell($colAnchos[3], $cellHeight, txt($eq['modelo'] ?? ''), 1, 0, 'L');
+            $pdf->Cell($colAnchos[4], $cellHeight, txt($eq['ubicacion'] ?? ''), 1, 0, 'L');
+            $pdf->Cell($colAnchos[5], $cellHeight, txt($eq['voltaje'] ?? ''), 1, 1, 'L');
 
-    // Otras celdas: todas tendrán la altura total de la fila
-    $pdf->Cell($colAnchos[1], $cellHeight, txt($eq['marca'] ?? ''), 1, 0, 'L');
-    $pdf->Cell($colAnchos[2], $cellHeight, txt($eq['modelo'] ?? ''), 1, 0, 'L');
-    $pdf->Cell($colAnchos[3], $cellHeight, txt($eq['ubicacion'] ?? ''), 1, 0, 'L');
-    $pdf->Cell($colAnchos[4], $cellHeight, txt($eq['voltaje'] ?? ''), 1, 1, 'L');
+            // Asegurar que el cursor quede al final de la fila
+            $pdf->SetY(max($newY, $y + $cellHeight));
 
-    // --- 3️⃣ Asegurar que el cursor quede debajo de toda la fila ---
-    $pdf->SetY(max($newY, $y + $cellHeight));
+        } else {
+            // --- Fila vacía ---
+            $pdf->Cell(10,7,"",1,0);
+            $pdf->Cell(40,7,"",1,0);
+            $pdf->Cell(40,7,"",1,0);
+            $pdf->Cell(40,7,"",1,0);
+            $pdf->Cell(35,7,"",1,0);
+            $pdf->Cell(25,7,"",1,1);
+        }
+    }
 
-} else {
-    // Fila vacía estándar
-    $pdf->Cell(40,7, "", 1, 0);
-    $pdf->Cell(40,7, "", 1, 0);
-    $pdf->Cell(40,7, "", 1, 0);
-    $pdf->Cell(35,7, "", 1, 0);
-    $pdf->Cell(25,7, "", 1, 1);
-}
 
     }
     $pdf->Ln(4);
