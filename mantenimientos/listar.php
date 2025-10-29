@@ -308,7 +308,11 @@ function cargarMantenimientos() {
           <td>${r.operador || '-'}</td>
           <td class="text-end">
             ${r.estado !== 'finalizado' 
-                ? `<button class="btn btn-sm btn-outline-primary btn-editar" data-id="${r.id}">Editar</button>` 
+                ? `
+                <button class="btn btn-sm btn-outline-primary btn-editar" data-id="${r.id}">Editar</button>
+                <button class="btn btn-sm btn-outline-danger btn-eliminar" data-id="${r.id}">Eliminar</button>
+                ` 
+                
                 : ''
             }
             ${r.estado === 'finalizado' && r.url_reporte
