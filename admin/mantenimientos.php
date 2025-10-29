@@ -212,7 +212,7 @@ function cargarMantenimientos() {
                 : ''
             }
             ${r.estado === 'finalizado' && r.url_reporte
-                ? `<button class="btn btn-sm btn-outline-success btn-reporte" data-id="${r.id}" data-url="${r.url_reporte}">Descargar Reporte</button>` 
+                ? `<button class="btn btn-sm btn-outline-success btn-reporte" data-id="${r.id}" data-url="${r.url_reporte}"><i class="bi bi-download"></i></button>` 
                 : ''
             }
           </td>
