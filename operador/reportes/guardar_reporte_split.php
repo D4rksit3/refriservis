@@ -467,7 +467,20 @@ $pdf->Ln(3);
 
                 // --- Contenido ---
                 $pdf->SetFont('Arial','B',9);
-                $pdf->MultiCell(0,6, utf8_decode("Equipo: " . ($obs['equipo'] ?? '')), 0, 'L');
+
+                $codigoEquipo = $obs['equipo'] ?? '';
+                $nombreEquipo = '';
+
+                if (!empty($codigoEquipo)) {
+                    $stmtEq = $pdo->prepare("SELECT Nombre FROM equipos WHERE Identificador = ? LIMIT 1");
+                    $stmtEq->execute([$codigoEquipo]);
+                    $rowEq = $stmtEq->fetch(PDO::FETCH_ASSOC);
+                    if ($rowEq) {
+                        $nombreEquipo = $rowEq['Nombre'] ?? '';
+                    }
+                }
+
+                $pdf->Cell(0,6, utf8_decode("Equipo: " . $codigoEquipo . " - " . $nombreEquipo), 0, 1, 'L');
 
                 $pdf->SetFont('Arial','',9);
                 $texto = isset($obs['texto']) ? $obs['texto'] : '';
