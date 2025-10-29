@@ -78,4 +78,29 @@ $(document).ready(function(){
 $('#btnExportar').click(function(){
     window.location.href = 'exportar_equipos.php';
 });
+
+$('#tabla-mantenimientos').on('click', '.btn-eliminar, .btn-eliminar i', function(e){
+  e.preventDefault();
+  const button = $(this).closest('.btn-eliminar');
+  const id = button.data('id');
+  
+  if(confirm('¿Seguro que deseas eliminar este mantenimiento? Esta acción no se puede deshacer.')) {
+    $.ajax({
+      url: '/mantenimientos/eliminar.php',
+      type: 'POST',
+      data: { id },
+      dataType: 'json',
+      success: function(res){
+        if(res.success){
+          alert('Mantenimiento eliminado correctamente');
+          cargarMantenimientos();
+        } else {
+          alert(res.error || 'Error al eliminar el mantenimiento');
+        }
+      }
+    });
+  }
+});
+
+
 });
