@@ -334,13 +334,14 @@ function generarPDF(PDO $pdo, int $id) {
                 // Guarda posición para calcular alto dinámico
                 $startY = $pdf->GetY();
 
-                // --- Contenido ---
+
+                
                 $pdf->SetFont('Arial','B',9);
 
                 $eqNum = intval($obs['equipo'] ?? 0);
-                $nombreEquipo = $equipos[$eqNum]['Nombre'] ?? ''; // ajusta el campo según tu tabla
+                $nombreEquipo = $equipos[$eqNum]['Nombre'] ?? ''; // Ajusta el campo exacto según tu tabla
 
-                $pdf->MultiCell(0,6, utf8_decode("Equipo: " . ($obs['equipo'] ?? '') . " - " . $nombreEquipo), 0, 'L');
+                $pdf->Cell(0,6, utf8_decode("Equipo: " . ($obs['equipo'] ?? '') . " - " . $nombreEquipo), 0, 1, 'L');
 
 
                 $pdf->SetFont('Arial','',9);
