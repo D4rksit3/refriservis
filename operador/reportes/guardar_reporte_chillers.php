@@ -454,9 +454,9 @@ if (!is_array($actividadesBD)) {
 
 // Recorremos la lista fija
 foreach ($actividadesList as $idx => $nombre) {
-    $actividadBD = $actividadesBD[$idx] ?? ["dias" => [], "frecuencia" => null];
+    $actividadBD = $actividadesBD[$idx] ?? ["dias"=>[], "frecuencia"=>null];
 
-    // Normalizar días
+    // Normalizar dias
     $diasMarcados = $actividadBD['dias'] ?? [];
     if (!is_array($diasMarcados)) {
         $diasMarcados = json_decode($diasMarcados, true) ?: [];
@@ -466,30 +466,29 @@ foreach ($actividadesList as $idx => $nombre) {
     $x = $pdf->GetX();
     $y = $pdf->GetY();
 
-    // ---- Calcular altura necesaria antes de escribir celdas ----
-    $nb = $pdf->NbLines(80, txt($nombre)); // Cuántas líneas ocupará
-    $h = 5 * $nb; // altura total
+    // MultiCell SOLO para el nombre (80 de ancho)
+    $pdf->MultiCell(80,5, txt($nombre),1,'L');
 
-    // Celda de nombre (MultiCell) sin mover el puntero al final
-    $pdf->MultiCell(80, 5, txt($nombre), 1, 'L');
+    // Altura real que ocupó el texto
+    $altura = $pdf->GetY() - $y;
 
-    // Posicionar al lado derecho del texto
-    $pdf->SetXY($x + 80, $y);
+    // Regresar posición a la derecha del texto
+    $pdf->SetXY($x+80,$y);
 
-    // Celdas de días (01–07)
-    for ($i = 1; $i <= 7; $i++) {
+    // Columnas de días (01-07)
+    for ($i=1;$i<=7;$i++) {
         $marca = in_array($i, $diasMarcados) ? "X" : "";
-        $pdf->Cell(10, $h, $marca, 1, 0, 'C');
+        $pdf->Cell(10,$altura, $marca, 1, 0, 'C');
     }
 
-    // Celdas de frecuencia (B, T, S, A)
-    foreach (["B", "T", "S", "A"] as $f) {
+    // Columnas de frecuencia (B, T, S, A)
+    foreach (["B","T","S","A"] as $f) {
         $marca = ($actividadBD['frecuencia'] === $f) ? "X" : "";
-        $pdf->Cell(8, $h, $marca, 1, 0, 'C');
+        $pdf->Cell(8,$altura, $marca, 1, 0, 'C');
     }
 
-    // Salto de línea para siguiente fila
-    $pdf->Ln($h);
+    // Bajar cursor a la siguiente fila
+    $pdf->Ln();
 }
 
 $pdf->Ln(3);
