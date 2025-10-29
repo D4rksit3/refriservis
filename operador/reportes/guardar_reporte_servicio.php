@@ -336,7 +336,12 @@ function generarPDF(PDO $pdo, int $id) {
 
                 // --- Contenido ---
                 $pdf->SetFont('Arial','B',9);
-                $pdf->MultiCell(0,6, utf8_decode("Equipo: " . ($obs['equipo'] ?? '')), 0, 'L');
+
+                $eqNum = intval($obs['equipo'] ?? 0);
+                $nombreEquipo = $equipos[$eqNum]['nombre_equipo'] ?? ''; // ajusta el campo según tu tabla
+
+                $pdf->MultiCell(0,6, utf8_decode("Equipo: " . ($obs['equipo'] ?? '') . " - " . $nombreEquipo), 0, 'L');
+
 
                 $pdf->SetFont('Arial','',9);
                 $texto = isset($obs['texto']) ? $obs['texto'] : '';
