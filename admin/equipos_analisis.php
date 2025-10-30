@@ -1,28 +1,26 @@
 <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
-// =============================
-// Cabecera y sesión
-// =============================
+
 session_start();
 if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'admin') {
   header('Location: /index.php');
   exit;
 }
 require_once __DIR__.'/../config/db.php';
-
+require_once __DIR__.'/../includes/header.php';
 
 // =============================
-// Datos generales
+// Resumen general
 // =============================
 $cuentas = [
   'usuarios' => $pdo->query('SELECT COUNT(*) FROM usuarios')->fetchColumn(),
   'clientes' => $pdo->query('SELECT COUNT(*) FROM clientes')->fetchColumn(),
-  'equipos' => $pdo->query('SELECT COUNT(*) FROM equipos')->fetchColumn(),
+  'equipos'  => $pdo->query('SELECT COUNT(*) FROM equipos')->fetchColumn(),
 ];
 
 // =============================
-// FILTROS
+// Filtros
 // =============================
 $filtroCliente = $_GET['cliente'] ?? '';
 $filtroFechaInicio = $_GET['inicio'] ?? '';
@@ -52,10 +50,17 @@ $whereSQL = $where ? 'WHERE '.implode(' AND ', $where) : '';
 // Ranking de equipos más usados
 // =============================
 $sqlRanking = "
-SELECT e.id_equipo, e.Identificador, e.Nombre, COUNT(m.id) AS total_mantenimientos
+SELECT e.id_equipo, e.Identificador, e.Nombre,
+COUNT(m.id) AS total_mantenimientos
 FROM equipos e
 JOIN mantenimientos m
-  ON e.id_equipo IN (m.equipo1, m.equipo2, m.equipo3, m.equipo4, m.equipo5, m.equipo6, m.equipo7)
+  ON e.id_equipo = m.equipo1
+  OR e.id_equipo = m.equipo2
+  OR e.id_equipo = m.equipo3
+  OR e.id_equipo = m.equipo4
+  OR e.id_equipo = m.equipo5
+  OR e.id_equipo = m.equipo6
+  OR e.id_equipo = m.equipo7
 LEFT JOIN clientes c ON c.id = m.cliente_id
 $whereSQL
 GROUP BY e.id_equipo
@@ -70,11 +75,22 @@ $rankingEquipos = $stmtRanking->fetchAll(PDO::FETCH_ASSOC);
 // Historial detallado de mantenimientos
 // =============================
 $sqlHistorial = "
-SELECT m.id, m.titulo, m.fecha, m.estado, m.nombre_tecnico, c.nombre AS cliente,
-GROUP_CONCAT(e.Nombre SEPARATOR ', ') AS equipos
+SELECT 
+  m.id, 
+  m.titulo, 
+  m.fecha, 
+  m.estado, 
+  c.nombre AS cliente,
+  GROUP_CONCAT(DISTINCT e.Nombre SEPARATOR ', ') AS equipos
 FROM mantenimientos m
 LEFT JOIN clientes c ON c.id = m.cliente_id
-LEFT JOIN equipos e ON e.id_equipo IN (m.equipo1, m.equipo2, m.equipo3, m.equipo4, m.equipo5, m.equipo6, m.equipo7)
+LEFT JOIN equipos e ON e.id_equipo = m.equipo1
+   OR e.id_equipo = m.equipo2
+   OR e.id_equipo = m.equipo3
+   OR e.id_equipo = m.equipo4
+   OR e.id_equipo = m.equipo5
+   OR e.id_equipo = m.equipo6
+   OR e.id_equipo = m.equipo7
 $whereSQL
 GROUP BY m.id
 ORDER BY m.fecha DESC
@@ -91,7 +107,7 @@ $labels = [];
 $values = [];
 foreach ($rankingEquipos as $r) {
   $labels[] = $r['Nombre'] ?: $r['Identificador'];
-  $values[] = $r['total_mantenimientos'];
+  $values[] = (int)$r['total_mantenimientos'];
 }
 ?>
 
@@ -195,9 +211,7 @@ foreach ($rankingEquipos as $r) {
   </div>
 </div>
 
-<!-- =============================
-     Gráfico (Chart.js)
-============================= -->
+<!-- Gráfico -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 const ctx = document.getElementById('graficoEquipos');
@@ -208,6 +222,8 @@ new Chart(ctx, {
     datasets: [{
       label: 'Mantenimientos',
       data: <?=json_encode($values)?>,
+      backgroundColor: 'rgba(54, 162, 235, 0.5)',
+      borderColor: 'rgba(54, 162, 235, 1)',
       borderWidth: 1
     }]
   },
