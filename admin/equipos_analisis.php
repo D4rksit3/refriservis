@@ -1,235 +1,104 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 session_start();
-if (!isset($_SESSION['usuario']) || $_SESSION['rol'] !== 'admin') {
-  header('Location: /index.php');
-  exit;
-}
-require_once __DIR__.'/../config/db.php';
-require_once __DIR__.'/../includes/header.php';
-
-// =============================
-// Resumen general
-// =============================
-$cuentas = [
-  'usuarios' => $pdo->query('SELECT COUNT(*) FROM usuarios')->fetchColumn(),
-  'clientes' => $pdo->query('SELECT COUNT(*) FROM clientes')->fetchColumn(),
-  'equipos'  => $pdo->query('SELECT COUNT(*) FROM equipos')->fetchColumn(),
-];
-
-// =============================
-// Filtros
-// =============================
-$filtroCliente = $_GET['cliente'] ?? '';
-$filtroFechaInicio = $_GET['inicio'] ?? '';
-$filtroFechaFin = $_GET['fin'] ?? '';
-$filtroEstado = $_GET['estado'] ?? '';
-
-$where = [];
-$params = [];
-
-if ($filtroCliente !== '') {
-  $where[] = 'c.id = ?';
-  $params[] = $filtroCliente;
-}
-if ($filtroFechaInicio && $filtroFechaFin) {
-  $where[] = 'm.fecha BETWEEN ? AND ?';
-  $params[] = $filtroFechaInicio;
-  $params[] = $filtroFechaFin;
-}
-if ($filtroEstado !== '') {
-  $where[] = 'm.estado = ?';
-  $params[] = $filtroEstado;
+if (!isset($_SESSION['usuario'])) {
+    header('Location: /index.php');
+    exit;
 }
 
-$whereSQL = $where ? 'WHERE '.implode(' AND ', $where) : '';
+require_once __DIR__ . '/../config/db.php';
 
-// =============================
-// Ranking de equipos más usados
-// =============================
-$sqlRanking = "
-SELECT e.id_equipo, e.Identificador, e.Nombre,
-COUNT(m.id) AS total_mantenimientos
-FROM equipos e
-JOIN mantenimientos m
-  ON e.id_equipo = m.equipo1
-  OR e.id_equipo = m.equipo2
-  OR e.id_equipo = m.equipo3
-  OR e.id_equipo = m.equipo4
-  OR e.id_equipo = m.equipo5
-  OR e.id_equipo = m.equipo6
-  OR e.id_equipo = m.equipo7
-LEFT JOIN clientes c ON c.id = m.cliente_id
-$whereSQL
-GROUP BY e.id_equipo
-ORDER BY total_mantenimientos DESC
-LIMIT 10
-";
-$stmtRanking = $pdo->prepare($sqlRanking);
-$stmtRanking->execute($params);
-$rankingEquipos = $stmtRanking->fetchAll(PDO::FETCH_ASSOC);
+try {
+    // ==========================
+    // CONSULTA PRINCIPAL
+    // ==========================
+    $sql = "
+    SELECT DISTINCT 
+        e.id_equipo,
+        e.Identificador,
+        e.Nombre AS nombre_equipo,
+        e.marca,
+        e.modelo,
+        e.ubicacion,
+        e.Categoria,
+        e.Descripcion,
+        COUNT(m.id) AS cantidad_mantenimientos
+    FROM equipos e
+    LEFT JOIN mantenimientos m 
+        ON e.id_equipo IN (
+            m.equipo1, m.equipo2, m.equipo3,
+            m.equipo4, m.equipo5, m.equipo6, m.equipo7
+        )
+    GROUP BY e.id_equipo
+    ORDER BY cantidad_mantenimientos DESC, e.Nombre ASC;
+    ";
 
-// =============================
-// Historial detallado de mantenimientos
-// =============================
-$sqlHistorial = "
-SELECT 
-  m.id, 
-  m.titulo, 
-  m.fecha, 
-  m.estado, 
-  c.nombre AS cliente,
-  GROUP_CONCAT(DISTINCT e.Nombre SEPARATOR ', ') AS equipos
-FROM mantenimientos m
-LEFT JOIN clientes c ON c.id = m.cliente_id
-LEFT JOIN equipos e ON e.id_equipo = m.equipo1
-   OR e.id_equipo = m.equipo2
-   OR e.id_equipo = m.equipo3
-   OR e.id_equipo = m.equipo4
-   OR e.id_equipo = m.equipo5
-   OR e.id_equipo = m.equipo6
-   OR e.id_equipo = m.equipo7
-$whereSQL
-GROUP BY m.id
-ORDER BY m.fecha DESC
-LIMIT 50
-";
-$stmtHistorial = $pdo->prepare($sqlHistorial);
-$stmtHistorial->execute($params);
-$historial = $stmtHistorial->fetchAll(PDO::FETCH_ASSOC);
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute();
+    $equipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// =============================
-// Datos para gráfico
-// =============================
-$labels = [];
-$values = [];
-foreach ($rankingEquipos as $r) {
-  $labels[] = $r['Nombre'] ?: $r['Identificador'];
-  $values[] = (int)$r['total_mantenimientos'];
+} catch (PDOException $e) {
+    die("Error en la consulta: " . $e->getMessage());
 }
 ?>
 
-<div class="container my-4">
-  <h2 class="mb-4">📊 Análisis de Equipos</h2>
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Análisis de Equipos - RefriServis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
 
-  <!-- Filtros -->
-  <form method="GET" class="row g-3 mb-4">
-    <div class="col-md-3">
-      <label class="form-label">Cliente</label>
-      <select name="cliente" class="form-select">
-        <option value="">Todos</option>
-        <?php
-        $clientes = $pdo->query("SELECT id, nombre FROM clientes ORDER BY nombre")->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($clientes as $cl) {
-          $sel = ($filtroCliente == $cl['id']) ? 'selected' : '';
-          echo "<option value='{$cl['id']}' $sel>{$cl['nombre']}</option>";
-        }
-        ?>
-      </select>
-    </div>
-    <div class="col-md-3">
-      <label class="form-label">Desde</label>
-      <input type="date" name="inicio" class="form-control" value="<?=htmlspecialchars($filtroFechaInicio)?>">
-    </div>
-    <div class="col-md-3">
-      <label class="form-label">Hasta</label>
-      <input type="date" name="fin" class="form-control" value="<?=htmlspecialchars($filtroFechaFin)?>">
-    </div>
-    <div class="col-md-2">
-      <label class="form-label">Estado</label>
-      <select name="estado" class="form-select">
-        <option value="">Todos</option>
-        <option value="pendiente" <?=($filtroEstado=='pendiente'?'selected':'')?>>Pendiente</option>
-        <option value="en proceso" <?=($filtroEstado=='en proceso'?'selected':'')?>>En proceso</option>
-        <option value="finalizado" <?=($filtroEstado=='finalizado'?'selected':'')?>>Finalizado</option>
-      </select>
-    </div>
-    <div class="col-md-1 d-flex align-items-end">
-      <button class="btn btn-primary w-100">Filtrar</button>
-    </div>
-  </form>
+<div class="container mt-4">
+    <h2 class="mb-4 text-center text-primary fw-bold">📊 Análisis de Equipos</h2>
 
-  <!-- Ranking de equipos -->
-  <div class="card mb-4 shadow-sm">
-    <div class="card-header bg-primary text-white">🏆 Equipos más usados en mantenimientos</div>
-    <div class="card-body">
-      <canvas id="graficoEquipos" height="100"></canvas>
-      <table class="table table-striped table-hover mt-3">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Identificador</th>
-            <th>Nombre</th>
-            <th>Total mantenimientos</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php foreach ($rankingEquipos as $i => $eq): ?>
-            <tr>
-              <td><?=$i+1?></td>
-              <td><?=htmlspecialchars($eq['Identificador'])?></td>
-              <td><?=htmlspecialchars($eq['Nombre'])?></td>
-              <td><?=$eq['total_mantenimientos']?></td>
-            </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
+    <div class="card shadow">
+        <div class="card-body">
+            <?php if (count($equipos) > 0): ?>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Identificador</th>
+                            <th>Nombre del Equipo</th>
+                            <th>Marca</th>
+                            <th>Modelo</th>
+                            <th>Ubicación</th>
+                            <th>Categoría</th>
+                            <th>Descripción</th>
+                            <th>Mantenimientos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($equipos as $eq): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($eq['id_equipo']) ?></td>
+                            <td><?= htmlspecialchars($eq['Identificador']) ?></td>
+                            <td><?= htmlspecialchars($eq['nombre_equipo']) ?></td>
+                            <td><?= htmlspecialchars($eq['marca']) ?></td>
+                            <td><?= htmlspecialchars($eq['modelo']) ?></td>
+                            <td><?= htmlspecialchars($eq['ubicacion']) ?></td>
+                            <td><?= htmlspecialchars($eq['Categoria']) ?></td>
+                            <td><?= htmlspecialchars($eq['Descripcion']) ?></td>
+                            <td class="text-center fw-bold text-primary"><?= htmlspecialchars($eq['cantidad_mantenimientos']) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php else: ?>
+                <div class="alert alert-warning text-center">No hay equipos registrados o asociados a mantenimientos.</div>
+            <?php endif; ?>
+        </div>
     </div>
-  </div>
 
-  <!-- Historial -->
-  <div class="card shadow-sm">
-    <div class="card-header bg-secondary text-white">📘 Historial de Mantenimientos</div>
-    <div class="card-body">
-      <table class="table table-bordered table-hover table-sm">
-        <thead class="table-light">
-          <tr>
-            <th>ID</th>
-            <th>Título</th>
-            <th>Fecha</th>
-            <th>Estado</th>
-            <th>Cliente</th>
-            <th>Equipos involucrados</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php foreach ($historial as $h): ?>
-            <tr>
-              <td><?=$h['id']?></td>
-              <td><?=htmlspecialchars($h['titulo'])?></td>
-              <td><?=$h['fecha']?></td>
-              <td><?=ucfirst($h['estado'])?></td>
-              <td><?=htmlspecialchars($h['cliente'])?></td>
-              <td><?=htmlspecialchars($h['equipos'])?></td>
-            </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
+    <div class="text-center mt-3">
+        <a href="/admin/" class="btn btn-secondary">⬅ Volver al Panel</a>
     </div>
-  </div>
 </div>
 
-<!-- Gráfico -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-const ctx = document.getElementById('graficoEquipos');
-new Chart(ctx, {
-  type: 'bar',
-  data: {
-    labels: <?=json_encode($labels)?>,
-    datasets: [{
-      label: 'Mantenimientos',
-      data: <?=json_encode($values)?>,
-      backgroundColor: 'rgba(54, 162, 235, 0.5)',
-      borderColor: 'rgba(54, 162, 235, 1)',
-      borderWidth: 1
-    }]
-  },
-  options: {
-    responsive: true,
-    scales: { y: { beginAtZero: true } }
-  }
-});
-</script>
+</body>
+</html>
