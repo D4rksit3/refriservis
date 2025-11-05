@@ -628,19 +628,22 @@ function generarObservacionesMultimedia() {
   });
 }
 
+// === Vista previa y subida inmediata al servidor (permite tomar varias una por una) ===
+const imagenesGuardadas = {}; // guarda rutas acumuladas por cada index
+
 // Vista previa de imágenes y subida inmediata al servidor
 $(document).on('change', '.observacion-imagen', function() {
   const index = $(this).data('index');
   const files = this.files;
   const preview = document.getElementById(`preview-${index}`);
-  preview.innerHTML = '';
+  if (!imagenesGuardadas[index]) imagenesGuardadas[index] = [];
 
   if (files.length === 0) return;
 
   const formData = new FormData();
   for (const f of files) formData.append('imagenes[]', f);
 
-  console.log('🟡 Subiendo imágenes de equipo', index, files);
+  console.log('📸 Subiendo nueva imagen de equipo', index);
 
   fetch('subir_imagen.php', { method: 'POST', body: formData })
     .then(res => {
@@ -655,6 +658,13 @@ $(document).on('change', '.observacion-imagen', function() {
         return;
       }
 
+      // Agregar rutas nuevas al arreglo existente
+      imagenesGuardadas[index].push(...rutas);
+
+      // Actualizar dataset del preview
+      preview.dataset.rutas = JSON.stringify(imagenesGuardadas[index]);
+
+      // Agregar imágenes al preview SIN borrar las anteriores
       rutas.forEach(ruta => {
         const img = document.createElement('img');
         img.src = ruta;
@@ -663,11 +673,13 @@ $(document).on('change', '.observacion-imagen', function() {
         img.style.maxHeight = '120px';
         preview.appendChild(img);
       });
-
-      preview.dataset.rutas = JSON.stringify(rutas);
     })
     .catch(err => {
-      console.error('🔴 Error subiendo imágenes:', err);
+      console.error('🔴 Error subiendo imagen:', err);
+    })
+    .finally(() => {
+      // ⚡ Limpia el input para permitir tomar otra foto sin perder las anteriores
+      this.value = '';
     });
 });
 
