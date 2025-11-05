@@ -227,9 +227,15 @@ function generarPDF(PDO $pdo, int $id) {
             $imagen = @imagecreatefromstring(file_get_contents($ruta));
             if (!$imagen) return;
             switch ($exif['Orientation']) {
-                case 3: $imagen = imagerotate($imagen, 180, 0); break;
-                case 6: $imagen = imagerotate($imagen, -90, 0); break;
-                case 8: $imagen = imagerotate($imagen, 90, 0); break;
+                case 3:
+                    $imagen = imagerotate($imagen, 180, 0);
+                    break;
+                case 6:
+                    $imagen = imagerotate($imagen, -90, 0);
+                    break;
+                case 8:
+                    $imagen = imagerotate($imagen, 90, 0);
+                    break;
             }
             imagejpeg($imagen, $ruta, 90);
             imagedestroy($imagen);
@@ -606,24 +612,23 @@ if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
 
     foreach ($obs['imagenes'] as $imgPath) {
         $realPath = __DIR__ . '/' . $imgPath;
-        if (file_exists($realPath)) {
-            [$width, $height] = getimagesize($realPath);
+if (file_exists($realPath)) {
+    corregirOrientacion($realPath); // <-- agrega esta línea
 
-            // Escalar con proporción
-            $ratio = min($maxWidth / $width, $maxHeight / $height);
-            $w_mm = $width * $ratio;
-            $h_mm = $height * $ratio;
+    list($width, $height) = getimagesize($realPath);
+    $width_mm = $width * 0.264583;
+    $height_mm = $height * 0.264583;
 
-            // Posición X
-            $x = 15 + ($count % 2) * ($maxWidth + $margin);
+    $ratio = min($maxWidth / $width_mm, $maxHeight / $height_mm);
+    $w_mm = $width_mm * $ratio;
+    $h_mm = $height_mm * $ratio;
 
-            // Antes de dibujar, si la imagen no cabe en la página, añadir nueva
-            if ($pdf->GetY() + $h_mm > 270) {
-                $pdf->AddPage();
-            }
-
-            // Dibujar
-            $pdf->Image($realPath, $x, $pdf->GetY(), $w_mm, $h_mm);
+    $x = 15 + ($count % 2) * ($maxWidth + $margin);
+    if ($pdf->GetY() + $h_mm > 270) {
+        $pdf->AddPage();
+    }
+    $pdf->Image($realPath, $x, $pdf->GetY(), $w_mm, $h_mm);
+    
 
             // Si es la segunda imagen, saltar de línea
             if ($count % 2 == 1) {
