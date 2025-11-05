@@ -403,7 +403,7 @@ function generarPDF(PDO $pdo, int $id) {
                 $pdf->MultiCell(0,6, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', "Observación: " . $texto), 0, 'L');
                 $pdf->Ln(2);
 
-                // --- Imágenes (2 por fila) ---
+               // --- Imágenes (2 por fila) ---
                 if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
                     $maxWidth = 60;
                     $maxHeight = 45;
@@ -413,6 +413,9 @@ function generarPDF(PDO $pdo, int $id) {
                     foreach ($obs['imagenes'] as $imgPath) {
                         $realPath = __DIR__ . '/' . $imgPath;
                         if (file_exists($realPath)) {
+                            // 🔧 Corrige orientación antes de insertarla en el PDF
+                            corregirOrientacion($realPath);
+
                             $x = 10 + ($count % 2) * ($maxWidth + $margin);
                             $y = $pdf->GetY();
 
@@ -435,11 +438,16 @@ function generarPDF(PDO $pdo, int $id) {
                     }
                 }
 
+
+                
+
                 // --- Fin del cuadro ---
                 $endY = $pdf->GetY();
                 $pdf->Rect($xStart, $yStart, 190 - $xStart, $endY - $yStart);
                 $pdf->Ln(6);
             }
+
+
         } else {
             $pdf->SetFont('Arial','I',9);
             $pdf->Cell(0,6, utf8_decode("No hay observaciones registradas."), 0, 1);
