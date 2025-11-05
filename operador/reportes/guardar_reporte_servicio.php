@@ -432,7 +432,9 @@ function generarPDF(PDO $pdo, int $id) {
                 $pdf->MultiCell(0,6, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', "Observación: " . $texto), 0, 'L');
                 $pdf->Ln(2);
 
-               // --- Imágenes (máx. 2 por fila, proporción real y tamaño moderado) ---
+               // --- Imágenes (2 por fila) ---
+               // --- Imágenes (máx. 2 por fila, proporción real) ---
+// --- Imágenes (máx. 2 por fila, proporción real y tamaño moderado) ---
 if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
     $maxWidth = 60;   // ancho máximo permitido en mm
     $maxHeight = 45;  // alto máximo permitido en mm
@@ -475,21 +477,6 @@ if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
         $pdf->Ln($maxHeight + 5);
     }
 }
-
-
-                            $count++;
-                        } else {
-                            $pdf->SetFont('Arial', 'I', 8);
-                            $pdf->Cell(0, 5, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', "Imagen no encontrada: $imgPath"), 0, 1, 'L');
-                        }
-                    }
-
-                    // Si quedó una sola imagen en la fila, saltamos línea igual
-                    if ($count % 2 == 1) {
-                        $pdf->Ln($maxHeight + 5);
-                    }
-                }
-
 
 
 
