@@ -617,9 +617,15 @@ function generarObservacionesMultimedia() {
           <textarea class="form-control observacion-texto" data-index="${index}" rows="3"
             placeholder="Escribe observaciones específicas para ${texto}..."></textarea>
         </div>
-        <div class="mb-2">
+         <div class="mb-2">
           <label>Imágenes:</label>
-          <input type="file" class="form-control observacion-imagen" data-index="${index}" accept="image/*" multiple>
+          <input 
+            type="file" 
+            class="form-control observacion-imagen" 
+            data-index="${index}" 
+            accept="image/*" 
+            capture="camera" 
+            multiple>
           <div id="preview-${index}" class="d-flex flex-wrap gap-2 mt-2"></div>
         </div>
       `;
