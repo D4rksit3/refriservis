@@ -441,6 +441,10 @@ include __DIR__ . '/modal_equipo.php';
 
     <hr>
 
+    <div class="mb-3">
+      <label>Fotos del/los equipos (múltiples)</label>
+      <input type="file" class="form-control" name="fotos[]" accept="image/*" multiple>
+    </div>
     <!-- FOTOS -->
     <!-- <div class="mb-3">
       <label>Fotos del/los equipos (múltiples)</label>
