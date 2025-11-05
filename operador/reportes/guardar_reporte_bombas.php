@@ -225,22 +225,12 @@ function generarPDF(PDO $pdo, int $id) {
         $exif = @exif_read_data($ruta);
         if (!empty($exif['Orientation'])) {
             $imagen = @imagecreatefromstring(file_get_contents($ruta));
-            if (!$imagen) return; // si no se puede abrir, salimos
-
+            if (!$imagen) return;
             switch ($exif['Orientation']) {
-                case 3:
-                    $imagen = imagerotate($imagen, 180, 0);
-                    break;
-                case 6:
-                    $imagen = imagerotate($imagen, -90, 0);
-                    break;
-                case 8:
-                    $imagen = imagerotate($imagen, 90, 0);
-                    break;
-                default:
-                    return; // no necesita rotación
+                case 3: $imagen = imagerotate($imagen, 180, 0); break;
+                case 6: $imagen = imagerotate($imagen, -90, 0); break;
+                case 8: $imagen = imagerotate($imagen, 90, 0); break;
             }
-
             imagejpeg($imagen, $ruta, 90);
             imagedestroy($imagen);
         }
