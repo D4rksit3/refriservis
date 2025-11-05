@@ -578,36 +578,57 @@ $pdf->Ln(2);
                 $pdf->Ln(2);
 
                 // --- Imágenes (2 por fila) ---
-                if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
-                    $maxWidth = 60;
-                    $maxHeight = 45;
-                    $margin = 10;
-                    $count = 0;
+                // --- Imágenes (ajustadas con proporción real) ---
+if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
+    $maxWidth = 85;   // ancho máximo por imagen en mm
+    $maxHeight = 65;  // alto máximo en mm
+    $margin = 10;     // espacio horizontal entre imágenes
+    $count = 0;
 
-                    foreach ($obs['imagenes'] as $imgPath) {
-                        $realPath = __DIR__ . '/' . $imgPath;
-                        if (file_exists($realPath)) {
-                            $x = 10 + ($count % 2) * ($maxWidth + $margin);
-                            $y = $pdf->GetY();
+    foreach ($obs['imagenes'] as $imgPath) {
+        $realPath = __DIR__ . '/' . $imgPath;
+        if (file_exists($realPath)) {
+            [$width, $height] = getimagesize($realPath);
 
-                            $pdf->Image($realPath, $x, $y, $maxWidth, $maxHeight);
+            // Escalar con proporción
+            $ratio = min($maxWidth / $width, $maxHeight / $height);
+            $w_mm = $width * $ratio;
+            $h_mm = $height * $ratio;
 
-                            // Cada 2 imágenes, salta de línea
-                            if ($count % 2 == 1) {
-                                $pdf->Ln($maxHeight + 5);
-                            }
-                            $count++;
-                        } else {
-                            $pdf->SetFont('Arial','I',8);
-                            $pdf->Cell(0,5, utf8_decode("Imagen no encontrada: $imgPath"), 0, 1, 'L');
-                        }
-                    }
+            // Posición X
+            $x = 15 + ($count % 2) * ($maxWidth + $margin);
 
-                    // Si quedó una sola imagen sin pareja, baja de línea igual
-                    if ($count % 2 == 1) {
-                        $pdf->Ln($maxHeight + 5);
-                    }
-                }
+            // Antes de dibujar, si la imagen no cabe en la página, añadir nueva
+            if ($pdf->GetY() + $h_mm > 270) {
+                $pdf->AddPage();
+            }
+
+            // Dibujar
+            $pdf->Image($realPath, $x, $pdf->GetY(), $w_mm, $h_mm);
+
+            // Si es la segunda imagen, saltar de línea
+            if ($count % 2 == 1) {
+                $pdf->Ln($h_mm + 8);
+            }
+
+            $count++;
+        } else {
+            $pdf->SetFont('Arial','I',8);
+            $pdf->Cell(0,5, "Imagen no encontrada: $imgPath",0,1,'L');
+        }
+    }
+
+    // Si quedó una sola imagen sin pareja, baja igual
+    if ($count % 2 == 1) {
+        $pdf->Ln($maxHeight + 5);
+    }
+}
+
+
+
+
+
+
 
                 // --- Fin del cuadro ---
                 $endY = $pdf->GetY();
