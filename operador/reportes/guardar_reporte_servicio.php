@@ -433,34 +433,54 @@ function generarPDF(PDO $pdo, int $id) {
                 $pdf->Ln(2);
 
                // --- Imágenes (2 por fila) ---
-                foreach ($obs['imagenes'] as $imgPath) {
-                $realPath = __DIR__ . '/' . $imgPath;
-                if (file_exists($realPath)) {
-                    // Obtener tamaño real de la imagen
-                    [$width, $height] = getimagesize($realPath);
+               // --- Imágenes (máx. 2 por fila, proporción real) ---
+                if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
+                    $maxWidth = 80;   // ancho máximo permitido en mm
+                    $maxHeight = 60;  // alto máximo permitido en mm
+                    $margin = 10;     // margen horizontal entre imágenes
+                    $count = 0;
 
-                    // Convertir píxeles a milímetros (asumiendo 96 DPI)
-                    $w_mm = $width * 25.4 / 96;
-                    $h_mm = $height * 25.4 / 96;
+                    foreach ($obs['imagenes'] as $imgPath) {
+                        $realPath = __DIR__ . '/' . $imgPath;
+                        if (file_exists($realPath)) {
 
-                    // Si el tamaño es muy grande, limitamos al ancho de página
-                    $maxPageWidth = 180; // área útil del PDF
-                    if ($w_mm > $maxPageWidth) {
-                        $scale = $maxPageWidth / $w_mm;
-                        $w_mm *= $scale;
-                        $h_mm *= $scale;
+                            // Obtener tamaño original de la imagen (en píxeles)
+                            [$width, $height] = getimagesize($realPath);
+
+                            // Convertir a mm (asumiendo 96 DPI)
+                            $w_mm = $width * 25.4 / 96;
+                            $h_mm = $height * 25.4 / 96;
+
+                            // Escalar proporcionalmente si excede el tamaño máximo
+                            $scale = min($maxWidth / $w_mm, $maxHeight / $h_mm, 1);
+                            $w_mm *= $scale;
+                            $h_mm *= $scale;
+
+                            // Posición x/y según la cantidad
+                            $x = 10 + ($count % 2) * ($maxWidth + $margin);
+                            $y = $pdf->GetY();
+
+                            // Insertar la imagen
+                            $pdf->Image($realPath, $x, $y, $w_mm, $h_mm);
+
+                            // Si ya colocamos 2 imágenes, saltar a la siguiente línea
+                            if ($count % 2 == 1) {
+                                $pdf->Ln($maxHeight + 5);
+                            }
+
+                            $count++;
+                        } else {
+                            $pdf->SetFont('Arial', 'I', 8);
+                            $pdf->Cell(0, 5, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', "Imagen no encontrada: $imgPath"), 0, 1, 'L');
+                        }
                     }
 
-                    $x = $pdf->GetX();
-                    $y = $pdf->GetY();
-
-                    $pdf->Image($realPath, $x, $y, $w_mm, $h_mm);
-                    $pdf->Ln($h_mm + 5);
-                } else {
-                    $pdf->SetFont('Arial','I',8);
-                    $pdf->Cell(0,5, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', "Imagen no encontrada: $imgPath"), 0, 1, 'L');
+                    // Si quedó una sola imagen en la fila, saltamos línea igual
+                    if ($count % 2 == 1) {
+                        $pdf->Ln($maxHeight + 5);
+                    }
                 }
-            }
+
 
 
 
