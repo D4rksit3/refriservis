@@ -433,39 +433,34 @@ function generarPDF(PDO $pdo, int $id) {
                 $pdf->Ln(2);
 
                // --- Imágenes (2 por fila) ---
-                if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
-                    $maxWidth = 60;
-                    $maxHeight = 45;
-                    $margin = 10;
-                    $count = 0;
+                foreach ($obs['imagenes'] as $imgPath) {
+                $realPath = __DIR__ . '/' . $imgPath;
+                if (file_exists($realPath)) {
+                    // Obtener tamaño real de la imagen
+                    [$width, $height] = getimagesize($realPath);
 
-                    foreach ($obs['imagenes'] as $imgPath) {
-                        $realPath = __DIR__ . '/' . $imgPath;
-                        if (file_exists($realPath)) {
-                            // 🔧 Corrige orientación antes de insertarla en el PDF
-                            corregirOrientacion($realPath);
+                    // Convertir píxeles a milímetros (asumiendo 96 DPI)
+                    $w_mm = $width * 25.4 / 96;
+                    $h_mm = $height * 25.4 / 96;
 
-                            $x = 10 + ($count % 2) * ($maxWidth + $margin);
-                            $y = $pdf->GetY();
-
-                            $pdf->Image($realPath, $x, $y, $maxWidth, $maxHeight);
-
-                            // Cada 2 imágenes, salta de línea
-                            if ($count % 2 == 1) {
-                                $pdf->Ln($maxHeight + 5);
-                            }
-                            $count++;
-                        } else {
-                            $pdf->SetFont('Arial','I',8);
-                            $pdf->Cell(0,5, utf8_decode("Imagen no encontrada: $imgPath"), 0, 1, 'L');
-                        }
+                    // Si el tamaño es muy grande, limitamos al ancho de página
+                    $maxPageWidth = 180; // área útil del PDF
+                    if ($w_mm > $maxPageWidth) {
+                        $scale = $maxPageWidth / $w_mm;
+                        $w_mm *= $scale;
+                        $h_mm *= $scale;
                     }
 
-                    // Si quedó una sola imagen sin pareja, baja de línea igual
-                    if ($count % 2 == 1) {
-                        $pdf->Ln($maxHeight + 5);
-                    }
+                    $x = $pdf->GetX();
+                    $y = $pdf->GetY();
+
+                    $pdf->Image($realPath, $x, $y, $w_mm, $h_mm);
+                    $pdf->Ln($h_mm + 5);
+                } else {
+                    $pdf->SetFont('Arial','I',8);
+                    $pdf->Cell(0,5, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', "Imagen no encontrada: $imgPath"), 0, 1, 'L');
                 }
+            }
 
 
 
