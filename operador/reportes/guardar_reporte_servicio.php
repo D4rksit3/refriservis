@@ -189,7 +189,13 @@ function generarPDF(PDO $pdo, int $id) {
             $this->Cell(0, 10, $texto, 0, 0, 'C');
         }
 
-function corregirOrientacion($ruta) {
+
+
+
+    }
+
+
+    function corregirOrientacion($ruta) {
     if (function_exists('exif_read_data')) {
         $exif = @exif_read_data($ruta);
         if (!empty($exif['Orientation'])) {
@@ -215,10 +221,6 @@ function corregirOrientacion($ruta) {
         }
     }
 }
-
-
-    }
-
     // Construir PDF
     $pdf = new PDF('P','mm','A4');
     $pdf->mantenimientoId = $m['id'];
