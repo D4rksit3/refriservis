@@ -436,8 +436,8 @@ function generarPDF(PDO $pdo, int $id) {
                // --- Imágenes (máx. 2 por fila, proporción real) ---
 // --- Imágenes (máx. 2 por fila, proporción real y tamaño moderado) ---
 if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
-    $maxWidth = 60;   // ancho máximo permitido en mm
-    $maxHeight = 45;  // alto máximo permitido en mm
+    $maxWidth = 80;   // ancho máximo permitido en mm
+    $maxHeight = 65;  // alto máximo permitido en mm
     $margin = 8;      // margen horizontal entre imágenes
     $count = 0;
 
