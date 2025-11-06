@@ -164,7 +164,7 @@ if (!empty($m['actividades'])) {
 $nombre_tecnico = $m['nombre_tecnico'] ?? '';
 
 // Lista de equipos desde inventario
-$equiposList = $pdo->query("SELECT id_equipo AS id_equipo, Identificador, Marca, Modelo, Ubicacion, Voltaje 
+$equiposList = $pdo->query("SELECT id_equipo AS id_equipo,Nombre, Identificador, Marca, Modelo, Ubicacion, Voltaje 
                             FROM equipos ORDER BY Identificador ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 // Preparar equipos del mantenimiento
@@ -285,6 +285,8 @@ include __DIR__ . '/modal_equipo.php';
                 <?php endforeach; ?>
               </select>
             </td>
+            <td><input type="text" class="form-control form-control-sm nombre-<?= $i ?>" name="equipos[<?= $i ?>][Nombre]" value="<?=htmlspecialchars($eq['Nombre'] ?? '')?>" readonly></td>
+            
             <td><input type="text" class="form-control form-control-sm marca-<?= $i ?>" name="equipos[<?= $i ?>][marca]" value="<?=htmlspecialchars($eq['Marca'] ?? '')?>" readonly></td>
             <td><input type="text" class="form-control form-control-sm modelo-<?= $i ?>" name="equipos[<?= $i ?>][modelo]" value="<?=htmlspecialchars($eq['Modelo'] ?? '')?>" readonly></td>
             <td><input type="text" class="form-control form-control-sm ubicacion-<?= $i ?>" name="equipos[<?= $i ?>][ubicacion]" value="<?=htmlspecialchars($eq['Ubicacion'] ?? '')?>" readonly></td>
@@ -558,10 +560,13 @@ $(document).ready(function(){
     if(id){
       $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id }, function(data){
         if(data.success){
+          $(`.nombre-${index}`).val(data.nombre || '');
           $(`.marca-${index}`).val(data.marca || '');
           $(`.modelo-${index}`).val(data.modelo || '');
           $(`.ubicacion-${index}`).val(data.ubicacion || '');
           $(`.voltaje-${index}`).val(data.voltaje || '');
+
+          generarObservacionesMultimedia();
         }
       });
     }
@@ -577,10 +582,13 @@ $(document).ready(function(){
     }
     $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id }, function(data){
       if(data.success){
+        $(`.nombre-${index}`).val(data.nombre || '');
         $(`.marca-${index}`).val(data.marca || '');
         $(`.modelo-${index}`).val(data.modelo || '');
         $(`.ubicacion-${index}`).val(data.ubicacion || '');
         $(`.voltaje-${index}`).val(data.voltaje || '');
+
+        generarObservacionesMultimedia();
       }
     });
   });
@@ -597,19 +605,29 @@ function generarObservacionesMultimedia() {
     const id = $(this).val();
     const texto = $(this).find('option:selected').text().trim();
 
+    // Recuperamos el nombre desde un input o atributo data
+    const nombre = $(this).data('nombre') || $(`.nombre-${index}`).val() || '';
+
+
     if (id && texto && texto !== '-- Seleccione --') {
       const bloque = document.createElement('div');
       bloque.className = 'card p-3 mb-3';
       bloque.innerHTML = `
-        <h6 class="text-primary mb-2">🔧 ${texto}</h6>
+        <h6 class="text-primary mb-2">🔧 ${texto} - ${nombre ? ' - ' + nombre : ''}</h6>
         <div class="mb-2">
           <label>Texto / Recomendación:</label>
           <textarea class="form-control observacion-texto" data-index="${index}" rows="3"
-            placeholder="Escribe observaciones específicas para ${texto}..."></textarea>
+            placeholder="Escribe observaciones específicas para ${texto}..." required></textarea>
         </div>
         <div class="mb-2">
           <label>Imágenes:</label>
-          <input type="file" class="form-control observacion-imagen" data-index="${index}" accept="image/*" multiple>
+          <input 
+            type="file" 
+            class="form-control observacion-imagen" 
+            data-index="${index}" 
+            accept="image/*" 
+            capture="camera" 
+            multiple>
           <div id="preview-${index}" class="d-flex flex-wrap gap-2 mt-2"></div>
         </div>
       `;
@@ -618,19 +636,22 @@ function generarObservacionesMultimedia() {
   });
 }
 
+// === Vista previa y subida inmediata al servidor (permite tomar varias una por una) ===
+const imagenesGuardadas = {}; // guarda rutas acumuladas por cada index
+
 // Vista previa de imágenes y subida inmediata al servidor
 $(document).on('change', '.observacion-imagen', function() {
   const index = $(this).data('index');
   const files = this.files;
   const preview = document.getElementById(`preview-${index}`);
-  preview.innerHTML = '';
+  if (!imagenesGuardadas[index]) imagenesGuardadas[index] = [];
 
   if (files.length === 0) return;
 
   const formData = new FormData();
   for (const f of files) formData.append('imagenes[]', f);
 
-  console.log('🟡 Subiendo imágenes de equipo', index, files);
+  console.log('📸 Subiendo nueva imagen de equipo', index);
 
   fetch('subir_imagen.php', { method: 'POST', body: formData })
     .then(res => {
@@ -645,6 +666,13 @@ $(document).on('change', '.observacion-imagen', function() {
         return;
       }
 
+      // Agregar rutas nuevas al arreglo existente
+      imagenesGuardadas[index].push(...rutas);
+
+      // Actualizar dataset del preview
+      preview.dataset.rutas = JSON.stringify(imagenesGuardadas[index]);
+
+      // Agregar imágenes al preview SIN borrar las anteriores
       rutas.forEach(ruta => {
         const img = document.createElement('img');
         img.src = ruta;
@@ -653,14 +681,15 @@ $(document).on('change', '.observacion-imagen', function() {
         img.style.maxHeight = '120px';
         preview.appendChild(img);
       });
-
-      preview.dataset.rutas = JSON.stringify(rutas);
     })
     .catch(err => {
-      console.error('🔴 Error subiendo imágenes:', err);
+      console.error('🔴 Error subiendo imagen:', err);
+    })
+    .finally(() => {
+      // ⚡ Limpia el input para permitir tomar otra foto sin perder las anteriores
+      this.value = '';
     });
 });
-
 
 // Generar secciones según equipos seleccionados
 $('.equipo-select').on('change', function() {
