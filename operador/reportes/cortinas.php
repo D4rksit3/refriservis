@@ -570,7 +570,7 @@ $(document).ready(function(){
     let id = $(this).val();
     let index = $(this).data('index');
     if(!id) {
-      $(`.marca-${index}, .modelo-${index}, .ubicacion-${index}, .voltaje-${index}`).val('');
+      $(`.marca-${index}, .nombre-${index},.modelo-${index}, .ubicacion-${index}, .voltaje-${index}`).val('');
       return;
     }
     $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id }, function(data){
@@ -598,6 +598,9 @@ function generarObservacionesMultimedia() {
     const id = $(this).val();
     const texto = $(this).find('option:selected').text().trim();
 
+    // Recuperamos el nombre desde un input o atributo data
+    const nombre = $(this).data('nombre') || $(`.nombre-${index}`).val() || '';
+    
     if (id && texto && texto !== '-- Seleccione --') {
       const bloque = document.createElement('div');
       bloque.className = 'card p-3 mb-3';
