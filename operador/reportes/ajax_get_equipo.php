@@ -7,6 +7,7 @@ if(!$codigo){ echo json_encode([]); exit; }
 $stmt = $pdo->prepare("
   SELECT 
     inv.nombre AS tipo,
+    eq.nombre
     eq.marca,
     eq.modelo,
     eq.ubicacion,
