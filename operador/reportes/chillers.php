@@ -283,8 +283,10 @@ include __DIR__ . '/modal_equipo.php';
                       data-index="<?= $i ?>">
                 <option value="">-- Seleccione --</option>
                 <?php foreach($equiposList as $e): ?>
-                    <option value="<?= $e['id_equipo'] ?>" <?= ($eq && $eq['id_equipo']==$e['id_equipo'] ? 'selected' : '') ?>>
-                        <?= htmlspecialchars($e['Identificador']) ?>
+                     <option value="<?= $e['id_equipo'] ?>" 
+            data-nombre="<?= htmlspecialchars($e['Nombre']) ?>"
+            <?= ($eq && $eq['id_equipo']==$e['id_equipo'] ? 'selected' : '') ?>>
+      <?= htmlspecialchars($e['Identificador']) ?>
                     </option>
                 <?php endforeach; ?>
               </select>
@@ -607,8 +609,9 @@ function generarObservacionesMultimedia() {
   contenedor.innerHTML = '';
 
   $('.equipo-select').each(function() {
+    const selectedOption = $(this).find('option:selected');
     const index = $(this).data('index');
-    const nombre = $(this).attr('data-nombre') || '';
+    const nombre = selectedOption.data('nombre') || '';
     const id = $(this).val();
     const texto = $(this).find('option:selected').text().trim();
 
