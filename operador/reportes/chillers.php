@@ -613,7 +613,7 @@ function generarObservacionesMultimedia() {
       const bloque = document.createElement('div');
       bloque.className = 'card p-3 mb-3';
       bloque.innerHTML = `
-        <h6 class="text-primary mb-2">🔧 ${texto}</h6>
+        <h6 class="text-primary mb-2">🔧 ${texto} - ${equipo}</h6>
         <div class="mb-2">
           <label>Texto / Recomendación:</label>
           <textarea class="form-control observacion-texto" data-index="${index}" rows="3"
