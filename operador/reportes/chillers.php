@@ -283,7 +283,7 @@ include __DIR__ . '/modal_equipo.php';
                       data-index="<?= $i ?>">
                 <option value="">-- Seleccione --</option>
                 <?php foreach($equiposList as $e): ?>
-                    <option value="<?= $e['id_equipo'] ?> - <?= $e['Nombre'] ?>" <?= ($eq && $eq['id_equipo']==$e['id_equipo'] ? 'selected' : '') ?>>
+                    <option value="<?= $e['id_equipo'] ?> - <?= $e['id_equipo'] ?>" <?= ($eq && $eq['id_equipo']==$e['id_equipo'] ? 'selected' : '') ?>>
                         <?= htmlspecialchars($e['Identificador']) ?>
                     </option>
                 <?php endforeach; ?>
@@ -565,53 +565,43 @@ $(document).ready(function(){
 
   $('.equipo-select').select2({ placeholder:"Buscar equipo...", allowClear:true, width:'100%' });
 
-
-  // === Función para cargar datos de un equipo ===
-  function cargarDatosEquipo(index, id, callback) {
-    $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id })
-      .done(function (data) {
-        if (data.success) {
+  // Cargar datos de equipos seleccionados
+  $('.equipo-select').each(function(){
+    let id = $(this).val();
+    let index = $(this).data('index');
+    if(id){
+      $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id }, function(data){
+        if(data.success){
           $(`.nombre-${index}`).val(data.nombre || '');
           $(`.marca-${index}`).val(data.marca || '');
           $(`.modelo-${index}`).val(data.modelo || '');
           $(`.ubicacion-${index}`).val(data.ubicacion || '');
           $(`.voltaje-${index}`).val(data.voltaje || '');
         }
-      })
-      .always(function () {
-        if (typeof callback === 'function') callback();
       });
-  }
-
-
-function esperarAjaxYGenerar() {
-  if ($.active > 0) {
-    // Espera medio segundo y vuelve a intentar
-    setTimeout(esperarAjaxYGenerar, 500);
-  } else {
-    generarObservacionesMultimedia();
-  }
-}
-
-
-
-  // === Al cambiar un equipo ===
-  $(document).on('change', '.equipo-select', function () {
-    const id = $(this).val();
-    const index = $(this).data('index');
-    if (!id) {
-      $(`.nombre-${index}, .marca-${index}, .modelo-${index}, .ubicacion-${index}, .voltaje-${index}`).val('');
-      esperarAjaxYGenerar();
-      return;
     }
-
-    // Cargar los datos y, cuando termine, regenerar observaciones
-    cargarDatosEquipo(index, id, esperarAjaxYGenerar);
   });
 
-  // === Generar observaciones después de cargar todo ===
-  esperarAjaxYGenerar();
+  // Cuando cambia un equipo
+  $('.equipo-select').on('change', function(){
+    let id = $(this).val();
+    let index = $(this).data('index');
+    if(!id) {
+      $(`.marca-${index}, .nombre-${index},.modelo-${index}, .ubicacion-${index}, .voltaje-${index}`).val('');
+      return;
+    }
+    $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id }, function(data){
+      if(data.success){
+        $(`.nombre-${index}`).val(data.nombre || '');
+        $(`.marca-${index}`).val(data.marca || '');
+        $(`.modelo-${index}`).val(data.modelo || '');
+        $(`.ubicacion-${index}`).val(data.ubicacion || '');
+        $(`.voltaje-${index}`).val(data.voltaje || '');
+      }
+    });
+  });
 });
+
 
 
 function generarObservacionesMultimedia() {
@@ -620,15 +610,16 @@ function generarObservacionesMultimedia() {
 
   $('.equipo-select').each(function() {
     const index = $(this).data('index');
+    
+    const nombre = $(`.nombre-${index}`).val();
     const id = $(this).val();
     const texto = $(this).find('option:selected').text().trim();
-    const nombre = $(`.nombre-${index}`).val(); // ← Aquí tomas el nombre real del input
 
     if (id && texto && texto !== '-- Seleccione --') {
       const bloque = document.createElement('div');
       bloque.className = 'card p-3 mb-3';
       bloque.innerHTML = `
-        <h6 class="text-primary mb-2">🔧 ${texto} - ${nombre || ''}</h6>
+        <h6 class="text-primary mb-2">🔧 ${texto} - ${nombre}</h6>
         <div class="mb-2">
           <label>Texto / Recomendación:</label>
           <textarea class="form-control observacion-texto" data-index="${index}" rows="3"
@@ -650,7 +641,6 @@ function generarObservacionesMultimedia() {
     }
   });
 }
-
 
 // === Vista previa y subida inmediata al servidor (permite tomar varias una por una) ===
 const imagenesGuardadas = {}; // guarda rutas acumuladas por cada index
@@ -708,11 +698,9 @@ $(document).on('change', '.observacion-imagen', function() {
 });
 
 
-
-
 // Generar secciones según equipos seleccionados
 $('.equipo-select').on('change', function() {
-  esperarAjaxYGenerar();
+  generarObservacionesMultimedia();
 });
 $(document).ready(generarObservacionesMultimedia);
 
