@@ -55,10 +55,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $equiposGuardados[$i] = ($val === '' ? null : $val); // si es '', guardamos NULL
     }
         
-      $nombre_cliente = $_POST['nombre_cliente'] ?? null;
+/*       $nombre_cliente = $_POST['nombre_cliente'] ?? null;
       $nombre_supervisor = $_POST['nombre_supervisor'] ?? null;
 
-
+ */
 
     // ✅ UPDATE en la tabla mantenimientos
     $actividades = $_POST['actividades'] ?? [];
