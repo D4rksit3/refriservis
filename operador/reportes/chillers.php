@@ -577,6 +577,8 @@ $(document).ready(function(){
           $(`.modelo-${index}`).val(data.modelo || '');
           $(`.ubicacion-${index}`).val(data.ubicacion || '');
           $(`.voltaje-${index}`).val(data.voltaje || '');
+
+          generarObservacionesMultimedia();
         }
       });
     }
@@ -597,6 +599,8 @@ $(document).ready(function(){
         $(`.modelo-${index}`).val(data.modelo || '');
         $(`.ubicacion-${index}`).val(data.ubicacion || '');
         $(`.voltaje-${index}`).val(data.voltaje || '');
+
+        generarObservacionesMultimedia();
       }
     });
   });
@@ -703,9 +707,9 @@ $(document).on('change', '.observacion-imagen', function() {
 
 
 // Generar secciones según equipos seleccionados
-$('.equipo-select').on('change', function() {
+/* $('.equipo-select').on('change', function() {
   generarObservacionesMultimedia();
-});
+}); */
 $(document).ready(generarObservacionesMultimedia);
 
 // Consolidar al enviar
