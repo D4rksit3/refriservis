@@ -608,7 +608,7 @@ function generarObservacionesMultimedia() {
 
   $('.equipo-select').each(function() {
     const index = $(this).data('index');
-    const nombre = $(this).data('data-nombre');
+    const nombre = $(this).data('data-Nombre');
     const id = $(this).val();
     const texto = $(this).find('option:selected').text().trim();
 
