@@ -264,6 +264,7 @@ include __DIR__ . '/modal_equipo.php';
           <tr>
             <th>#</th>
             <th>Identificador</th>
+            <th>Nombre</th>
             <th>Marca</th>
             <th>Modelo</th>
             <th>Ubicación</th>
@@ -288,6 +289,8 @@ include __DIR__ . '/modal_equipo.php';
                 <?php endforeach; ?>
               </select>
             </td>
+            <td><input type="text" class="form-control form-control-sm nombre-<?= $i ?>" name="equipos[<?= $i ?>][Nombre]" value="<?=htmlspecialchars($eq['Nombre'] ?? '')?>" readonly></td>
+            
             <td><input type="text" class="form-control form-control-sm marca-<?= $i ?>" name="equipos[<?= $i ?>][marca]" value="<?=htmlspecialchars($eq['Marca'] ?? '')?>" readonly></td>
             <td><input type="text" class="form-control form-control-sm modelo-<?= $i ?>" name="equipos[<?= $i ?>][modelo]" value="<?=htmlspecialchars($eq['Modelo'] ?? '')?>" readonly></td>
             <td><input type="text" class="form-control form-control-sm ubicacion-<?= $i ?>" name="equipos[<?= $i ?>][ubicacion]" value="<?=htmlspecialchars($eq['Ubicacion'] ?? '')?>" readonly></td>
