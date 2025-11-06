@@ -587,7 +587,7 @@ $(document).ready(function(){
     let id = $(this).val();
     let index = $(this).data('index');
     if(!id) {
-      $(`.marca-${index}, .modelo-${index}, .ubicacion-${index}, .voltaje-${index}`).val('');
+      $(`.marca-${index}, .nombre-${index},.modelo-${index}, .ubicacion-${index}, .voltaje-${index}`).val('');
       return;
     }
     $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id }, function(data){
