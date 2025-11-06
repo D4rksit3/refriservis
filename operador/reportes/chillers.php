@@ -429,7 +429,7 @@ include __DIR__ . '/modal_equipo.php';
     </div>
 
     <!-- OBSERVACIONES MULTIMEDIA -->
-    <h6>Observaciones y recomendaciones (Multimedia por equipo)</h6>
+    <h6>Observaciones y recomendaciones (Multimedia por equipo) *</h6>
 
     <div id="observacionesMultimedia"></div>
 
