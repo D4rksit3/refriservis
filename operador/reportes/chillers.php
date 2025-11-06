@@ -565,43 +565,53 @@ $(document).ready(function(){
 
   $('.equipo-select').select2({ placeholder:"Buscar equipo...", allowClear:true, width:'100%' });
 
-  // Cargar datos de equipos seleccionados
-  $('.equipo-select').each(function(){
-    let id = $(this).val();
-    let index = $(this).data('index');
-    if(id){
-      $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id }, function(data){
-        if(data.success){
+
+  // === Función para cargar datos de un equipo ===
+  function cargarDatosEquipo(index, id, callback) {
+    $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id })
+      .done(function (data) {
+        if (data.success) {
           $(`.nombre-${index}`).val(data.nombre || '');
           $(`.marca-${index}`).val(data.marca || '');
           $(`.modelo-${index}`).val(data.modelo || '');
           $(`.ubicacion-${index}`).val(data.ubicacion || '');
           $(`.voltaje-${index}`).val(data.voltaje || '');
         }
+      })
+      .always(function () {
+        if (typeof callback === 'function') callback();
       });
-    }
-  });
+  }
 
-  // Cuando cambia un equipo
-  $('.equipo-select').on('change', function(){
-    let id = $(this).val();
-    let index = $(this).data('index');
-    if(!id) {
-      $(`.marca-${index}, .nombre-${index},.modelo-${index}, .ubicacion-${index}, .voltaje-${index}`).val('');
+
+function esperarAjaxYGenerar() {
+  if ($.active > 0) {
+    // Espera medio segundo y vuelve a intentar
+    setTimeout(esperarAjaxYGenerar, 500);
+  } else {
+    generarObservacionesMultimedia();
+  }
+}
+
+
+
+  // === Al cambiar un equipo ===
+  $(document).on('change', '.equipo-select', function () {
+    const id = $(this).val();
+    const index = $(this).data('index');
+    if (!id) {
+      $(`.nombre-${index}, .marca-${index}, .modelo-${index}, .ubicacion-${index}, .voltaje-${index}`).val('');
+      esperarAjaxYGenerar();
       return;
     }
-    $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id }, function(data){
-      if(data.success){
-        $(`.nombre-${index}`).val(data.nombre || '');
-        $(`.marca-${index}`).val(data.marca || '');
-        $(`.modelo-${index}`).val(data.modelo || '');
-        $(`.ubicacion-${index}`).val(data.ubicacion || '');
-        $(`.voltaje-${index}`).val(data.voltaje || '');
-      }
-    });
-  });
-});
 
+    // Cargar los datos y, cuando termine, regenerar observaciones
+    cargarDatosEquipo(index, id, esperarAjaxYGenerar);
+  });
+
+  // === Generar observaciones después de cargar todo ===
+  esperarAjaxYGenerar();
+});
 
 
 function generarObservacionesMultimedia() {
@@ -698,14 +708,7 @@ $(document).on('change', '.observacion-imagen', function() {
 });
 
 
-function esperarAjaxYGenerar() {
-  if ($.active > 0) {
-    // Espera medio segundo y vuelve a intentar
-    setTimeout(esperarAjaxYGenerar, 500);
-  } else {
-    generarObservacionesMultimedia();
-  }
-}
+
 
 // Generar secciones según equipos seleccionados
 $('.equipo-select').on('change', function() {
