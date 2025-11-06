@@ -698,9 +698,18 @@ $(document).on('change', '.observacion-imagen', function() {
 });
 
 
+function esperarAjaxYGenerar() {
+  if ($.active > 0) {
+    // Espera medio segundo y vuelve a intentar
+    setTimeout(esperarAjaxYGenerar, 500);
+  } else {
+    generarObservacionesMultimedia();
+  }
+}
+
 // Generar secciones según equipos seleccionados
 $('.equipo-select').on('change', function() {
-  generarObservacionesMultimedia();
+  esperarAjaxYGenerar();
 });
 $(document).ready(generarObservacionesMultimedia);
 
