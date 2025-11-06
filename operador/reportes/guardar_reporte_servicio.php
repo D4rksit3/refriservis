@@ -195,32 +195,7 @@ function generarPDF(PDO $pdo, int $id) {
     }
 
 
-    function corregirOrientacion($ruta) {
-    if (function_exists('exif_read_data')) {
-        $exif = @exif_read_data($ruta);
-        if (!empty($exif['Orientation'])) {
-            $imagen = @imagecreatefromstring(file_get_contents($ruta));
-            if (!$imagen) return; // si no se puede abrir, salimos
 
-            switch ($exif['Orientation']) {
-                case 3:
-                    $imagen = imagerotate($imagen, 180, 0);
-                    break;
-                case 6:
-                    $imagen = imagerotate($imagen, -90, 0);
-                    break;
-                case 8:
-                    $imagen = imagerotate($imagen, 90, 0);
-                    break;
-                default:
-                    return; // no necesita rotación
-            }
-
-            imagejpeg($imagen, $ruta, 90);
-            imagedestroy($imagen);
-        }
-    }
-}
     // Construir PDF
     $pdf = new PDF('P','mm','A4');
     $pdf->mantenimientoId = $m['id'];

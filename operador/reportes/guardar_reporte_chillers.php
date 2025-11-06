@@ -112,32 +112,6 @@ function generarPDF(PDO $pdo, int $id) {
         if (is_array($decoded)) $fotos = $decoded;
     }
 
-    function corregirOrientacion($ruta) {
-    if (function_exists('exif_read_data')) {
-        $exif = @exif_read_data($ruta);
-        if (!empty($exif['Orientation'])) {
-            $imagen = @imagecreatefromstring(file_get_contents($ruta));
-            if (!$imagen) return; // si no se puede abrir, salimos
-
-            switch ($exif['Orientation']) {
-                case 3:
-                    $imagen = imagerotate($imagen, 180, 0);
-                    break;
-                case 6:
-                    $imagen = imagerotate($imagen, -90, 0);
-                    break;
-                case 8:
-                    $imagen = imagerotate($imagen, 90, 0);
-                    break;
-                default:
-                    return; // no necesita rotación
-            }
-
-            imagejpeg($imagen, $ruta, 90);
-            imagedestroy($imagen);
-        }
-    }
-}
 
     // helper para tildes (FPDF usa ISO-8859-1)
     function txt($s) { return mb_convert_encoding($s, 'ISO-8859-1', 'UTF-8'); }
@@ -247,6 +221,35 @@ function generarPDF(PDO $pdo, int $id) {
 
 
     }
+
+    function corregirOrientacion($ruta) {
+    if (function_exists('exif_read_data')) {
+        $exif = @exif_read_data($ruta);
+        if (!empty($exif['Orientation'])) {
+            $imagen = @imagecreatefromstring(file_get_contents($ruta));
+            if (!$imagen) return; // si no se puede abrir, salimos
+
+            switch ($exif['Orientation']) {
+                case 3:
+                    $imagen = imagerotate($imagen, 180, 0);
+                    break;
+                case 6:
+                    $imagen = imagerotate($imagen, -90, 0);
+                    break;
+                case 8:
+                    $imagen = imagerotate($imagen, 90, 0);
+                    break;
+                default:
+                    return; // no necesita rotación
+            }
+
+            imagejpeg($imagen, $ruta, 90);
+            imagedestroy($imagen);
+        }
+    }
+}
+
+
 
     // Construir PDF
     $pdf = new PDF('P','mm','A4');
@@ -571,51 +574,51 @@ $pdf->Ln(3);
                 $pdf->Ln(2);
 
                 // --- Imágenes (2 por fila) ---
-                // --- Imágenes (ajustadas con proporción real) ---
-                if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
-                    $maxWidth = 85;   // ancho máximo por imagen en mm
-                    $maxHeight = 65;  // alto máximo en mm
-                    $margin = 10;     // espacio horizontal entre imágenes
-                    $count = 0;
+// --- Imágenes (ajustadas con proporción real) ---
+if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
+    $maxWidth = 85;   // ancho máximo por imagen en mm
+    $maxHeight = 65;  // alto máximo en mm
+    $margin = 10;     // espacio horizontal entre imágenes
+    $count = 0;
 
-                    foreach ($obs['imagenes'] as $imgPath) {
-                        $realPath = __DIR__ . '/' . $imgPath;
-                        if (file_exists($realPath)) {
-                            [$width, $height] = getimagesize($realPath);
+    foreach ($obs['imagenes'] as $imgPath) {
+        $realPath = __DIR__ . '/' . $imgPath;
+        if (file_exists($realPath)) {
+            [$width, $height] = getimagesize($realPath);
 
-                            // Escalar con proporción
-                            $ratio = min($maxWidth / $width, $maxHeight / $height);
-                            $w_mm = $width * $ratio;
-                            $h_mm = $height * $ratio;
+            // Escalar con proporción
+            $ratio = min($maxWidth / $width, $maxHeight / $height);
+            $w_mm = $width * $ratio;
+            $h_mm = $height * $ratio;
 
-                            // Posición X
-                            $x = 15 + ($count % 2) * ($maxWidth + $margin);
+            // Posición X
+            $x = 15 + ($count % 2) * ($maxWidth + $margin);
 
-                            // Antes de dibujar, si la imagen no cabe en la página, añadir nueva
-                            if ($pdf->GetY() + $h_mm > 270) {
-                                $pdf->AddPage();
-                            }
+            // Antes de dibujar, si la imagen no cabe en la página, añadir nueva
+            if ($pdf->GetY() + $h_mm > 270) {
+                $pdf->AddPage();
+            }
 
-                            // Dibujar
-                            $pdf->Image($realPath, $x, $pdf->GetY(), $w_mm, $h_mm);
+            // Dibujar
+            $pdf->Image($realPath, $x, $pdf->GetY(), $w_mm, $h_mm);
 
-                            // Si es la segunda imagen, saltar de línea
-                            if ($count % 2 == 1) {
-                                $pdf->Ln($h_mm + 8);
-                            }
+            // Si es la segunda imagen, saltar de línea
+            if ($count % 2 == 1) {
+                $pdf->Ln($h_mm + 8);
+            }
 
-                            $count++;
-                        } else {
-                            $pdf->SetFont('Arial','I',8);
-                            $pdf->Cell(0,5, "Imagen no encontrada: $imgPath",0,1,'L');
-                        }
-                    }
+            $count++;
+        } else {
+            $pdf->SetFont('Arial','I',8);
+            $pdf->Cell(0,5, "Imagen no encontrada: $imgPath",0,1,'L');
+        }
+    }
 
-                    // Si quedó una sola imagen sin pareja, baja igual
-                    if ($count % 2 == 1) {
-                        $pdf->Ln($maxHeight + 5);
-                    }
-                }
+    // Si quedó una sola imagen sin pareja, baja igual
+    if ($count % 2 == 1) {
+        $pdf->Ln($maxHeight + 5);
+    }
+}
 
 
 
