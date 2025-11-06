@@ -283,7 +283,7 @@ include __DIR__ . '/modal_equipo.php';
                       data-index="<?= $i ?>">
                 <option value="">-- Seleccione --</option>
                 <?php foreach($equiposList as $e): ?>
-                    <option value="<?= $e['id_equipo'] ?> - <?= $e['id_equipo'] ?>" <?= ($eq && $eq['id_equipo']==$e['id_equipo'] ? 'selected' : '') ?>>
+                    <option value="<?= $e['id_equipo'] ?> - <?= $e['Nombre'] ?>" <?= ($eq && $eq['id_equipo']==$e['id_equipo'] ? 'selected' : '') ?>>
                         <?= htmlspecialchars($e['Identificador']) ?>
                     </option>
                 <?php endforeach; ?>

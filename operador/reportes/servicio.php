@@ -141,7 +141,7 @@ $nombre_tecnico = $m['nombre_tecnico'] ?? '';
 
 
 // Lista de equipos desde inventario
-$equiposList = $pdo->query("SELECT id_equipo AS id_equipo, Identificador, Marca, Modelo, Ubicacion, Voltaje 
+$equiposList = $pdo->query("SELECT id_equipo AS id_equipo, Nombre,Identificador, Marca, Modelo, Ubicacion, Voltaje 
                             FROM equipos ORDER BY Identificador ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 // Preparar equipos del mantenimiento
@@ -239,6 +239,7 @@ include __DIR__ . '/modal_equipo.php';
           <tr>
             <th>#</th>
             <th>Identificador</th>
+            <th>Nombre</th>
             <th>Marca</th>
             <th>Modelo</th>
             <th>Ubicación</th>
