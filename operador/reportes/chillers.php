@@ -611,9 +611,13 @@ function generarObservacionesMultimedia() {
   $('.equipo-select').each(function() {
     const index = $(this).data('index');
     
-    const nombre = $(`.nombre-${index}`).val();
+    
     const id = $(this).val();
     const texto = $(this).find('option:selected').text().trim();
+
+    // Recuperamos el nombre desde un input o atributo data
+    const nombre = $(this).data('nombre') || $(`.nombre-${index}`).val() || '';
+
 
     if (id && texto && texto !== '-- Seleccione --') {
       const bloque = document.createElement('div');
