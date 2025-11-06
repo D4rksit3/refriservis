@@ -6,6 +6,8 @@ ini_set('session.gc_maxlifetime', 36000);
 ini_set('session.cookie_lifetime', 36000);
 ini_set('session.gc_probability', 1);
 ini_set('session.gc_divisor', 1);
+
+session_set_cookie_params(36000);
 session_start();
 if (!isset($_SESSION['usuario']) || !in_array($_SESSION['rol'], ['operador', 'digitador', 'admin'])) {
     header('Location: /../index.php');
