@@ -264,6 +264,8 @@ include __DIR__ . '/modal_equipo.php';
                 <?php endforeach; ?>
               </select>
             </td>
+            <td><input type="text" class="form-control form-control-sm nombre-<?= $i ?>" name="equipos[<?= $i ?>][Nombre]" value="<?=htmlspecialchars($eq['Nombre'] ?? '')?>" readonly></td>
+            
             <td><input type="text" class="form-control form-control-sm marca-<?= $i ?>" name="equipos[<?= $i ?>][marca]" value="<?=htmlspecialchars($eq['Marca'] ?? '')?>" readonly></td>
             <td><input type="text" class="form-control form-control-sm modelo-<?= $i ?>" name="equipos[<?= $i ?>][modelo]" value="<?=htmlspecialchars($eq['Modelo'] ?? '')?>" readonly></td>
             <td><input type="text" class="form-control form-control-sm ubicacion-<?= $i ?>" name="equipos[<?= $i ?>][ubicacion]" value="<?=htmlspecialchars($eq['Ubicacion'] ?? '')?>" readonly></td>
@@ -455,6 +457,7 @@ $(document).ready(function(){
     if(id){
       $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id }, function(data){
         if(data.success){
+          $(`.nombre-${index}`).val(data.nombre || '');
           $(`.marca-${index}`).val(data.marca || '');
           $(`.modelo-${index}`).val(data.modelo || '');
           $(`.ubicacion-${index}`).val(data.ubicacion || '');
@@ -478,6 +481,8 @@ $(document).ready(function(){
         $(`.modelo-${index}`).val(data.modelo || '');
         $(`.ubicacion-${index}`).val(data.ubicacion || '');
         $(`.voltaje-${index}`).val(data.voltaje || '');
+
+        generarObservacionesMultimedia();
       }
     });
   });
@@ -494,11 +499,14 @@ function generarObservacionesMultimedia() {
     const id = $(this).val();
     const texto = $(this).find('option:selected').text().trim();
 
+    // Recuperamos el nombre desde un input o atributo data
+    const nombre = $(this).data('nombre') || $(`.nombre-${index}`).val() || '';
+
     if (id && texto && texto !== '-- Seleccione --') {
       const bloque = document.createElement('div');
       bloque.className = 'card p-3 mb-3';
       bloque.innerHTML = `
-        <h6 class="text-primary mb-2">🔧 ${texto}</h6>
+        <h6 class="text-primary mb-2">🔧 ${texto} - ${nombre ? ' - ' + nombre : ''}</h6>
         <div class="mb-2">
           <label>Texto / Recomendación:</label>
           <textarea class="form-control observacion-texto" data-index="${index}" rows="3"
@@ -579,9 +587,9 @@ $(document).on('change', '.observacion-imagen', function() {
 
 
 // Generar secciones según equipos seleccionados
-$('.equipo-select').on('change', function() {
+/* $('.equipo-select').on('change', function() {
   generarObservacionesMultimedia();
-});
+}); */
 $(document).ready(generarObservacionesMultimedia);
 
 // Consolidar al enviar
