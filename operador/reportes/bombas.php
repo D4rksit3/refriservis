@@ -619,7 +619,7 @@ function generarObservacionesMultimedia() {
         <div class="mb-2">
           <label>Texto / Recomendación:</label>
           <textarea class="form-control observacion-texto" data-index="${index}" rows="3"
-            placeholder="Escribe observaciones específicas para ${texto}..."></textarea>
+            placeholder="Escribe observaciones específicas para ${texto}..." required></textarea>
         </div>
          <div class="mb-2">
           <label>Imágenes:</label>
