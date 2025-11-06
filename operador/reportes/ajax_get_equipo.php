@@ -26,7 +26,7 @@ echo json_encode($eq ?: []);
 
 require_once __DIR__ . '/../../config/db.php';
 
-// Recibe parámetro
+// Recibe el parámetro id_equipo
 $id_equipo = $_GET['id_equipo'] ?? '';
 if (!$id_equipo) {
     echo json_encode(['success' => false, 'message' => 'ID no proporcionado']);
@@ -37,7 +37,7 @@ try {
     $stmt = $pdo->prepare("
         SELECT 
             eq.id_equipo,
-            eq.Identificador,
+            eq.Nombre AS nombre,
             eq.Marca AS marca,
             eq.Modelo AS modelo,
             eq.Ubicacion AS ubicacion,
@@ -53,7 +53,16 @@ try {
     $eq = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($eq) {
-        echo json_encode(['success' => true, 'data' => $eq]);
+        echo json_encode([
+            'success' => true,
+            'nombre' => $eq['nombre'] ?? '',
+            'marca' => $eq['marca'] ?? '',
+            'modelo' => $eq['modelo'] ?? '',
+            'ubicacion' => $eq['ubicacion'] ?? '',
+            'voltaje' => $eq['voltaje'] ?? '',
+            'tipo' => $eq['tipo'] ?? '',
+            'gas' => $eq['gas'] ?? ''
+        ]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Equipo no encontrado']);
     }
