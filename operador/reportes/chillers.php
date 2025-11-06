@@ -570,6 +570,7 @@ $(document).ready(function(){
     if(id){
       $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id }, function(data){
         if(data.success){
+          $(`.tipo-${index}`).val(data.tipo || '');
           $(`.marca-${index}`).val(data.marca || '');
           $(`.modelo-${index}`).val(data.modelo || '');
           $(`.ubicacion-${index}`).val(data.ubicacion || '');
@@ -589,6 +590,7 @@ $(document).ready(function(){
     }
     $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id }, function(data){
       if(data.success){
+        $(`.tipo-${index}`).val(data.tipo || '');
         $(`.marca-${index}`).val(data.marca || '');
         $(`.modelo-${index}`).val(data.modelo || '');
         $(`.ubicacion-${index}`).val(data.ubicacion || '');
@@ -606,6 +608,7 @@ function generarObservacionesMultimedia() {
 
   $('.equipo-select').each(function() {
     const index = $(this).data('index');
+    const tipo = $(this).data('index');
     const id = $(this).val();
     const texto = $(this).find('option:selected').text().trim();
 
@@ -613,7 +616,7 @@ function generarObservacionesMultimedia() {
       const bloque = document.createElement('div');
       bloque.className = 'card p-3 mb-3';
       bloque.innerHTML = `
-        <h6 class="text-primary mb-2">🔧 ${texto} - ${id}</h6>
+        <h6 class="text-primary mb-2">🔧 ${texto} - ${tipo}</h6>
         <div class="mb-2">
           <label>Texto / Recomendación:</label>
           <textarea class="form-control observacion-texto" data-index="${index}" rows="3"
