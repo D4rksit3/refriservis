@@ -570,7 +570,7 @@ $(document).ready(function(){
     if(id){
       $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id }, function(data){
         if(data.success){
-          $(`.nombre-${index}`).val(data.nombre || '');
+          $(`.nombre-${index}`).val(data.Nombre || '');
           $(`.marca-${index}`).val(data.marca || '');
           $(`.modelo-${index}`).val(data.modelo || '');
           $(`.ubicacion-${index}`).val(data.ubicacion || '');
@@ -590,7 +590,7 @@ $(document).ready(function(){
     }
     $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id }, function(data){
       if(data.success){
-        $(`.nombre-${index}`).val(data.nombre || '');
+        $(`.nombre-${index}`).val(data.Nombre || '');
         $(`.marca-${index}`).val(data.marca || '');
         $(`.modelo-${index}`).val(data.modelo || '');
         $(`.ubicacion-${index}`).val(data.ubicacion || '');
