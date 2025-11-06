@@ -20,4 +20,14 @@ $stmt = $pdo->prepare("
 $stmt->execute([$codigo]);
 $eq = $stmt->fetch(PDO::FETCH_ASSOC);
 
-echo json_encode($eq ?: []);
+/* echo json_encode($eq ?: []); */
+echo json_encode([
+  'success' => $eq ? true : false,
+  'nombre' => $eq['nombre'] ?? '',
+  'marca' => $eq['marca'] ?? '',
+  'modelo' => $eq['modelo'] ?? '',
+  'ubicacion' => $eq['ubicacion'] ?? '',
+  'voltaje' => $eq['voltaje'] ?? '',
+  'tipo' => $eq['tipo'] ?? '',
+  'gas' => $eq['gas'] ?? ''
+]);
