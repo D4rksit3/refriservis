@@ -570,6 +570,7 @@ $pdf->Ln(3);
                 $pdf->Ln(2);
 
                 // --- Imágenes (2 por fila) ---
+               // --- Imágenes (2 por fila) ---
 // --- Imágenes (ajustadas con proporción real) ---
 if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
     $maxWidth = 85;   // ancho máximo por imagen en mm
@@ -596,8 +597,7 @@ if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
             }
 
             // Dibujar
-            $ruta = corregirOrientacion($rutaImagen);
-            $pdf->Image($ruta, $x, $y, $ancho, $alto);
+            $pdf->Image($realPath, $x, $pdf->GetY(), $w_mm, $h_mm);
 
             // Si es la segunda imagen, saltar de línea
             if ($count % 2 == 1) {
@@ -616,6 +616,7 @@ if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
         $pdf->Ln($maxHeight + 5);
     }
 }
+
 
 
 
