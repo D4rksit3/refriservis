@@ -222,26 +222,42 @@ function generarPDF(PDO $pdo, int $id) {
 
     }
 
-function corregirOrientacion($rutaImagen) {
-    if (!file_exists($rutaImagen)) return $rutaImagen;
-    if (function_exists('exif_read_data')) {
-        $exif = @exif_read_data($rutaImagen);
-        if (!empty($exif['Orientation'])) {
-            $image = @imagecreatefromstring(@file_get_contents($rutaImagen));
-            if (!$image) return $rutaImagen;
-            switch ($exif['Orientation']) {
-                case 3: $image = imagerotate($image, 180, 0); break;
-                case 6: $image = imagerotate($image, -90, 0); break;
-                case 8: $image = imagerotate($image, 90, 0); break;
-                default: return $rutaImagen;
-            }
-            $tmpPath = sys_get_temp_dir() . '/' . uniqid('img_') . '.jpg';
-            imagejpeg($image, $tmpPath, 90);
-            imagedestroy($image);
-            return $tmpPath;
-        }
+/**
+ * Corrige la orientación de una imagen según sus metadatos EXIF.
+ */
+function corregirOrientacion($ruta)
+{
+    $ext = strtolower(pathinfo($ruta, PATHINFO_EXTENSION));
+    if (!in_array($ext, ['jpg', 'jpeg'])) {
+        return $ruta; // solo aplica a JPG
     }
-    return $rutaImagen;
+
+    $exif = @exif_read_data($ruta);
+    if (!isset($exif['Orientation'])) {
+        return $ruta;
+    }
+
+    $image = imagecreatefromjpeg($ruta);
+    switch ($exif['Orientation']) {
+        case 3:
+            $image = imagerotate($image, 180, 0);
+            break;
+        case 6:
+            $image = imagerotate($image, -90, 0);
+            break;
+        case 8:
+            $image = imagerotate($image, 90, 0);
+            break;
+        default:
+            return $ruta;
+    }
+
+    // Guardar versión temporal corregida
+    $tmp = tempnam(sys_get_temp_dir(), 'img_') . '.jpg';
+    imagejpeg($image, $tmp, 90);
+    imagedestroy($image);
+
+    return $tmp;
 }
 
 
@@ -624,43 +640,7 @@ if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
 }
 
 
-/**
- * Corrige la orientación de una imagen según sus metadatos EXIF.
- */
-function corregirOrientacion($ruta)
-{
-    $ext = strtolower(pathinfo($ruta, PATHINFO_EXTENSION));
-    if (!in_array($ext, ['jpg', 'jpeg'])) {
-        return $ruta; // solo aplica a JPG
-    }
 
-    $exif = @exif_read_data($ruta);
-    if (!isset($exif['Orientation'])) {
-        return $ruta;
-    }
-
-    $image = imagecreatefromjpeg($ruta);
-    switch ($exif['Orientation']) {
-        case 3:
-            $image = imagerotate($image, 180, 0);
-            break;
-        case 6:
-            $image = imagerotate($image, -90, 0);
-            break;
-        case 8:
-            $image = imagerotate($image, 90, 0);
-            break;
-        default:
-            return $ruta;
-    }
-
-    // Guardar versión temporal corregida
-    $tmp = tempnam(sys_get_temp_dir(), 'img_') . '.jpg';
-    imagejpeg($image, $tmp, 90);
-    imagedestroy($image);
-
-    return $tmp;
-}
 
 
 
