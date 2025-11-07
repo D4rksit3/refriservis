@@ -1,32 +1,56 @@
-<?php
-include("db.php");
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Marcación de Asistencia</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light p-4">
 
-$documento = $_POST['documento'] ?? '';
-$tipo = $_POST['tipo'] ?? '';
-$lat = $_POST['latitud'] ?? '';
-$lng = $_POST['longitud'] ?? '';
+<div class="container text-center">
+    <h3 class="mb-4">Sistema de Marcación</h3>
 
-if (!$documento || !$tipo) {
-  die("Datos incompletos");
-}
+    <select id="tipo" class="form-select mb-3" style="max-width:400px; margin:auto;">
+        <option value="entrada">Entrada</option>
+        <option value="salida">Salida</option>
+        <option value="inicio_refrigerio">Inicio de Refrigerio</option>
+        <option value="fin_refrigerio">Fin de Refrigerio</option>
+        <option value="entrada_tienda">Entrada de Tienda</option>
+        <option value="salida_tienda">Salida de Tienda</option>
+    </select>
 
-// Buscar usuario
-$stmt = $pdo->prepare("SELECT id FROM usuarios WHERE documento = ?");
-$stmt->execute([$documento]);
-$user = $stmt->fetch(PDO::FETCH_ASSOC);
+    <button id="btnMarcar" class="btn btn-primary">Marcar Asistencia</button>
 
-if (!$user) {
-  // Crear usuario automáticamente si no existe
-  $nombre = "Empleado " . $documento;
-  $pdo->prepare("INSERT INTO usuarios (nombre, documento) VALUES (?, ?)")->execute([$nombre, $documento]);
-  $user_id = $pdo->lastInsertId();
-} else {
-  $user_id = $user['id'];
-}
+    <div id="resultado" class="mt-4 text-success fw-bold"></div>
+</div>
 
-// Guardar asistencia
-$stmt = $pdo->prepare("INSERT INTO asistencias (usuario_id, tipo, latitud, longitud) VALUES (?, ?, ?, ?)");
-$stmt->execute([$user_id, $tipo, $lat, $lng]);
+<script>
+document.getElementById("btnMarcar").addEventListener("click", function() {
+    let tipo = document.getElementById("tipo").value;
 
-echo "<script>alert('Asistencia registrada correctamente'); window.location='index.php';</script>";
-?>
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(success, error);
+    } else {
+        alert("Tu navegador no soporta geolocalización");
+    }
+
+    function success(position) {
+        let lat = position.coords.latitude;
+        let lon = position.coords.longitude;
+
+        fetch("registrar_marcacion.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `lat=${lat}&lon=${lon}&tipo=${tipo}`
+        })
+        .then(res => res.text())
+        .then(data => document.getElementById("resultado").innerHTML = data);
+    }
+
+    function error(err) {
+        alert("Error al obtener ubicación: " + err.message);
+    }
+});
+</script>
+</body>
+</html>

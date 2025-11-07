@@ -1,18 +1,21 @@
-CREATE DATABASE asistencia_db CHARACTER SET utf8mb4;
+CREATE DATABASE IF NOT EXISTS asistencia_db CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE asistencia_db;
 
 CREATE TABLE usuarios (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  nombre VARCHAR(100) NOT NULL,
-  documento VARCHAR(50) UNIQUE NOT NULL
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100),
+    rol ENUM('admin','supervisor','empleado') DEFAULT 'empleado'
 );
 
-CREATE TABLE asistencias (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  usuario_id INT NOT NULL,
-  tipo ENUM('entrada', 'salida', 'visita') NOT NULL,
-  fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
-  latitud VARCHAR(50),
-  longitud VARCHAR(50),
-  FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+CREATE TABLE marcaciones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT,
+    tipo ENUM('entrada','salida','inicio_refrigerio','fin_refrigerio','entrada_tienda','salida_tienda'),
+    fecha DATE,
+    hora TIME,
+    latitud DECIMAL(10,8),
+    longitud DECIMAL(11,8),
+    direccion TEXT,
+    distrito VARCHAR(100),
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id)
 );
