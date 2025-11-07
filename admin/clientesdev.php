@@ -60,15 +60,10 @@ if ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POS
 }
 
 // =========================
-// LISTADO CON FILTRO Y PAGINACIÓN
+// FUNCIÓN REUTILIZABLE (LISTA HTML)
 // =========================
-if ($action === 'list') {
-    $limit = 10; // clientes por página
-    $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+function render_clientes_table($pdo, $filtro = '', $limit = 10, $page = 1) {
     $offset = ($page - 1) * $limit;
-
-    // --- Filtro por cliente ---
-    $filtro = trim($_GET['filtro'] ?? '');
     $where = '';
     $params = [];
 
@@ -77,14 +72,12 @@ if ($action === 'list') {
         $params[':filtro'] = "%$filtro%";
     }
 
-    // Total de registros
     $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM clientes $where");
     foreach ($params as $k => $v) $stmtCount->bindValue($k, $v);
     $stmtCount->execute();
     $total = $stmtCount->fetchColumn();
     $totalPages = ceil($total / $limit);
 
-    // Obtener registros filtrados
     $sql = "SELECT * FROM clientes $where ORDER BY id DESC LIMIT :limit OFFSET :offset";
     $stmt = $pdo->prepare($sql);
     foreach ($params as $k => $v) $stmt->bindValue($k, $v);
@@ -92,30 +85,8 @@ if ($action === 'list') {
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
     $lista = $stmt->fetchAll();
-    ?>
-    <div class="card p-3">
-        <div class="d-flex justify-content-between align-items-center">
-            <h5>Clientes</h5>
-            <a class="btn btn-primary btn-sm" href="/admin/clientes.php?action=add">+ Nuevo Cliente</a>
-        </div>
 
-        <!-- Filtro -->
-        <form method="get" class="row g-2 mt-3 mb-2">
-            <input type="hidden" name="action" value="list">
-            <div class="col-md-4 col-8">
-                <input type="text" name="filtro" class="form-control" placeholder="Buscar cliente..." 
-                    value="<?=htmlspecialchars($filtro)?>">
-            </div>
-            <div class="col-md-2 col-4">
-                <button class="btn btn-outline-secondary w-100">Buscar</button>
-            </div>
-            <?php if ($filtro !== ''): ?>
-                <div class="col-md-2 col-12">
-                    <a href="clientes.php?action=list" class="btn btn-outline-danger w-100">Limpiar</a>
-                </div>
-            <?php endif; ?>
-        </form>
-
+    ob_start(); ?>
         <div class="table-responsive mt-2">
             <table class="table table-sm table-hover">
                 <thead>
@@ -159,37 +130,75 @@ if ($action === 'list') {
                 </tbody>
             </table>
         </div>
+    <?php
+    return ob_get_clean();
+}
 
-        <!-- PAGINACIÓN -->
-        <?php if ($totalPages > 1): ?>
-        <nav>
-            <ul class="pagination justify-content-center">
-                <li class="page-item <?=($page <= 1 ? 'disabled' : '')?>">
-                    <a class="page-link" href="?action=list&filtro=<?=urlencode($filtro)?>&page=<?=($page-1)?>">Anterior</a>
-                </li>
-                <?php for ($i=1; $i<=$totalPages; $i++): ?>
-                    <li class="page-item <?=($i == $page ? 'active' : '')?>">
-                        <a class="page-link" href="?action=list&filtro=<?=urlencode($filtro)?>&page=<?=$i?>"><?=$i?></a>
-                    </li>
-                <?php endfor; ?>
-                <li class="page-item <?=($page >= $totalPages ? 'disabled' : '')?>">
-                    <a class="page-link" href="?action=list&filtro=<?=urlencode($filtro)?>&page=<?=($page+1)?>">Siguiente</a>
-                </li>
-            </ul>
-        </nav>
-        <?php endif; ?>
+// =========================
+// MODO AJAX (búsqueda en tiempo real)
+// =========================
+if ($action === 'ajax_search') {
+    $filtro = trim($_GET['filtro'] ?? '');
+    echo render_clientes_table($pdo, $filtro, 10, 1);
+    exit;
+}
+
+// =========================
+// LISTADO PRINCIPAL
+// =========================
+if ($action === 'list') {
+    $filtro = trim($_GET['filtro'] ?? '');
+    ?>
+    <div class="card p-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5>Clientes</h5>
+            <a class="btn btn-primary btn-sm" href="/admin/clientes.php?action=add">+ Nuevo Cliente</a>
+        </div>
+
+        <!-- Búsqueda en tiempo real -->
+        <div class="row g-2 mt-3 mb-2">
+            <div class="col-md-4 col-8">
+                <input type="text" id="buscarCliente" class="form-control" placeholder="Buscar cliente..." autocomplete="off">
+            </div>
+        </div>
+
+        <!-- Contenedor dinámico -->
+        <div id="tablaClientes">
+            <?= render_clientes_table($pdo, $filtro, 10, 1) ?>
+        </div>
     </div>
 
     <script>
-    document.querySelectorAll('.toggle-status').forEach(chk => {
-        chk.addEventListener('change', function() {
-            fetch('/admin/toggle_cliente.php', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: 'id='+this.dataset.id+'&estatus='+(this.checked ? 1 : 0)
+    // --- Debounce (espera 300 ms antes de buscar) ---
+    let timer = null;
+    const input = document.getElementById('buscarCliente');
+    const tabla = document.getElementById('tablaClientes');
+
+    input.addEventListener('keyup', function() {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            const texto = this.value.trim();
+            fetch(`/admin/clientes.php?action=ajax_search&filtro=${encodeURIComponent(texto)}`)
+                .then(r => r.text())
+                .then(html => {
+                    tabla.innerHTML = html;
+                    activarToggles();
+                });
+        }, 300);
+    });
+
+    function activarToggles() {
+        document.querySelectorAll('.toggle-status').forEach(chk => {
+            chk.addEventListener('change', function() {
+                fetch('/admin/toggle_cliente.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: 'id='+this.dataset.id+'&estatus='+(this.checked ? 1 : 0)
+                });
             });
         });
-    });
+    }
+    activarToggles();
     </script>
     <?php
 }
