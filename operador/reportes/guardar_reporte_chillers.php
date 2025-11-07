@@ -222,31 +222,30 @@ function generarPDF(PDO $pdo, int $id) {
 
     }
 
-    function corregirOrientacion($ruta) {
+function corregirOrientacion($rutaImagen) {
     if (function_exists('exif_read_data')) {
-        $exif = @exif_read_data($ruta);
+        $exif = @exif_read_data($rutaImagen);
         if (!empty($exif['Orientation'])) {
-            $imagen = @imagecreatefromstring(file_get_contents($ruta));
-            if (!$imagen) return; // si no se puede abrir, salimos
-
+            $image = imagecreatefromstring(file_get_contents($rutaImagen));
             switch ($exif['Orientation']) {
                 case 3:
-                    $imagen = imagerotate($imagen, 180, 0);
+                    $image = imagerotate($image, 180, 0);
                     break;
                 case 6:
-                    $imagen = imagerotate($imagen, -90, 0);
+                    $image = imagerotate($image, -90, 0);
                     break;
                 case 8:
-                    $imagen = imagerotate($imagen, 90, 0);
+                    $image = imagerotate($image, 90, 0);
                     break;
-                default:
-                    return; // no necesita rotación
             }
-
-            imagejpeg($imagen, $ruta, 90);
-            imagedestroy($imagen);
+            // Reescribimos la imagen corregida temporalmente
+            $tmpPath = sys_get_temp_dir() . '/' . uniqid('img_') . '.jpg';
+            imagejpeg($image, $tmpPath, 90);
+            imagedestroy($image);
+            return $tmpPath;
         }
     }
+    return $rutaImagen; // si no tiene orientación, se devuelve igual
 }
 
 
@@ -600,7 +599,8 @@ if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
             }
 
             // Dibujar
-            $pdf->Image($realPath, $x, $pdf->GetY(), $w_mm, $h_mm);
+            $ruta = corregirOrientacion($rutaImagen);
+            $pdf->Image($ruta, $x, $y, $ancho, $alto);
 
             // Si es la segunda imagen, saltar de línea
             if ($count % 2 == 1) {
