@@ -196,6 +196,7 @@ function generarPDF(PDO $pdo, int $id) {
 
 
 
+
 /**
  * Corrige la orientación de una imagen según sus metadatos EXIF.
  */
@@ -233,6 +234,7 @@ function corregirOrientacion($ruta)
 
     return $tmp;
 }
+
 
 
 
@@ -500,7 +502,6 @@ if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
         $pdf->Ln($maxHeight + 5);
     }
 }
-
 
 
 

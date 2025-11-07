@@ -218,6 +218,47 @@ function generarPDF(PDO $pdo, int $id) {
 
     }
 
+    
+/**
+ * Corrige la orientación de una imagen según sus metadatos EXIF.
+ */
+function corregirOrientacion($ruta)
+{
+    $ext = strtolower(pathinfo($ruta, PATHINFO_EXTENSION));
+    if (!in_array($ext, ['jpg', 'jpeg'])) {
+        return $ruta; // solo aplica a JPG
+    }
+
+    $exif = @exif_read_data($ruta);
+    if (!isset($exif['Orientation'])) {
+        return $ruta;
+    }
+
+    $image = imagecreatefromjpeg($ruta);
+    switch ($exif['Orientation']) {
+        case 3:
+            $image = imagerotate($image, 180, 0);
+            break;
+        case 6:
+            $image = imagerotate($image, -90, 0);
+            break;
+        case 8:
+            $image = imagerotate($image, 90, 0);
+            break;
+        default:
+            return $ruta;
+    }
+
+    // Guardar versión temporal corregida
+    $tmp = tempnam(sys_get_temp_dir(), 'img_') . '.jpg';
+    imagejpeg($image, $tmp, 90);
+    imagedestroy($image);
+
+    return $tmp;
+}
+
+
+
     // Construir PDF
     $pdf = new PDF('P','mm','A4');
     $pdf->mantenimientoId = $m['id'];
@@ -529,36 +570,58 @@ $pdf->Ln(3);
                 $pdf->Ln(2);
 
                 // --- Imágenes (2 por fila) ---
-                if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
-                    $maxWidth = 60;
-                    $maxHeight = 45;
-                    $margin = 10;
-                    $count = 0;
+                // --- Imágenes (ajustadas con proporción real y rotación corregida) ---
+if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
+    $maxWidth = 85;   // ancho máximo por imagen en mm
+    $maxHeight = 65;  // alto máximo por imagen en mm
+    $margin = 10;     // espacio horizontal entre imágenes
+    $count = 0;
 
-                    foreach ($obs['imagenes'] as $imgPath) {
-                        $realPath = __DIR__ . '/' . $imgPath;
-                        if (file_exists($realPath)) {
-                            $x = 10 + ($count % 2) * ($maxWidth + $margin);
-                            $y = $pdf->GetY();
+    foreach ($obs['imagenes'] as $imgPath) {
+        $realPath = __DIR__ . '/' . $imgPath;
 
-                            $pdf->Image($realPath, $x, $y, $maxWidth, $maxHeight);
+        if (file_exists($realPath)) {
+            // --- Corregir orientación EXIF (si existe) ---
+            $correctedPath = corregirOrientacion($realPath);
 
-                            // Cada 2 imágenes, salta de línea
-                            if ($count % 2 == 1) {
-                                $pdf->Ln($maxHeight + 5);
-                            }
-                            $count++;
-                        } else {
-                            $pdf->SetFont('Arial','I',8);
-                            $pdf->Cell(0,5, utf8_decode("Imagen no encontrada: $imgPath"), 0, 1, 'L');
-                        }
-                    }
+            // --- Obtener tamaño original ---
+            [$width, $height] = getimagesize($correctedPath);
 
-                    // Si quedó una sola imagen sin pareja, baja de línea igual
-                    if ($count % 2 == 1) {
-                        $pdf->Ln($maxHeight + 5);
-                    }
-                }
+            // --- Escalar proporcionalmente ---
+            $ratio = min($maxWidth / $width, $maxHeight / $height);
+            $w_mm = $width * $ratio;
+            $h_mm = $height * $ratio;
+
+            // --- Posición X ---
+            $x = 15 + ($count % 2) * ($maxWidth + $margin);
+            $y = $pdf->GetY();
+
+            // --- Salto de página si no cabe ---
+            if ($y + $h_mm > 270) {
+                $pdf->AddPage();
+                $y = $pdf->GetY();
+            }
+
+            // --- Dibujar imagen ---
+            $pdf->Image($correctedPath, $x, $y, $w_mm, $h_mm);
+
+            // --- Si es la segunda imagen, salto de línea ---
+            if ($count % 2 == 1) {
+                $pdf->Ln($h_mm + 8);
+            }
+
+            $count++;
+        } else {
+            $pdf->SetFont('Arial', 'I', 8);
+            $pdf->Cell(0, 5, "Imagen no encontrada: $imgPath", 0, 1, 'L');
+        }
+    }
+
+    // --- Si quedó una sola imagen sin pareja, baja igual ---
+    if ($count % 2 == 1) {
+        $pdf->Ln($maxHeight + 5);
+    }
+}
 
                 // --- Fin del cuadro ---
                 $endY = $pdf->GetY();
