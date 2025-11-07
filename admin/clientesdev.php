@@ -14,7 +14,7 @@ $action = $_REQUEST['action'] ?? 'list';
 // =========================
 // PROCESAR FORMULARIO
 // =========================
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($action, ['add','edit'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $cliente       = trim($_POST['cliente'] ?? '');
     $direccion     = trim($_POST['direccion'] ?? '');
     $telefono      = trim($_POST['telefono'] ?? '');
@@ -45,6 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array($action, ['add','edit'])) 
 // =========================
 // ELIMINAR CLIENTE
 // =========================
+// =========================
+// ELIMINAR CLIENTE (POST)
+// =========================
 if ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
     $id = (int)$_POST['id'];
     if($id > 0){
@@ -59,36 +62,33 @@ if ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POS
     exit;
 }
 
+
 // =========================
-// FUNCIÓN REUTILIZABLE (LISTA HTML)
+// LISTADO CON PAGINACIÓN
 // =========================
-function render_clientes_table($pdo, $filtro = '', $limit = 10, $page = 1) {
+if ($action === 'list') {
+    $limit = 10; // clientes por página
+    $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
     $offset = ($page - 1) * $limit;
-    $where = '';
-    $params = [];
 
-    if ($filtro !== '') {
-        $where = "WHERE cliente LIKE :filtro";
-        $params[':filtro'] = "%$filtro%";
-    }
-
-    $stmtCount = $pdo->prepare("SELECT COUNT(*) FROM clientes $where");
-    foreach ($params as $k => $v) $stmtCount->bindValue($k, $v);
-    $stmtCount->execute();
-    $total = $stmtCount->fetchColumn();
+    // Total de registros
+    $total = $pdo->query("SELECT COUNT(*) FROM clientes")->fetchColumn();
     $totalPages = ceil($total / $limit);
 
-    $sql = "SELECT * FROM clientes $where ORDER BY id DESC LIMIT :limit OFFSET :offset";
-    $stmt = $pdo->prepare($sql);
-    foreach ($params as $k => $v) $stmt->bindValue($k, $v);
+    // Obtener registros
+    $stmt = $pdo->prepare("SELECT * FROM clientes ORDER BY id DESC LIMIT :limit OFFSET :offset");
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
     $lista = $stmt->fetchAll();
-
-    ob_start(); ?>
-        <div class="table-responsive mt-2">
-            <table class="table table-sm table-hover">
+    ?>
+    <div class="card p-3">
+        <div class="d-flex justify-content-between">
+            <h5>Clientes</h5>
+            <a class="btn btn-primary btn-sm" href="/admin/clientes.php?action=add">+ Nuevo Cliente</a>
+        </div>
+        <div class="table-responsive mt-3">
+            <table class="table table-sm">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -121,6 +121,14 @@ function render_clientes_table($pdo, $filtro = '', $limit = 10, $page = 1) {
                             </td>
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="/admin/clientes.php?action=edit&id=<?=$c['id']?>">Editar</a>
+                                <!-- <a class="btn btn-sm btn-outline-danger" href="/admin/clientes.php?action=delete&id=<?=$c['id']?>" onclick="return confirm('Eliminar cliente?')">Eliminar</a>
+                             -->
+                           <!--  <form method="post" action="clientes.php" style="display:inline-block;" onsubmit="return confirm('Eliminar cliente?')">
+    <input type="hidden" name="action" value="delete">
+    <input type="hidden" name="id" value="<?=$c['id']?>">
+    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+</form> -->
+
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -130,75 +138,37 @@ function render_clientes_table($pdo, $filtro = '', $limit = 10, $page = 1) {
                 </tbody>
             </table>
         </div>
-    <?php
-    return ob_get_clean();
-}
 
-// =========================
-// MODO AJAX (búsqueda en tiempo real)
-// =========================
-if ($action === 'ajax_search') {
-    $filtro = trim($_GET['filtro'] ?? '');
-    echo render_clientes_table($pdo, $filtro, 10, 1);
-    exit;
-}
-
-// =========================
-// LISTADO PRINCIPAL
-// =========================
-if ($action === 'list') {
-    $filtro = trim($_GET['filtro'] ?? '');
-    ?>
-    <div class="card p-3">
-        <div class="d-flex justify-content-between align-items-center">
-            <h5>Clientes</h5>
-            <a class="btn btn-primary btn-sm" href="/admin/clientes.php?action=add">+ Nuevo Cliente</a>
-        </div>
-
-        <!-- Búsqueda en tiempo real -->
-        <div class="row g-2 mt-3 mb-2">
-            <div class="col-md-4 col-8">
-                <input type="text" id="buscarCliente" class="form-control" placeholder="Buscar cliente..." autocomplete="off">
-            </div>
-        </div>
-
-        <!-- Contenedor dinámico -->
-        <div id="tablaClientes">
-            <?= render_clientes_table($pdo, $filtro, 10, 1) ?>
-        </div>
+        <!-- PAGINACIÓN -->
+        <?php if ($totalPages > 1): ?>
+        <nav>
+            <ul class="pagination justify-content-center">
+                <li class="page-item <?=($page <= 1 ? 'disabled' : '')?>">
+                    <a class="page-link" href="?action=list&page=<?=($page-1)?>">Anterior</a>
+                </li>
+                <?php for ($i=1; $i<=$totalPages; $i++): ?>
+                    <li class="page-item <?=($i == $page ? 'active' : '')?>">
+                        <a class="page-link" href="?action=list&page=<?=$i?>"><?=$i?></a>
+                    </li>
+                <?php endfor; ?>
+                <li class="page-item <?=($page >= $totalPages ? 'disabled' : '')?>">
+                    <a class="page-link" href="?action=list&page=<?=($page+1)?>">Siguiente</a>
+                </li>
+            </ul>
+        </nav>
+        <?php endif; ?>
     </div>
 
     <script>
-    // --- Debounce (espera 300 ms antes de buscar) ---
-    let timer = null;
-    const input = document.getElementById('buscarCliente');
-    const tabla = document.getElementById('tablaClientes');
-
-    input.addEventListener('keyup', function() {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-            const texto = this.value.trim();
-            fetch(`/admin/clientes.php?action=ajax_search&filtro=${encodeURIComponent(texto)}`)
-                .then(r => r.text())
-                .then(html => {
-                    tabla.innerHTML = html;
-                    activarToggles();
-                });
-        }, 300);
-    });
-
-    function activarToggles() {
-        document.querySelectorAll('.toggle-status').forEach(chk => {
-            chk.addEventListener('change', function() {
-                fetch('/admin/toggle_cliente.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: 'id='+this.dataset.id+'&estatus='+(this.checked ? 1 : 0)
-                });
+    document.querySelectorAll('.toggle-status').forEach(chk => {
+        chk.addEventListener('change', function() {
+            fetch('/admin/toggle_cliente.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'id='+this.dataset.id+'&estatus='+(this.checked ? 1 : 0)
             });
         });
-    }
-    activarToggles();
+    });
     </script>
     <?php
 }
