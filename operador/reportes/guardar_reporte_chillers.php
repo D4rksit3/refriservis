@@ -570,7 +570,6 @@ $pdf->Ln(3);
                 $pdf->Ln(2);
 
                 // --- Imágenes (2 por fila) ---
-               // --- Imágenes (2 por fila) ---
 // --- Imágenes (ajustadas con proporción real) ---
 if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
     $maxWidth = 85;   // ancho máximo por imagen en mm
