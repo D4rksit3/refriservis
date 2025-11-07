@@ -223,30 +223,27 @@ function generarPDF(PDO $pdo, int $id) {
     }
 
 function corregirOrientacion($rutaImagen) {
+    if (!file_exists($rutaImagen)) return $rutaImagen;
     if (function_exists('exif_read_data')) {
         $exif = @exif_read_data($rutaImagen);
         if (!empty($exif['Orientation'])) {
-            $image = imagecreatefromstring(file_get_contents($rutaImagen));
+            $image = @imagecreatefromstring(@file_get_contents($rutaImagen));
+            if (!$image) return $rutaImagen;
             switch ($exif['Orientation']) {
-                case 3:
-                    $image = imagerotate($image, 180, 0);
-                    break;
-                case 6:
-                    $image = imagerotate($image, -90, 0);
-                    break;
-                case 8:
-                    $image = imagerotate($image, 90, 0);
-                    break;
+                case 3: $image = imagerotate($image, 180, 0); break;
+                case 6: $image = imagerotate($image, -90, 0); break;
+                case 8: $image = imagerotate($image, 90, 0); break;
+                default: return $rutaImagen;
             }
-            // Reescribimos la imagen corregida temporalmente
             $tmpPath = sys_get_temp_dir() . '/' . uniqid('img_') . '.jpg';
             imagejpeg($image, $tmpPath, 90);
             imagedestroy($image);
             return $tmpPath;
         }
     }
-    return $rutaImagen; // si no tiene orientación, se devuelve igual
+    return $rutaImagen;
 }
+
 
 
 
