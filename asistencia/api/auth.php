@@ -57,3 +57,4 @@ if ($action === 'login') {
     // si es GET sin action, devolver info básica (opcional)
     json(['ok'=>false,'msg'=>'Acción no definida']);
 }
+
