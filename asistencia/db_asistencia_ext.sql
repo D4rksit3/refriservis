@@ -66,6 +66,7 @@ CREATE TABLE incidencias (
 
 -- -----------------------------------------------------
 -- Tabla: zonas_autorizadas (para validar ubicación GPS)
+
 -- -----------------------------------------------------
 CREATE TABLE zonas_autorizadas (
     id INT AUTO_INCREMENT PRIMARY KEY,
