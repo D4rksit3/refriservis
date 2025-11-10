@@ -2,8 +2,8 @@
 // api/conexion.php
 $host = "localhost";
 $dbname = "db_asistencia_ext";
-$user = "root";
-$pass = "";
+$user = "refriservis";
+$pass = "123456";
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass, [
