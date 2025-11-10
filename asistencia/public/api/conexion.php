@@ -1,7 +1,7 @@
 <?php
 // api/conexion.php
 $host = "localhost";
-$dbname = "asistencia_db";
+$dbname = "db_asistencia_ext";
 $user = "refriservis";
 $pass = "123456";
 
