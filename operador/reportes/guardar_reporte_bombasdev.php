@@ -124,146 +124,140 @@ function generarPDF(PDO $pdo, int $id) {
         public function getRightMargin() { return $this->rMargin; }
             
             
-    public function Header() {
-    $left = 10; 
-    $top  = 10;
+        public function Header() {
+            $left = 10; 
+            $top  = 10;
 
-    // Configuración de anchos
-    $logoW   = 40;
-    $centerW = 110;
-    $numW    = 40;
+            // Configuración de anchos
+            $logoW   = 40;
+            $centerW = 110;
+            $numW    = 40;
 
-    // Texto central
-    $this->SetFont('Arial','B',12);
-    $text = txt("CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS - BOMBA DE AGUA");
+            // Texto central
+            $this->SetFont('Arial','B',11);
+            $text = txt("CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS - BOMBA DE AGUA");
 
-    // Altura de línea
-    $lineH = 6;
-    $nbLines = substr_count($text, "\n") + 1;
-    $centerH = 7 + ($nbLines * $lineH) + 8;   // titulo + subtitulo + contacto
-    $cellH = max(35, $centerH);
+            // Altura de línea
+            $lineH = 5.5;
+            $nbLines = substr_count($text, "\n") + 1;
+            $centerH = 7 + ($nbLines * $lineH) + 8;
+            $cellH = max(35, $centerH);
 
-    // -------------------------------
-    // Logo
-    // -------------------------------
-    $this->Rect($left, $top, $logoW, $cellH);
-    if (file_exists(__DIR__ . '/../../lib/logo.jpeg')) {
-        $imgW = 30; $imgH = 18;
-        $imgX = $left + ($logoW - $imgW) / 2;
-        $imgY = $top + ($cellH - $imgH) / 2;
-        $this->Image(__DIR__ . '/../../lib/logo.jpeg', $imgX, $imgY, $imgW, $imgH);
-    }
+            // -------------------------------
+            // Logo con sombra sutil
+            // -------------------------------
+            $this->SetDrawColor(13, 110, 253); // Color primario #0d6efd
+            $this->SetLineWidth(0.5);
+            $this->Rect($left, $top, $logoW, $cellH);
+            
+            if (file_exists(__DIR__ . '/../../lib/logo.jpeg')) {
+                $imgW = 32; $imgH = 20;
+                $imgX = $left + ($logoW - $imgW) / 2;
+                $imgY = $top + ($cellH - $imgH) / 2;
+                $this->Image(__DIR__ . '/../../lib/logo.jpeg', $imgX, $imgY, $imgW, $imgH);
+            }
 
-    // -------------------------------
-    // Bloque central
-    // -------------------------------
-    $this->SetXY($left + $logoW, $top);
+            // -------------------------------
+            // Bloque central - Gradiente azul
+            // -------------------------------
+            $this->SetXY($left + $logoW, $top);
 
-    // Título principal
-    $this->SetFont('Arial', 'B', 10);
-    $this->SetFillColor(207, 226, 243);
-    $this->Cell($centerW, 7, txt("FORMATO DE CALIDAD"), 1, 2, 'C', true);
+            // Título principal con fondo azul principal
+            $this->SetFont('Arial', 'B', 10);
+            $this->SetFillColor(13, 110, 253); // #0d6efd
+            $this->SetTextColor(255, 255, 255);
+            $this->Cell($centerW, 7, txt("FORMATO DE CALIDAD"), 1, 2, 'C', true);
 
-    // Subtítulo
-    $this->SetFont('Arial','B',12);
-    $this->MultiCell($centerW, $lineH, $text, 0, 'C');
+            // Subtítulo con texto oscuro
+            $this->SetTextColor(33, 37, 41); // Gris oscuro
+            $this->SetFont('Arial','B',10);
+            $this->MultiCell($centerW, $lineH, $text, 0, 'C');
 
-    // Guardar altura usada hasta aquí
-    $yAfterTitle = $this->GetY();
+            $yAfterTitle = $this->GetY();
 
-    // Contacto en la parte inferior del cuadro central
-    $contacto = txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com");
-    $this->SetXY($left + $logoW, $top + $cellH - 8);
-    $this->SetFont('Arial','',8);
-    $this->Cell($centerW, 8, $contacto, 1, 2, 'C');
+            // Contacto con fondo azul claro
+            $contacto = txt("Oficina: (01) 6557907  |  Emergencias: +51 943 048 606  |  ventas@refriservissac.com");
+            $this->SetXY($left + $logoW, $top + $cellH - 8);
+            $this->SetFont('Arial','',7.5);
+            $this->SetFillColor(227, 242, 253); // Azul muy claro
+            $this->SetTextColor(13, 110, 253);
+            $this->Cell($centerW, 8, $contacto, 1, 2, 'C', true);
 
-    // Dibujar marco completo central
-    $this->Rect($left + $logoW, $top, $centerW, $cellH);
+            // Marco del bloque central
+            $this->SetDrawColor(13, 110, 253);
+            $this->Rect($left + $logoW, $top, $centerW, $cellH);
 
-    // -------------------------------
-    // Número
-    // -------------------------------
-    $this->SetXY($left + $logoW + $centerW, $top);
-    $this->Rect($this->GetX(), $this->GetY(), $numW, $cellH);
+            // -------------------------------
+            // Número con estilo destacado
+            // -------------------------------
+            $this->SetXY($left + $logoW + $centerW, $top);
+            $this->SetDrawColor(13, 110, 253);
+            $this->Rect($this->GetX(), $this->GetY(), $numW, $cellH);
 
-    $this->SetFont('Arial','',9);
-    $this->SetXY($this->GetX(), $this->GetY() + ($cellH/2) - 3);
-    $this->Cell($numW, 6, "001-N" . chr(176) . str_pad($this->mantenimientoId ?? '', 6, "0", STR_PAD_LEFT), 0, 1, 'C');
+            $this->SetFont('Arial','B',11);
+            $this->SetTextColor(13, 110, 253);
+            $this->SetXY($this->GetX(), $this->GetY() + ($cellH/2) - 4);
+            $this->Cell($numW, 8, "N" . chr(176) . str_pad($this->mantenimientoId ?? '', 6, "0", STR_PAD_LEFT), 0, 1, 'C');
 
-    // -------------------------------
-    // Espaciado
-    // -------------------------------
-    $this->Ln(6);
-    $this->SetY($top + $cellH + 10);
+            // Resetear colores
+            $this->SetTextColor(0, 0, 0);
+            $this->SetDrawColor(0, 0, 0);
 
-}
-    public function Footer()
-        {
-            // Posición del footer (15 mm del final)
+            $this->Ln(4);
+            $this->SetY($top + $cellH + 10);
+        }
+        
+        public function Footer() {
             $this->SetY(-15);
-            $this->SetFont('Arial', 'I', 8);
+            $this->SetFont('Arial', 'I', 7.5);
+            $this->SetTextColor(108, 117, 125); // Gris medio
 
-            // Zona horaria y fecha/hora actual
             date_default_timezone_set('America/Lima');
             $fechaHora = date('d/m/Y H:i:s');
-
-            // Usuario generador del PDF
             $usuario = isset($this->user) ? $this->user : 'Desconocido';
 
-            // Texto del pie
-            $texto = utf8_decode("Página " . $this->PageNo() . " de {nb}    |    Generado por: $usuario    |    {$this->fechaModificacion}");
-
-            // Mostrar centrado
+            $texto = utf8_decode("Pág. " . $this->PageNo() . " de {nb}  |  Generado por: $usuario  |  {$this->fechaModificacion}");
             $this->Cell(0, 10, $texto, 0, 0, 'C');
+            
+            $this->SetTextColor(0, 0, 0);
+        }
+    }
+
+    /**
+     * Corrige la orientación de una imagen según sus metadatos EXIF.
+     */
+    function corregirOrientacion($ruta) {
+        $ext = strtolower(pathinfo($ruta, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg', 'jpeg'])) {
+            return $ruta;
         }
 
-    }
-
-
-
-/**
- * Corrige la orientación de una imagen según sus metadatos EXIF.
- */
-function corregirOrientacion($ruta)
-{
-    $ext = strtolower(pathinfo($ruta, PATHINFO_EXTENSION));
-    if (!in_array($ext, ['jpg', 'jpeg'])) {
-        return $ruta; // solo aplica a JPG
-    }
-
-    $exif = @exif_read_data($ruta);
-    if (!isset($exif['Orientation'])) {
-        return $ruta;
-    }
-
-    $image = imagecreatefromjpeg($ruta);
-    switch ($exif['Orientation']) {
-        case 3:
-            $image = imagerotate($image, 180, 0);
-            break;
-        case 6:
-            $image = imagerotate($image, -90, 0);
-            break;
-        case 8:
-            $image = imagerotate($image, 90, 0);
-            break;
-        default:
+        $exif = @exif_read_data($ruta);
+        if (!isset($exif['Orientation'])) {
             return $ruta;
+        }
+
+        $image = imagecreatefromjpeg($ruta);
+        switch ($exif['Orientation']) {
+            case 3:
+                $image = imagerotate($image, 180, 0);
+                break;
+            case 6:
+                $image = imagerotate($image, -90, 0);
+                break;
+            case 8:
+                $image = imagerotate($image, 90, 0);
+                break;
+            default:
+                return $ruta;
+        }
+
+        $tmp = tempnam(sys_get_temp_dir(), 'img_') . '.jpg';
+        imagejpeg($image, $tmp, 90);
+        imagedestroy($image);
+
+        return $tmp;
     }
-
-    // Guardar versión temporal corregida
-    $tmp = tempnam(sys_get_temp_dir(), 'img_') . '.jpg';
-    imagejpeg($image, $tmp, 90);
-    imagedestroy($image);
-
-    return $tmp;
-}
-
-
-
-
-
-
 
     // Construir PDF
     $pdf = new PDF('P','mm','A4');
@@ -275,43 +269,67 @@ function corregirOrientacion($ruta)
     $pdf->SetFont('Arial','',9);
 
     // ---------- DATOS DEL CLIENTE ----------
-    $pdf->SetFont('Arial','B',9);
-    $pdf->Cell(0,7, txt("Datos del Cliente"), 1, 1, 'C');
+    $pdf->SetFont('Arial','B',9.5);
+    $pdf->SetFillColor(13, 110, 253);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->Cell(0,8, txt("DATOS DEL CLIENTE"), 1, 1, 'C', true);
+    $pdf->SetTextColor(0, 0, 0);
 
     // Fila: Cliente + Supervisor
-    $pdf->SetFont('Arial','',9);
-    $pdf->Cell(25,7, txt("Cliente:"), 1, 0);
-    $pdf->Cell(90,7, txt($m['cliente'] ?? ''), 1, 0);
-    $pdf->Cell(25,7, txt("Supervisor:"), 1, 0);
-    $pdf->Cell(50,7, txt($m['supervisor'] ?? ''), 1, 1);
+    $pdf->SetFont('Arial','B',8.5);
+    $pdf->SetFillColor(240, 248, 255); // Azul muy claro
+    $pdf->Cell(28,7, txt("Cliente:"), 1, 0, 'L', true);
+    $pdf->SetFont('Arial','',8.5);
+    $pdf->Cell(87,7, txt($m['cliente'] ?? ''), 1, 0);
+    $pdf->SetFont('Arial','B',8.5);
+    $pdf->SetFillColor(240, 248, 255);
+    $pdf->Cell(28,7, txt("Supervisor:"), 1, 0, 'L', true);
+    $pdf->SetFont('Arial','',8.5);
+    $pdf->Cell(47,7, txt($m['supervisor'] ?? ''), 1, 1);
 
     // Fila: Dirección
-    $pdf->Cell(25,7, txt("Dirección:"), 1, 0);
-    $pdf->Cell(165,7, txt($m['direccion'] ?? ''), 1, 1);
+    $pdf->SetFont('Arial','B',8.5);
+    $pdf->SetFillColor(240, 248, 255);
+    $pdf->Cell(28,7, txt("Dirección:"), 1, 0, 'L', true);
+    $pdf->SetFont('Arial','',8.5);
+    $pdf->Cell(162,7, txt($m['direccion'] ?? ''), 1, 1);
 
     // Fila: Responsable + Teléfono
-    $pdf->Cell(25,7, txt("Responsable:"), 1, 0);
-    $pdf->Cell(90,7, txt($m['responsable'] ?? ''), 1, 0);
-    $pdf->Cell(25,7, txt("Teléfono:"), 1, 0);
-    $pdf->Cell(50,7, txt($m['telefono'] ?? ''), 1, 1);
+    $pdf->SetFont('Arial','B',8.5);
+    $pdf->SetFillColor(240, 248, 255);
+    $pdf->Cell(28,7, txt("Responsable:"), 1, 0, 'L', true);
+    $pdf->SetFont('Arial','',8.5);
+    $pdf->Cell(87,7, txt($m['responsable'] ?? ''), 1, 0);
+    $pdf->SetFont('Arial','B',8.5);
+    $pdf->SetFillColor(240, 248, 255);
+    $pdf->Cell(28,7, txt("Teléfono:"), 1, 0, 'L', true);
+    $pdf->SetFont('Arial','',8.5);
+    $pdf->Cell(47,7, txt($m['telefono'] ?? ''), 1, 1);
 
-    $pdf->Ln(4);
+    $pdf->Ln(5);
 
     // ---------- EQUIPOS ----------
-    // ---------- EQUIPOS ----------
-    $pdf->SetFont('Arial','B',9);
-    $pdf->Cell(0,7, txt("Datos de Identificación de los Equipos"), 1, 1, 'C');
-    // --- ENCABEZADO DE TABLA ---
+    $pdf->SetFont('Arial','B',9.5);
+    $pdf->SetFillColor(13, 110, 253);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->Cell(0,8, txt("DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS"), 1, 1, 'C', true);
+    $pdf->SetTextColor(0, 0, 0);
+    
+    // Encabezado de tabla
     $pdf->SetFont('Arial','B',8);
-    $pdf->Cell(10,7,"#",1,0,'C');
-    $pdf->Cell(40,7, txt("Identificador / Nombre"), 1, 0, 'C');
-    $pdf->Cell(40,7, txt("Marca"), 1, 0, 'C');
-    $pdf->Cell(40,7, txt("Modelo"), 1, 0, 'C');
-    $pdf->Cell(35,7, txt("Ubicación"), 1, 0, 'C');
-    $pdf->Cell(25,7, txt("Voltaje"), 1, 1, 'C');
+    $pdf->SetFillColor(227, 242, 253); // Azul claro
+    $pdf->SetTextColor(13, 110, 253);
+    $pdf->Cell(10,7,"#",1,0,'C',true);
+    $pdf->Cell(40,7, txt("Identificador / Nombre"), 1, 0, 'C',true);
+    $pdf->Cell(40,7, txt("Marca"), 1, 0, 'C',true);
+    $pdf->Cell(40,7, txt("Modelo"), 1, 0, 'C',true);
+    $pdf->Cell(35,7, txt("Ubicación"), 1, 0, 'C',true);
+    $pdf->Cell(25,7, txt("Voltaje"), 1, 1, 'C',true);
+    
     $pdf->SetFont('Arial','',8);
+    $pdf->SetTextColor(0, 0, 0);
 
-    // --- FILAS ---
+    // Filas de equipos
     for ($i = 1; $i <= 7; $i++) {
         if (!empty($equipos[$i])) {
             $eq = $equipos[$i];
@@ -319,60 +337,59 @@ function corregirOrientacion($ruta)
             $nombre = $eq['Nombre'] ?? '';
             $texto = trim($identificador . ' - ' . $nombre);
 
-            // Configuración general
             $lineHeight = 6;
             $colAnchos = [10, 40, 40, 40, 35, 25];
 
-            // Posición inicial de la fila
             $x = $pdf->GetX();
             $y = $pdf->GetY();
 
-            // --- 1️⃣ Calcular altura real del texto en la celda "Identificador / Nombre" ---
-            $pdf->SetXY($x + $colAnchos[0], $y); // después de la columna #
+            $pdf->SetXY($x + $colAnchos[0], $y);
             $pdf->MultiCell($colAnchos[1], $lineHeight, utf8_decode($texto), 0, 'L');
             $alturaTexto = $pdf->GetY() - $y;
 
-            // Altura final de la fila
             $cellHeight = max($lineHeight, $alturaTexto);
 
-            // --- 2️⃣ Dibujar las celdas ---
-            // Celda #
-            $pdf->SetXY($x, $y);
-            $pdf->Cell($colAnchos[0], $cellHeight, $i, 1, 0, 'C');
+            // Alternar color de fondo
+            $fillColor = ($i % 2 == 0) ? [248, 249, 250] : [255, 255, 255];
+            $pdf->SetFillColor($fillColor[0], $fillColor[1], $fillColor[2]);
 
-            // Celda Identificador / Nombre
+            $pdf->SetXY($x, $y);
+            $pdf->Cell($colAnchos[0], $cellHeight, $i, 1, 0, 'C', true);
+
             $pdf->SetXY($x + $colAnchos[0], $y);
             $pdf->MultiCell($colAnchos[1], $lineHeight, utf8_decode($texto), 1, 'L');
 
-            // Guardar nueva Y luego del MultiCell
             $newY = $pdf->GetY();
 
-            // Otras celdas alineadas horizontalmente
             $pdf->SetXY($x + $colAnchos[0] + $colAnchos[1], $y);
-            $pdf->Cell($colAnchos[2], $cellHeight, txt($eq['marca'] ?? ''), 1, 0, 'L');
-            $pdf->Cell($colAnchos[3], $cellHeight, txt($eq['modelo'] ?? ''), 1, 0, 'L');
-            $pdf->Cell($colAnchos[4], $cellHeight, txt($eq['ubicacion'] ?? ''), 1, 0, 'L');
-            $pdf->Cell($colAnchos[5], $cellHeight, txt($eq['voltaje'] ?? ''), 1, 1, 'L');
+            $pdf->Cell($colAnchos[2], $cellHeight, txt($eq['marca'] ?? ''), 1, 0, 'L', true);
+            $pdf->Cell($colAnchos[3], $cellHeight, txt($eq['modelo'] ?? ''), 1, 0, 'L', true);
+            $pdf->Cell($colAnchos[4], $cellHeight, txt($eq['ubicacion'] ?? ''), 1, 0, 'L', true);
+            $pdf->Cell($colAnchos[5], $cellHeight, txt($eq['voltaje'] ?? ''), 1, 1, 'L', true);
 
-            // Asegurar que el cursor quede al final de la fila
             $pdf->SetY(max($newY, $y + $cellHeight));
 
         } else {
-            // --- Fila vacía ---
-            $pdf->Cell(10,7,"",1,0);
-            $pdf->Cell(40,7,"",1,0);
-            $pdf->Cell(40,7,"",1,0);
-            $pdf->Cell(40,7,"",1,0);
-            $pdf->Cell(35,7,"",1,0);
-            $pdf->Cell(25,7,"",1,1);
+            $fillColor = ($i % 2 == 0) ? [248, 249, 250] : [255, 255, 255];
+            $pdf->SetFillColor($fillColor[0], $fillColor[1], $fillColor[2]);
+            
+            $pdf->Cell(10,7,$i,1,0,'C',true);
+            $pdf->Cell(40,7,"",1,0,'L',true);
+            $pdf->Cell(40,7,"",1,0,'L',true);
+            $pdf->Cell(40,7,"",1,0,'L',true);
+            $pdf->Cell(35,7,"",1,0,'L',true);
+            $pdf->Cell(25,7,"",1,1,'L',true);
         }
     }
 
-    $pdf->Ln(4);
+    $pdf->Ln(5);
 
     // ---------- PARÁMETROS ----------
-    $pdf->SetFont('Arial','B',9);
-    $pdf->Cell(0,7, txt("Parámetros de Funcionamiento (Antes / Después)"), 1, 1, 'C');
+    $pdf->SetFont('Arial','B',9.5);
+    $pdf->SetFillColor(13, 110, 253);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->Cell(0,8, txt("PARÁMETROS DE FUNCIONAMIENTO (Antes / Después)"), 1, 1, 'C', true);
+    $pdf->SetTextColor(0, 0, 0);
 
     $labels = [
         'Corriente eléctrica nominal (Amperios) L1',
@@ -386,215 +403,223 @@ function corregirOrientacion($ruta)
     $rightMargin = $pdf->getRightMargin();
     $usableW     = $pageWidth - $leftMargin - $rightMargin;
     
-    $labelW  = 55; // ancho para la columna de texto
-    $totalCols = 7 * 2; // Eq1A, Eq1D, Eq2A, Eq2D, etc.
-    $colW = ($usableW - $labelW) / $totalCols; // ajusta todo el ancho exacto
+    $labelW  = 55;
+    $totalCols = 7 * 2;
+    $colW = ($usableW - $labelW) / $totalCols;
 
     $pdf->SetFont('Arial','B',7);
-    $pdf->Cell($labelW,7, txt("Medida"), 1, 0, 'C');
+    $pdf->SetFillColor(227, 242, 253);
+    $pdf->SetTextColor(13, 110, 253);
+    $pdf->Cell($labelW,7, txt("Medida"), 1, 0, 'C', true);
     for ($i = 1; $i <= 7; $i++) {
-        $pdf->Cell($colW,7, txt("Eq{$i} A"), 1, 0, 'C');
-        $pdf->Cell($colW,7, txt("Eq{$i} D"), 1, 0, 'C');
+        $pdf->Cell($colW,7, txt("Eq{$i} A"), 1, 0, 'C', true);
+        $pdf->Cell($colW,7, txt("Eq{$i} D"), 1, 0, 'C', true);
     }
     $pdf->Ln();
 
     $pdf->SetFont('Arial','',7);
+    $pdf->SetTextColor(0, 0, 0);
+    
+    $rowCounter = 0;
     foreach ($labels as $label) {
-        $pdf->Cell($labelW,7, txt($label), 1, 0);
+        $fillColor = ($rowCounter % 2 == 0) ? [248, 249, 250] : [255, 255, 255];
+        $pdf->SetFillColor($fillColor[0], $fillColor[1], $fillColor[2]);
+        
+        $pdf->Cell($labelW,7, txt($label), 1, 0, 'L', true);
         $hash = md5($label);
         for ($i = 1; $i <= 7; $i++) {
             $antes = $parametrosStored[$hash][$i]['antes'] ?? ($parametrosStored[$label][$i]['antes'] ?? "");
             $desp  = $parametrosStored[$hash][$i]['despues'] ?? ($parametrosStored[$label][$i]['despues'] ?? "");
-            $pdf->Cell($colW,7, txt((string)$antes), 1, 0);
-            $pdf->Cell($colW,7, txt((string)$desp), 1, 0);
+            $pdf->Cell($colW,7, txt((string)$antes), 1, 0, 'C', true);
+            $pdf->Cell($colW,7, txt((string)$desp), 1, 0, 'C', true);
         }
         $pdf->Ln();
+        $rowCounter++;
     }
-    $pdf->Ln(4);
+    $pdf->Ln(5);
 
-    
+    // ---------- NUEVA PÁGINA - ACTIVIDADES ----------
+    $pdf->AddPage();
 
-      // ---------- PARÁMETROS ----------
-   /*  $pdf->SetFont('Arial','B',9);
-    $pdf->Cell(0,7,txt("Parámetros"),1,1,'C');
-    $pdf->SetFont('Arial','',9);
-    foreach($parametros as $k=>$v) {
-        $pdf->Cell(0,6,txt("$k: $v"),1,1);
-    }
-    $pdf->Ln(3); */
- 
-    // ---------- NUEVA PÁGINA ----------
+    $nameW = 80;
+    $dayW  = 10;
+    $freqW = 8;
+    $lineH = 5;
+    $bottomMargin = 15;
 
+    $totalWidth = $nameW + ($dayW * 7) + ($freqW * 4);
 
+    $pdf->SetFont('Arial','B',9.5);
+    $pdf->SetFillColor(13, 110, 253);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->Cell($totalWidth,8, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C', true);
+    $pdf->SetTextColor(0, 0, 0);
 
-
-        
-    // ---------- NUEVA PÁGINA ----------
- 
-   // ---------- ACTIVIDADES A REALIZAR ----------
-// ---------- ACTIVIDADES A REALIZAR ----------
-$pdf->AddPage();
-
-$nameW = 80;
-$dayW  = 10;
-$freqW = 8;
-$lineH = 5;
-$bottomMargin = 15;
-
-// Calcular ancho total exacto
-$totalWidth = $nameW + ($dayW * 7) + ($freqW * 4);
-
-// Título alineado con el cuadro
-$pdf->SetFont('Arial','B',9);
-$pdf->Cell($totalWidth,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
-
-// Cabecera
-$pdf->SetFont('Arial','B',7);
-$pdf->Cell($nameW,6, txt("Actividad"), 1, 0, 'C');
-for ($i = 1; $i <= 7; $i++) {
-    $pdf->Cell($dayW,6, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
-}
-$pdf->Cell($freqW,6,"B",1,0,'C');
-$pdf->Cell($freqW,6,"T",1,0,'C');
-$pdf->Cell($freqW,6,"S",1,0,'C');
-$pdf->Cell($freqW,6,"A",1,1,'C');
-
-// Lista de actividades
-$actividadesList = [
-    "Inspección ocular del equipo en funcionamiento",
-    "Verificación del estado de superficies y aseo general del equipo",
-    "Medición y registro de parámetros de operación (amperaje, voltaje, potencia)",
-    "Inspección de estado del sello mecánico",
-    "Inspección de manómetros y termómetros",
-    "Inspección de rodamientos de motor y bomba centrifuga",
-    "Inspección del acoplamiento y ajuste de prisioneros",
-    "Medición y registro de consumos eléctricos",
-    "Ajuste de conexiones eléctricas del motor",
-    "Revisión de variador de velocidad",
-    "Lubricación de rodamientos de acuerdo a recomendaciones del fabricante",
-    "Revisión de los pernos de la base y motor (requiere uso de torquímetro)",
-    "Pintado externo del motor y bomba manteniendo color original (dieléctrica)",
-    "Prueba de funcionamiento y verificación de condiciones operativas",
-    "Lubricación y engrase de la bomba.",
-    "Revisión y Ajuste de la prensa estopa y/o sello mecánico",
-    "Revisión y/o cambio de empaquetaduras de O-rings",
-    "Revisión y cambio de borneras eléctricas",
-    "Cambio de empaquetaduras, sellos y rodamientos en caso se requiera",
-    "Pintado de las válvulas y de las tuberías de distribución si lo requiere",
-    "Megar y registrar el estado del aislamiento del motor eléctrico",
-];
-
-$actividadesBD = json_decode($m['actividades'] ?? '[]', true);
-if (!is_array($actividadesBD)) $actividadesBD = [];
-
-// Función para calcular el número de líneas
-$getNbLines = function($pdf, $w, $txt) use ($lineH) {
-    $txt = trim(str_replace("\r", '', $txt));
-    if ($txt === '') return 1;
-    $words = explode(' ', $txt);
-    $nb = 1;
-    $lineWidth = 0;
-    foreach ($words as $word) {
-        $wordWidth = $pdf->GetStringWidth($word . ' ');
-        if ($lineWidth + $wordWidth <= $w) {
-            $lineWidth += $wordWidth;
-        } else {
-            $nb++;
-            $lineWidth = $wordWidth;
-        }
-    }
-    return $nb;
-};
-
-// Función para reimprimir cabecera al hacer salto de página
-$printHeader = function() use ($pdf, $nameW, $dayW, $freqW) {
-    $pdf->SetFont('Arial','B',9);
-    $pdf->Cell(0,7, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C');
+    // Cabecera
     $pdf->SetFont('Arial','B',7);
-    $pdf->Cell($nameW,6, txt("Actividad"), 1, 0, 'C');
+    $pdf->SetFillColor(227, 242, 253);
+    $pdf->SetTextColor(13, 110, 253);
+    $pdf->Cell($nameW,6, txt("Actividad"), 1, 0, 'C', true);
     for ($i = 1; $i <= 7; $i++) {
-        $pdf->Cell($dayW,6, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C');
+        $pdf->Cell($dayW,6, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C', true);
     }
-    $pdf->Cell($freqW,6,"B",1,0,'C');
-    $pdf->Cell($freqW,6,"T",1,0,'C');
-    $pdf->Cell($freqW,6,"S",1,0,'C');
-    $pdf->Cell($freqW,6,"A",1,1,'C');
+    $pdf->Cell($freqW,6,"B",1,0,'C', true);
+    $pdf->Cell($freqW,6,"T",1,0,'C', true);
+    $pdf->Cell($freqW,6,"S",1,0,'C', true);
+    $pdf->Cell($freqW,6,"A",1,1,'C', true);
+    $pdf->SetTextColor(0, 0, 0);
+
+    $actividadesList = [
+        "Inspección ocular del equipo en funcionamiento",
+        "Verificación del estado de superficies y aseo general del equipo",
+        "Medición y registro de parámetros de operación (amperaje, voltaje, potencia)",
+        "Inspección de estado del sello mecánico",
+        "Inspección de manómetros y termómetros",
+        "Inspección de rodamientos de motor y bomba centrifuga",
+        "Inspección del acoplamiento y ajuste de prisioneros",
+        "Medición y registro de consumos eléctricos",
+        "Ajuste de conexiones eléctricas del motor",
+        "Revisión de variador de velocidad",
+        "Lubricación de rodamientos de acuerdo a recomendaciones del fabricante",
+        "Revisión de los pernos de la base y motor (requiere uso de torquímetro)",
+        "Pintado externo del motor y bomba manteniendo color original (dieléctrica)",
+        "Prueba de funcionamiento y verificación de condiciones operativas",
+        "Lubricación y engrase de la bomba.",
+        "Revisión y Ajuste de la prensa estopa y/o sello mecánico",
+        "Revisión y/o cambio de empaquetaduras de O-rings",
+        "Revisión y cambio de borneras eléctricas",
+        "Cambio de empaquetaduras, sellos y rodamientos en caso se requiera",
+        "Pintado de las válvulas y de las tuberías de distribución si lo requiere",
+        "Megar y registrar el estado del aislamiento del motor eléctrico",
+    ];
+
+    $actividadesBD = json_decode($m['actividades'] ?? '[]', true);
+    if (!is_array($actividadesBD)) $actividadesBD = [];
+
+    $getNbLines = function($pdf, $w, $txt) use ($lineH) {
+        $txt = trim(str_replace("\r", '', $txt));
+        if ($txt === '') return 1;
+        $words = explode(' ', $txt);
+        $nb = 1;
+        $lineWidth = 0;
+        foreach ($words as $word) {
+            $wordWidth = $pdf->GetStringWidth($word . ' ');
+            if ($lineWidth + $wordWidth <= $w) {
+                $lineWidth += $wordWidth;
+            } else {
+                $nb++;
+                $lineWidth = $wordWidth;
+            }
+        }
+        return $nb;
+    };
+
+    $printHeader = function() use ($pdf, $nameW, $dayW, $freqW, $totalWidth) {
+        $pdf->SetFont('Arial','B',9.5);
+        $pdf->SetFillColor(13, 110, 253);
+        $pdf->SetTextColor(255, 255, 255);
+        $pdf->Cell($totalWidth,8, txt("ACTIVIDADES A REALIZAR"), 1, 1, 'C', true);
+        $pdf->SetTextColor(0, 0, 0);
+        
+        $pdf->SetFont('Arial','B',7);
+        $pdf->SetFillColor(227, 242, 253);
+        $pdf->SetTextColor(13, 110, 253);
+        $pdf->Cell($nameW,6, txt("Actividad"), 1, 0, 'C', true);
+        for ($i = 1; $i <= 7; $i++) {
+            $pdf->Cell($dayW,6, str_pad($i,2,'0',STR_PAD_LEFT), 1, 0, 'C', true);
+        }
+        $pdf->Cell($freqW,6,"B",1,0,'C', true);
+        $pdf->Cell($freqW,6,"T",1,0,'C', true);
+        $pdf->Cell($freqW,6,"S",1,0,'C', true);
+        $pdf->Cell($freqW,6,"A",1,1,'C', true);
+        $pdf->SetFont('Arial','',7);
+        $pdf->SetTextColor(0, 0, 0);
+    };
+
     $pdf->SetFont('Arial','',7);
-};
+    $rowCounter = 0;
+    
+    foreach ($actividadesList as $idx => $nombreRaw) {
+        $actividadBD = $actividadesBD[$idx] ?? ["dias" => [], "frecuencia" => null];
+        $diasMarcados = $actividadBD['dias'] ?? [];
+        if (!is_array($diasMarcados)) {
+            $diasMarcados = json_decode($diasMarcados, true) ?: [];
+        }
 
-// Generar filas
-foreach ($actividadesList as $idx => $nombreRaw) {
-    $actividadBD = $actividadesBD[$idx] ?? ["dias" => [], "frecuencia" => null];
-    $diasMarcados = $actividadBD['dias'] ?? [];
-    if (!is_array($diasMarcados)) {
-        $diasMarcados = json_decode($diasMarcados, true) ?: [];
+        $nombre = txt($nombreRaw);
+        $nb = $getNbLines($pdf, $nameW - 2, $nombre);
+        $h = $nb * $lineH;
+
+        $pageHeight = 297;
+        if ($pdf->GetY() + $h + $bottomMargin > $pageHeight) {
+            $pdf->AddPage();
+            $printHeader();
+            $rowCounter = 0;
+        }
+
+        $fillColor = ($rowCounter % 2 == 0) ? [248, 249, 250] : [255, 255, 255];
+        $pdf->SetFillColor($fillColor[0], $fillColor[1], $fillColor[2]);
+
+        $x = $pdf->GetX();
+        $y = $pdf->GetY();
+
+        $pdf->MultiCell($nameW, $lineH, $nombre, 1, 'L', true);
+
+        $usedHeight = $pdf->GetY() - $y;
+        $pdf->SetXY($x + $nameW, $y);
+
+        for ($d = 1; $d <= 7; $d++) {
+            $marca = in_array($d, $diasMarcados, true) ? "X" : "";
+            $pdf->Cell($dayW, $usedHeight, $marca, 1, 0, 'C', true);
+        }
+
+        foreach (["B","T","S","A"] as $f) {
+            $marca = ($actividadBD['frecuencia'] === $f) ? "X" : "";
+            $pdf->Cell($freqW, $usedHeight, $marca, 1, 0, 'C', true);
+        }
+
+        $pdf->Ln($usedHeight);
+        $rowCounter++;
     }
 
-    $nombre = txt($nombreRaw);
-    $nb = $getNbLines($pdf, $nameW - 2, $nombre);
-    $h = $nb * $lineH;
+    $pdf->Ln(3);
 
-    $pageHeight = 297; // A4
-    if ($pdf->GetY() + $h + $bottomMargin > $pageHeight) {
-        $pdf->AddPage();
-        $printHeader();
-    }
-
-    $x = $pdf->GetX();
-    $y = $pdf->GetY();
-
-    $pdf->MultiCell($nameW, $lineH, $nombre, 1, 'L');
-
-    $usedHeight = $pdf->GetY() - $y;
-    $pdf->SetXY($x + $nameW, $y);
-
-    for ($d = 1; $d <= 7; $d++) {
-        $marca = in_array($d, $diasMarcados, true) ? "X" : "";
-        $pdf->Cell($dayW, $usedHeight, $marca, 1, 0, 'C');
-    }
-
-    foreach (["B","T","S","A"] as $f) {
-        $marca = ($actividadBD['frecuencia'] === $f) ? "X" : "";
-        $pdf->Cell($freqW, $usedHeight, $marca, 1, 0, 'C');
-    }
-
-    $pdf->Ln($usedHeight);
-}
-
-$pdf->Ln(2);
-
-
-
-
-// ---------- TRABAJOS ----------
-    $pdf->SetFont('Arial','B',9);
-    $pdf->MultiCell(0,7, txt("Trabajos Realizados:\n" . ($m['trabajos'] ?? '')), 1);
-    $pdf->Ln(2);
+    // ---------- TRABAJOS REALIZADOS ----------
+    $pdf->SetFont('Arial','B',9.5);
+    $pdf->SetFillColor(13, 110, 253);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->Cell(0,8, txt("TRABAJOS REALIZADOS"), 1, 1, 'C', true);
+    $pdf->SetTextColor(0, 0, 0);
+    
+    $pdf->SetFont('Arial','',9);
+    $pdf->SetFillColor(248, 249, 250);
+    $pdf->MultiCell(0,6, txt($m['trabajos'] ?? 'Sin trabajos registrados'), 1, 'L', true);
+    $pdf->Ln(3);
 
     // ---------- OBSERVACIONES ----------
-   /* $pdf->AddPage();
-    $pdf->SetFont('Arial','B',10);
-    $pdf->Cell(0,8, utf8_decode("Observaciones y Recomendaciones:"), 0, 1, 'L');
-    $pdf->Ln(2); */
-
     if (!empty($m['observaciones'])) {
         $observaciones = json_decode($m['observaciones'], true);
 
         if (is_array($observaciones)) {
             foreach ($observaciones as $obs) {
                 $pdf->AddPage();
-                // === Dibuja el marco general ===
+                
                 $xStart = 10;
                 $yStart = $pdf->GetY();
-                $pdf->SetDrawColor(180,180,180);
-                $pdf->SetLineWidth(0.2);
+                $pdf->SetDrawColor(13, 110, 253);
+                $pdf->SetLineWidth(0.3);
 
-                // Guarda posición para calcular alto dinámico
                 $startY = $pdf->GetY();
 
-                // --- Contenido ---
-                $pdf->SetFont('Arial','B',9);
+                // Encabezado de observación
+                $pdf->SetFont('Arial','B',9.5);
+                $pdf->SetFillColor(13, 110, 253);
+                $pdf->SetTextColor(255, 255, 255);
+                $pdf->Cell(0,8, txt("OBSERVACIÓN"), 1, 1, 'C', true);
+                $pdf->SetTextColor(0, 0, 0);
+                $pdf->Ln(2);
 
+                // Equipo
                 $codigoEquipo = $obs['equipo'] ?? '';
                 $nombreEquipo = '';
 
@@ -607,108 +632,131 @@ $pdf->Ln(2);
                     }
                 }
 
-                $pdf->Cell(0,6, utf8_decode("Equipo: " . $codigoEquipo . " - " . $nombreEquipo), 0, 1, 'L');
-
-
-
+                $pdf->SetFont('Arial','B',9);
+                $pdf->SetFillColor(227, 242, 253);
+                $pdf->SetTextColor(13, 110, 253);
+                $pdf->Cell(25,7, txt("Equipo:"), 1, 0, 'L', true);
                 $pdf->SetFont('Arial','',9);
-                $texto = isset($obs['texto']) ? $obs['texto'] : '';
-                $pdf->MultiCell(0,6, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', "Observación: " . $texto), 0, 'L');
+                $pdf->SetTextColor(0, 0, 0);
+                $pdf->SetFillColor(255, 255, 255);
+                $pdf->Cell(0,7, utf8_decode($codigoEquipo . " - " . $nombreEquipo), 1, 1, 'L', true);
                 $pdf->Ln(2);
 
-                // --- Imágenes (2 por fila) ---
-// --- Imágenes (ajustadas con proporción real y rotación corregida) ---
-if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
-    $maxWidth = 85;   // ancho máximo por imagen en mm
-    $maxHeight = 65;  // alto máximo por imagen en mm
-    $margin = 10;     // espacio horizontal entre imágenes
-    $count = 0;
+                // Texto de observación
+                $pdf->SetFont('Arial','B',9);
+                $pdf->SetFillColor(227, 242, 253);
+                $pdf->SetTextColor(13, 110, 253);
+                $pdf->Cell(0,7, txt("Detalle:"), 1, 1, 'L', true);
+                $pdf->SetTextColor(0, 0, 0);
+                
+                $pdf->SetFont('Arial','',9);
+                $texto = isset($obs['texto']) ? $obs['texto'] : '';
+                $pdf->SetFillColor(248, 249, 250);
+                $pdf->MultiCell(0,6, iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $texto), 1, 'L', true);
+                $pdf->Ln(3);
 
-    foreach ($obs['imagenes'] as $imgPath) {
-        $realPath = __DIR__ . '/' . $imgPath;
+                // Imágenes
+                if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
+                    $pdf->SetFont('Arial','B',9);
+                    $pdf->SetFillColor(227, 242, 253);
+                    $pdf->SetTextColor(13, 110, 253);
+                    $pdf->Cell(0,7, txt("Evidencias Fotográficas:"), 1, 1, 'L', true);
+                    $pdf->SetTextColor(0, 0, 0);
+                    $pdf->Ln(2);
 
-        if (file_exists($realPath)) {
-            // --- Corregir orientación EXIF (si existe) ---
-            $correctedPath = corregirOrientacion($realPath);
+                    $maxWidth = 85;
+                    $maxHeight = 65;
+                    $margin = 10;
+                    $count = 0;
 
-            // --- Obtener tamaño original ---
-            [$width, $height] = getimagesize($correctedPath);
+                    foreach ($obs['imagenes'] as $imgPath) {
+                        $realPath = __DIR__ . '/' . $imgPath;
 
-            // --- Escalar proporcionalmente ---
-            $ratio = min($maxWidth / $width, $maxHeight / $height);
-            $w_mm = $width * $ratio;
-            $h_mm = $height * $ratio;
+                        if (file_exists($realPath)) {
+                            $correctedPath = corregirOrientacion($realPath);
+                            [$width, $height] = getimagesize($correctedPath);
 
-            // --- Posición X ---
-            $x = 15 + ($count % 2) * ($maxWidth + $margin);
-            $y = $pdf->GetY();
+                            $ratio = min($maxWidth / $width, $maxHeight / $height);
+                            $w_mm = $width * $ratio;
+                            $h_mm = $height * $ratio;
 
-            // --- Salto de página si no cabe ---
-            if ($y + $h_mm > 270) {
-                $pdf->AddPage();
-                $y = $pdf->GetY();
-            }
+                            $x = 15 + ($count % 2) * ($maxWidth + $margin);
+                            $y = $pdf->GetY();
 
-            // --- Dibujar imagen ---
-            $pdf->Image($correctedPath, $x, $y, $w_mm, $h_mm);
+                            if ($y + $h_mm > 270) {
+                                $pdf->AddPage();
+                                $y = $pdf->GetY();
+                            }
 
-            // --- Si es la segunda imagen, salto de línea ---
-            if ($count % 2 == 1) {
-                $pdf->Ln($h_mm + 8);
-            }
+                            // Borde azul alrededor de la imagen
+                            $pdf->SetDrawColor(13, 110, 253);
+                            $pdf->SetLineWidth(0.5);
+                            $pdf->Rect($x - 2, $y - 2, $w_mm + 4, $h_mm + 4);
 
-            $count++;
-        } else {
-            $pdf->SetFont('Arial', 'I', 8);
-            $pdf->Cell(0, 5, "Imagen no encontrada: $imgPath", 0, 1, 'L');
-        }
-    }
+                            $pdf->Image($correctedPath, $x, $y, $w_mm, $h_mm);
 
-    // --- Si quedó una sola imagen sin pareja, baja igual ---
-    if ($count % 2 == 1) {
-        $pdf->Ln($maxHeight + 5);
-    }
-}
+                            if ($count % 2 == 1) {
+                                $pdf->Ln($h_mm + 8);
+                            }
 
+                            $count++;
+                        } else {
+                            $pdf->SetFont('Arial', 'I', 8);
+                            $pdf->SetTextColor(220, 53, 69); // Rojo
+                            $pdf->Cell(0, 5, "Imagen no encontrada: $imgPath", 0, 1, 'L');
+                            $pdf->SetTextColor(0, 0, 0);
+                        }
+                    }
 
+                    if ($count % 2 == 1) {
+                        $pdf->Ln($maxHeight + 5);
+                    }
+                }
 
-
-
-
-                // --- Fin del cuadro ---
                 $endY = $pdf->GetY();
+                $pdf->SetDrawColor(13, 110, 253);
                 $pdf->Rect($xStart, $yStart, 190 - $xStart, $endY - $yStart);
-                $pdf->Ln(6);
+                $pdf->Ln(4);
             }
         } else {
             $pdf->SetFont('Arial','I',9);
+            $pdf->SetTextColor(108, 117, 125);
             $pdf->Cell(0,6, utf8_decode("No hay observaciones registradas."), 0, 1);
+            $pdf->SetTextColor(0, 0, 0);
         }
     } else {
         $pdf->SetFont('Arial','I',9);
+        $pdf->SetTextColor(108, 117, 125);
         $pdf->Cell(0,6, utf8_decode("No hay observaciones registradas."), 0, 1);
+        $pdf->SetTextColor(0, 0, 0);
     }
 
-    $pdf->Ln(4);
+    $pdf->Ln(3);
 
-
-
-
-    // ---------- FOTOS ----------
+    // ---------- FOTOS DEL SERVICIO ----------
     if (!empty($fotos)) {
         $pdf->AddPage();
-        $pdf->SetFont('Arial','B',9);
-        $pdf->Cell(0,7, txt("Fotos del Servicio"), 1, 1, 'C');
-        $pdf->Ln(2);
+        $pdf->SetFont('Arial','B',9.5);
+        $pdf->SetFillColor(13, 110, 253);
+        $pdf->SetTextColor(255, 255, 255);
+        $pdf->Cell(0,8, txt("FOTOS DEL SERVICIO"), 1, 1, 'C', true);
+        $pdf->SetTextColor(0, 0, 0);
+        $pdf->Ln(3);
 
         $colsPerRow = 3;
         $imgCellW = ($usableW - 4) / $colsPerRow;
         $imgCellH = 50;
         $colCounter = 0;
+        
         foreach ($fotos as $foto) {
             $x = $pdf->GetX();
             $y = $pdf->GetY();
+            
+            // Borde azul
+            $pdf->SetDrawColor(13, 110, 253);
+            $pdf->SetLineWidth(0.5);
             $pdf->Rect($x, $y, $imgCellW, $imgCellH);
+            
             $fpath = __DIR__ . "/../../uploads/fotos/" . $foto;
             if (file_exists($fpath)) {
                 $maxW = $imgCellW - 6;
@@ -722,34 +770,52 @@ if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
                 $pdf->Image($fpath, $imgX, $imgY, $drawW, $drawH);
             } else {
                 $pdf->SetXY($x, $y + ($imgCellH/2) - 3);
+                $pdf->SetFont('Arial','I',8);
+                $pdf->SetTextColor(220, 53, 69);
                 $pdf->Cell($imgCellW, 6, txt("[No encontrada]"), 0, 0, 'C');
+                $pdf->SetTextColor(0, 0, 0);
             }
+            
             $pdf->SetXY($x + $imgCellW + 2, $y);
             $colCounter++;
+            
             if ($colCounter >= $colsPerRow) {
                 $pdf->Ln($imgCellH + 4);
                 $colCounter = 0;
             }
         }
+        
         if ($colCounter > 0) $pdf->Ln($imgCellH + 4);
     }
 
     // ---------- FIRMAS ----------
-    $pdf->Ln(4);
-    $pdf->SetFont('Arial','',9);
+    $pdf->Ln(6);
+    $pdf->SetFont('Arial','B',9.5);
+    $pdf->SetFillColor(13, 110, 253);
+    $pdf->SetTextColor(255, 255, 255);
+    $pdf->Cell(0,8, txt("FIRMAS Y CONFORMIDAD"), 1, 1, 'C', true);
+    $pdf->SetTextColor(0, 0, 0);
+    $pdf->Ln(3);
 
     $firmaBase = __DIR__ . "/../../uploads/firmas/";
     $sigW = ($usableW - 4) / 3;
-    $sigH = 30;
+    $sigH = 35;
+    
     $sigFiles = [
         $m['firma_cliente'] ?? null,
         $m['firma_supervisor'] ?? null,
         $m['firma_tecnico'] ?? null
     ];
+    
     foreach ($sigFiles as $sfile) {
         $x = $pdf->GetX();
         $y = $pdf->GetY();
+        
+        // Borde azul
+        $pdf->SetDrawColor(13, 110, 253);
+        $pdf->SetLineWidth(0.5);
         $pdf->Rect($x, $y, $sigW, $sigH);
+        
         if ($sfile && file_exists($firmaBase . $sfile)) {
             list($iw, $ih) = getimagesize($firmaBase . $sfile);
             $ratio = min(($sigW - 6) / $iw, ($sigH - 6) / $ih, 1);
@@ -759,19 +825,27 @@ if (!empty($obs['imagenes']) && is_array($obs['imagenes'])) {
             $imgY = $y + ($sigH - $drawH) / 2;
             $pdf->Image($firmaBase . $sfile, $imgX, $imgY, $drawW, $drawH);
         }
+        
         $pdf->SetXY($x + $sigW + 2, $y);
     }
+    
     $pdf->Ln($sigH + 2);
 
-    $pdf->Cell($sigW, 8, txt("Firma Cliente"), 1, 0, 'C');
-    $pdf->Cell($sigW, 8, txt("Firma Supervisor"), 1, 0, 'C');
-    $pdf->Cell($sigW, 8, txt("Firma Técnico"), 1, 1, 'C');
+    // Etiquetas de firmas
+    $pdf->SetFont('Arial','B',9);
+    $pdf->SetFillColor(227, 242, 253);
+    $pdf->SetTextColor(13, 110, 253);
+    $pdf->Cell($sigW, 7, txt("Firma Cliente"), 1, 0, 'C', true);
+    $pdf->Cell($sigW, 7, txt("Firma Supervisor"), 1, 0, 'C', true);
+    $pdf->Cell($sigW, 7, txt("Firma Técnico"), 1, 1, 'C', true);
 
     // Nombres debajo de las firmas
-    $pdf->SetFont('Arial','I',8);
-    $pdf->Cell($sigW, 6, txt($m['nombre_cliente'] ?? ''), 0, 0, 'C');
-    $pdf->Cell($sigW, 6, txt($m['nombre_supervisor'] ?? ''), 0, 0, 'C');
-    $pdf->Cell($sigW, 6, txt($m['tecnico'] ?? ''), 0, 1, 'C');
+    $pdf->SetFont('Arial','',8);
+    $pdf->SetTextColor(0, 0, 0);
+    $pdf->SetFillColor(248, 249, 250);
+    $pdf->Cell($sigW, 6, txt($m['nombre_cliente'] ?? ''), 1, 0, 'C', true);
+    $pdf->Cell($sigW, 6, txt($m['nombre_supervisor'] ?? ''), 1, 0, 'C', true);
+    $pdf->Cell($sigW, 6, txt($m['tecnico'] ?? ''), 1, 1, 'C', true);
 
     // ----------------- Forzar descarga -----------------
     if (ob_get_length()) {
