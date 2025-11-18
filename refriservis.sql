@@ -137,13 +137,7 @@ CREATE TABLE `usuarios` (
 -- Dumping data for table `usuarios`
 --
 
-LOCK TABLES `usuarios` WRITE;
-/*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
-INSERT INTO `usuarios` VALUES
-(4,'Administrador','jroque','$2y$10$v0tm.Ng5xIPkaZ/8xQolDu62AXHjhlup/oG0zsJDQUsnAeh6Krix2','admin','2025-09-13 00:24:05'),
-(5,'digitador','digitador','$2y$10$F92CzGIVLWi0TP.uQtojZetSCdNuGOXDI398TXI7IaRVtpYeCiOcW','digitador','2025-09-13 00:29:39'),
-(6,'operador','operador','$2y$10$M0Asave3NUWfMRHtnPTDKuVRgh3gywLiPxVVf1770WUlUN/w3UjtS','operador','2025-09-13 00:29:59');
-/*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
+
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
