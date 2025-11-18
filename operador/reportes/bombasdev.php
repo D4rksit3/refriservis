@@ -514,61 +514,291 @@ include __DIR__ . '/modal_equipo.php';
     accent-color: var(--primary-color);
   }
 
-  /* Responsive */
+  /* Responsive - Mobile First */
   @media (max-width: 768px) {
+    body {
+      font-size: 14px;
+    }
+
+    .container {
+      padding: 0;
+    }
+
     .page-header {
-      padding: 1.5rem 0;
+      padding: 1rem 0.5rem;
+      margin: 0 0 1rem;
+      border-radius: 0;
     }
 
     .page-header h5 {
-      font-size: 1.2rem;
+      font-size: 1rem;
+      line-height: 1.3;
+    }
+
+    .page-header .btn-back,
+    .page-header .btn-add-equipo {
+      font-size: 0.85rem;
+      padding: 0.5rem 0.75rem;
     }
 
     .section-title {
-      font-size: 0.95rem;
-      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+      padding: 0.75rem;
+      margin: 1rem 0 0.75rem;
     }
 
-    .custom-table {
+    .section-title i {
       font-size: 0.85rem;
     }
 
-    .custom-table thead th,
-    .custom-table tbody td {
+    /* Tablas en móvil */
+    .custom-table {
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .custom-table table {
+      font-size: 0.75rem;
+      min-width: 800px;
+    }
+
+    .custom-table thead th {
       padding: 0.5rem 0.25rem;
+      font-size: 0.7rem;
+      white-space: nowrap;
+    }
+
+    .custom-table tbody td {
+      padding: 0.4rem 0.2rem;
+    }
+
+    .custom-table input[type="text"] {
+      font-size: 0.75rem;
+      padding: 0.25rem;
+      min-width: 60px;
+    }
+
+    .custom-table input[type="checkbox"],
+    .custom-table input[type="radio"] {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Select más pequeño en móvil */
+    .form-select-sm {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+    }
+
+    /* Info card responsive */
+    .info-card {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 10px;
+    }
+
+    .info-card .info-row {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 0.5rem 0;
+      gap: 0.25rem;
+    }
+
+    .info-card .info-label {
+      min-width: auto;
+      font-size: 0.85rem;
+    }
+
+    .info-card .info-value {
+      font-size: 0.9rem;
+      padding-left: 1.5rem;
+    }
+
+    /* Header table en móvil */
+    .header-table {
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      overflow-x: auto;
+    }
+
+    .header-table table {
+      font-size: 0.7rem;
+      min-width: 600px;
+    }
+
+    .header-table td {
+      padding: 0.5rem;
+    }
+
+    .header-table img {
+      max-height: 40px !important;
+    }
+
+    .formato-badge {
+      font-size: 0.7rem !important;
+      padding: 0.25rem !important;
+    }
+
+    .report-number {
+      font-size: 0.85rem;
+      padding: 0.5rem;
+    }
+
+    /* Firmas en móvil */
+    .firma-container {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 10px;
+    }
+
+    .firma-label {
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
     }
 
     .firma-box {
       height: 120px;
+      border-width: 2px;
     }
 
     canvas {
       height: 120px;
     }
 
+    .firma-container input[type="text"] {
+      font-size: 0.85rem;
+      padding: 0.5rem;
+    }
+
+    .firma-container .btn {
+      font-size: 0.85rem;
+      padding: 0.5rem;
+    }
+
+    /* Observaciones en móvil */
+    .observacion-card {
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 10px;
+    }
+
+    .observacion-card h6 {
+      font-size: 0.95rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .observacion-card textarea {
+      font-size: 0.85rem;
+    }
+
+    .observacion-card .form-label {
+      font-size: 0.85rem;
+    }
+
+    /* Textarea general */
+    textarea.form-control {
+      font-size: 0.85rem;
+      min-height: 80px;
+    }
+
+    /* Botón principal */
     .btn-success {
-      font-size: 1rem;
-      padding: 0.875rem 1.5rem;
+      font-size: 0.95rem;
+      padding: 0.875rem 1.25rem;
+      width: 100%;
+    }
+
+    /* Preview de imágenes */
+    .img-thumbnail {
+      max-width: 80px !important;
+      max-height: 80px !important;
+    }
+
+    /* Ajuste para scrollbar de tablas */
+    .table-responsive {
+      margin-bottom: 0.5rem;
+    }
+
+    .table-responsive::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .table-responsive::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+      background: var(--primary-color);
+      border-radius: 10px;
     }
   }
 
   @media (max-width: 576px) {
-    .container {
-      padding: 0.5rem;
-    }
-
-    .info-card {
-      padding: 1rem;
-    }
-
-    .info-card .info-label {
-      min-width: 100px;
+    .page-header h5 {
       font-size: 0.9rem;
     }
 
-    .header-table td {
-      padding: 0.5rem;
+    .page-header .d-flex {
+      gap: 0.5rem !important;
+    }
+
+    .btn-back {
+      padding: 0.4rem 0.6rem !important;
+    }
+
+    .btn-back i {
+      font-size: 0.9rem;
+    }
+
+    .btn-add-equipo {
+      font-size: 0.75rem !important;
+      padding: 0.4rem 0.6rem !important;
+    }
+
+    .section-title {
       font-size: 0.85rem;
+      padding: 0.6rem;
+    }
+
+    .custom-table table {
+      font-size: 0.7rem;
+    }
+
+    .info-card .info-label {
+      font-size: 0.8rem;
+    }
+
+    .info-card .info-value {
+      font-size: 0.85rem;
+    }
+  }
+
+  /* Mejora de scroll horizontal para tablas */
+  .table-responsive {
+    position: relative;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Indicador visual de scroll */
+  @media (max-width: 768px) {
+    .custom-table::after {
+      content: '← Desliza para ver más →';
+      display: block;
+      text-align: center;
+      padding: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--primary-color);
+      background: rgba(13, 110, 253, 0.05);
+      border-radius: 0 0 10px 10px;
+    }
+
+    .custom-table.scrolled::after {
+      content: '';
+      display: none;
     }
   }
 
@@ -959,6 +1189,20 @@ const sigCliente = new SignaturePad(document.getElementById('firmaClienteCanvas'
 const sigSupervisor = new SignaturePad(document.getElementById('firmaSupervisorCanvas'));
 const sigTecnico = new SignaturePad(document.getElementById('firmaTecnicoCanvas'));
 
+// Detectar cuando se hace scroll en tablas (para ocultar el indicador)
+document.addEventListener('DOMContentLoaded', function() {
+  const tablas = document.querySelectorAll('.table-responsive');
+  tablas.forEach(tabla => {
+    tabla.addEventListener('scroll', function() {
+      if (this.scrollLeft > 10) {
+        this.closest('.custom-table')?.classList.add('scrolled');
+      } else {
+        this.closest('.custom-table')?.classList.remove('scrolled');
+      }
+    });
+  });
+});
+
 document.getElementById('formReporte').addEventListener('submit', function(e){
   if (!sigCliente.isEmpty()) {
     document.getElementById('firma_cliente_input').value = sigCliente.toDataURL();
@@ -982,7 +1226,12 @@ document.getElementById('formReporte').addEventListener('submit', function(e){
 });
 
 $(document).ready(function(){
-  $('.equipo-select').select2({ placeholder:"Buscar equipo...", allowClear:true, width:'100%' });
+  $('.equipo-select').select2({ 
+    placeholder:"Buscar equipo...", 
+    allowClear:true, 
+    width:'100%',
+    dropdownAutoWidth: true
+  });
 
   $('.equipo-select').each(function(){
     let id = $(this).val();
