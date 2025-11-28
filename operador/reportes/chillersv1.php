@@ -200,6 +200,68 @@ include __DIR__ . '/modal_equipo.php';
   canvas { width:100%; height:150px; }
   .img-preview { max-width:100%; max-height:150px; object-fit:contain; border:1px solid #ddd; padding:4px; background:#fff; }
   @media (max-width:576px){ .firma-box { height:120px } canvas{ height:120px } }
+
+
+    /* Estilos para preview de imágenes */
+  .image-preview-container {
+    position: relative;
+    display: inline-block;
+    margin: 5px;
+  }
+  
+  .image-preview-container img {
+    max-width: 120px;
+    max-height: 120px;
+    object-fit: cover;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .image-preview-container img:hover {
+    border-color: #0d6efd;
+    transform: scale(1.05);
+  }
+  
+  .btn-delete-image {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #dc3545;
+    color: white;
+    border: 2px solid white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+  }
+  
+  .btn-delete-image:hover {
+    background: #bb2d3b;
+    transform: scale(1.1);
+  }
+  
+  .loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
 </style>
 </head>
 <body class="bg-light">
