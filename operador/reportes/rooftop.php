@@ -197,6 +197,68 @@ include __DIR__ . '/modal_equipo.php';
   canvas { width:100%; height:150px; }
   .img-preview { max-width:100%; max-height:150px; object-fit:contain; border:1px solid #ddd; padding:4px; background:#fff; }
   @media (max-width:576px){ .firma-box { height:120px } canvas{ height:120px } }
+
+
+    /* Estilos para preview de imágenes */
+  .image-preview-container {
+    position: relative;
+    display: inline-block;
+    margin: 5px;
+  }
+  
+  .image-preview-container img {
+    max-width: 120px;
+    max-height: 120px;
+    object-fit: cover;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .image-preview-container img:hover {
+    border-color: #0d6efd;
+    transform: scale(1.05);
+  }
+  
+  .btn-delete-image {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #dc3545;
+    color: white;
+    border: 2px solid white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+  }
+  
+  .btn-delete-image:hover {
+    background: #bb2d3b;
+    transform: scale(1.1);
+  }
+  
+  .loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
 </style>
 </head>
 <body class="bg-light">
@@ -480,6 +542,7 @@ include __DIR__ . '/modal_equipo.php';
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 
+
 <script>
 // Firmas
 const sigCliente = new SignaturePad(document.getElementById('firmaClienteCanvas'));
@@ -487,7 +550,6 @@ const sigSupervisor = new SignaturePad(document.getElementById('firmaSupervisorC
 const sigTecnico = new SignaturePad(document.getElementById('firmaTecnicoCanvas'));
 
 document.getElementById('formReporte').addEventListener('submit', function(e){
-  // Guardar las firmas en los inputs ocultos
   if (!sigCliente.isEmpty()) {
     document.getElementById('firma_cliente_input').value = sigCliente.toDataURL();
   }
@@ -498,54 +560,20 @@ document.getElementById('formReporte').addEventListener('submit', function(e){
     document.getElementById('firma_tecnico_input').value = sigTecnico.toDataURL();
   }
 
-  // Confirmar antes de enviar
   if(!confirm("¿Estás seguro de guardar el reporte?")){
-    e.preventDefault(); // cancelar envío
+    e.preventDefault();
   } else {
-    // Campo oculto de confirmación
     let input = document.createElement('input');
     input.type = 'hidden';
     input.name = 'confirmado';
     input.value = 'si';
     this.appendChild(input);
-    // ⚠️ NO llamar a this.submit(), ya se está enviando solo
   }
 });
 
 $(document).ready(function(){
-
-
-   $('#formAgregarEquipo').on('submit', function(e) {
-    e.preventDefault();
-
-    $.ajax({
-      url: '/../../admin/equipos_add_crud.php', // archivo PHP que guarda el equipo
-      type: 'POST',
-      data: $(this).serialize(),
-      success: function(resp) {
-        try {
-          const r = JSON.parse(resp);
-          if (r.success) {
-            alert('✅ Equipo agregado correctamente');
-            $('#modalAgregarEquipo').modal('hide');
-            $('#formAgregarEquipo')[0].reset();
-          } else {
-            alert('⚠️ Error: ' + (r.message || 'No se pudo agregar.'));
-          }
-        } catch {
-          console.log(resp);
-          alert('✅ Equipo agregado correctamente');
-          location.reload();
-
-        }
-      }
-    });
-  });
-
-
   $('.equipo-select').select2({ placeholder:"Buscar equipo...", allowClear:true, width:'100%' });
 
-  // Cargar datos de equipos seleccionados
   $('.equipo-select').each(function(){
     let id = $(this).val();
     let index = $(this).data('index');
@@ -557,14 +585,12 @@ $(document).ready(function(){
           $(`.modelo-${index}`).val(data.modelo || '');
           $(`.ubicacion-${index}`).val(data.ubicacion || '');
           $(`.voltaje-${index}`).val(data.voltaje || '');
-
           generarObservacionesMultimedia();
         }
       });
     }
   });
 
-  // Cuando cambia un equipo
   $('.equipo-select').on('change', function(){
     let id = $(this).val();
     let index = $(this).data('index');
@@ -579,14 +605,36 @@ $(document).ready(function(){
         $(`.modelo-${index}`).val(data.modelo || '');
         $(`.ubicacion-${index}`).val(data.ubicacion || '');
         $(`.voltaje-${index}`).val(data.voltaje || '');
-
         generarObservacionesMultimedia();
       }
     });
   });
 });
 
-
+$('#formAgregarEquipo').on('submit', function(e) {
+  e.preventDefault();
+  $.ajax({
+    url: '/../../admin/equipos_add_crud.php',
+    type: 'POST',
+    data: $(this).serialize(),
+    success: function(resp) {
+      try {
+        const r = JSON.parse(resp);
+        if (r.success) {
+          alert('✅ Equipo agregado correctamente');
+          $('#modalAgregarEquipo').modal('hide');
+          $('#formAgregarEquipo')[0].reset();
+        } else {
+          alert('⚠️ Error: ' + (r.message || 'No se pudo agregar.'));
+        }
+      } catch {
+        console.log(resp);
+        alert('✅ Equipo agregado correctamente');
+        location.reload();
+      }
+    }
+  });
+});
 
 function generarObservacionesMultimedia() {
   const contenedor = document.getElementById('observacionesMultimedia');
@@ -596,15 +644,13 @@ function generarObservacionesMultimedia() {
     const index = $(this).data('index');
     const id = $(this).val();
     const texto = $(this).find('option:selected').text().trim();
-    
-  // Recuperamos el nombre desde un input o atributo data
     const nombre = $(this).data('nombre') || $(`.nombre-${index}`).val() || '';
 
     if (id && texto && texto !== '-- Seleccione --') {
       const bloque = document.createElement('div');
       bloque.className = 'card p-3 mb-3';
       bloque.innerHTML = `
-        <h6 class="text-primary mb-2">🔧 ${texto} - ${nombre ? ' - ' + nombre : ''}</h6>
+        <h6 class="text-primary mb-2">🔧 ${texto}${nombre ? ' - ' + nombre : ''}</h6>
         <div class="mb-2">
           <label>Texto / Recomendación:</label>
           <textarea class="form-control observacion-texto" data-index="${index}" rows="3"
@@ -612,14 +658,29 @@ function generarObservacionesMultimedia() {
         </div>
         <div class="mb-2">
           <label>Imágenes:</label>
+          <div class="d-flex gap-2 mb-2 flex-wrap">
+            <button type="button" class="btn btn-sm btn-primary btn-select-image" data-index="${index}">
+              📁 Galería
+            </button>
+            <button type="button" class="btn btn-sm btn-success btn-camera-image" data-index="${index}">
+              📷 Tomar Foto
+            </button>
+          </div>
           <input 
             type="file" 
-            class="form-control observacion-imagen" 
+            class="d-none observacion-imagen" 
+            id="input-imagen-${index}"
             data-index="${index}" 
             accept="image/*" 
-            capture="camera" 
             multiple>
-          <div id="preview-${index}" class="d-flex flex-wrap gap-2 mt-2"></div>
+          <input 
+            type="file" 
+            class="d-none observacion-camera" 
+            id="input-camera-${index}"
+            data-index="${index}" 
+            accept="image/*" 
+            capture="environment">
+          <div id="preview-${index}" class="d-flex flex-wrap gap-2 mt-3" data-rutas="[]"></div>
         </div>
       `;
       contenedor.appendChild(bloque);
@@ -627,23 +688,94 @@ function generarObservacionesMultimedia() {
   });
 }
 
+// === Manejadores de botones para galería y cámara ===
+$(document).on('click', '.btn-select-image', function() {
+  const index = $(this).data('index');
+  $(`#input-imagen-${index}`).click();
+});
 
-// === Vista previa y subida inmediata al servidor (permite tomar varias una por una) ===
-const imagenesGuardadas = {}; // guarda rutas acumuladas por cada index
+$(document).on('click', '.btn-camera-image', function() {
+  const index = $(this).data('index');
+  $(`#input-camera-${index}`).click();
+});
 
-// Vista previa de imágenes y subida inmediata al servidor
-$(document).on('change', '.observacion-imagen', function() {
+// === Almacenamiento de imágenes por equipo ===
+const imagenesGuardadas = {};
+
+// === Función para eliminar imagen ===
+function eliminarImagen(index, rutaImagen) {
+  if (!confirm('¿Deseas eliminar esta imagen?')) return;
+
+  // Buscar y eliminar del array
+  const rutasActuales = imagenesGuardadas[index] || [];
+  const nuevasRutas = rutasActuales.filter(r => r !== rutaImagen);
+  imagenesGuardadas[index] = nuevasRutas;
+
+  // Actualizar el preview
+  const preview = document.getElementById(`preview-${index}`);
+  preview.dataset.rutas = JSON.stringify(nuevasRutas);
+
+  // Eliminar del servidor (opcional - puedes implementar un endpoint)
+  fetch('eliminar_imagen.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ruta: rutaImagen })
+  }).catch(err => console.error('Error eliminando imagen del servidor:', err));
+
+  // Redibujar preview
+  actualizarPreview(index);
+}
+
+// === Función para actualizar el preview ===
+function actualizarPreview(index) {
+  const preview = document.getElementById(`preview-${index}`);
+  const rutas = imagenesGuardadas[index] || [];
+  
+  preview.innerHTML = '';
+  
+  rutas.forEach(ruta => {
+    const container = document.createElement('div');
+    container.className = 'image-preview-container';
+    
+    const img = document.createElement('img');
+    img.src = ruta;
+    img.className = 'img-thumbnail';
+    img.onclick = () => window.open(ruta, '_blank');
+    
+    const btnDelete = document.createElement('button');
+    btnDelete.className = 'btn-delete-image';
+    btnDelete.innerHTML = '×';
+    btnDelete.type = 'button';
+    btnDelete.onclick = (e) => {
+      e.stopPropagation();
+      eliminarImagen(index, ruta);
+    };
+    
+    container.appendChild(img);
+    container.appendChild(btnDelete);
+    preview.appendChild(container);
+  });
+}
+
+// === Manejo de carga de imágenes (galería y cámara) ===
+$(document).on('change', '.observacion-imagen, .observacion-camera', function() {
   const index = $(this).data('index');
   const files = this.files;
-  const preview = document.getElementById(`preview-${index}`);
-  if (!imagenesGuardadas[index]) imagenesGuardadas[index] = [];
+  const isCamera = $(this).hasClass('observacion-camera');
 
   if (files.length === 0) return;
+
+  if (!imagenesGuardadas[index]) imagenesGuardadas[index] = [];
 
   const formData = new FormData();
   for (const f of files) formData.append('imagenes[]', f);
 
-  console.log('📸 Subiendo nueva imagen de equipo', index);
+  // Mostrar indicador de carga
+  const preview = document.getElementById(`preview-${index}`);
+  const loadingDiv = document.createElement('div');
+  loadingDiv.className = 'text-center p-2';
+  loadingDiv.innerHTML = '<div class="loading-spinner"></div> Subiendo...';
+  preview.appendChild(loadingDiv);
 
   fetch('subir_imagen.php', { method: 'POST', body: formData })
     .then(res => {
@@ -651,44 +783,41 @@ $(document).on('change', '.observacion-imagen', function() {
       return res.json();
     })
     .then(rutas => {
-      console.log('🟢 Rutas devueltas:', rutas);
+      loadingDiv.remove();
 
       if (!Array.isArray(rutas) || rutas.length === 0) {
-        console.warn('⚠️ No se devolvieron rutas válidas');
+        alert('⚠️ No se pudieron subir las imágenes');
         return;
       }
 
-      // Agregar rutas nuevas al arreglo existente
+      // Agregar nuevas rutas
       imagenesGuardadas[index].push(...rutas);
-
-      // Actualizar dataset del preview
       preview.dataset.rutas = JSON.stringify(imagenesGuardadas[index]);
 
-      // Agregar imágenes al preview SIN borrar las anteriores
-      rutas.forEach(ruta => {
-        const img = document.createElement('img');
-        img.src = ruta;
-        img.className = 'img-thumbnail';
-        img.style.maxWidth = '120px';
-        img.style.maxHeight = '120px';
-        preview.appendChild(img);
-      });
+      // Actualizar preview
+      actualizarPreview(index);
+
+      // Mostrar notificación
+      const msg = document.createElement('div');
+      msg.className = 'alert alert-success alert-dismissible fade show mt-2';
+      msg.innerHTML = `
+        ✅ ${rutas.length} imagen(es) cargada(s) correctamente
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      `;
+      preview.parentElement.insertBefore(msg, preview);
+      setTimeout(() => msg.remove(), 3000);
     })
     .catch(err => {
-      console.error('🔴 Error subiendo imagen:', err);
+      loadingDiv.remove();
+      console.error('Error subiendo imagen:', err);
+      alert('❌ Error al subir las imágenes. Intenta nuevamente.');
     })
     .finally(() => {
-      // ⚡ Limpia el input para permitir tomar otra foto sin perder las anteriores
       this.value = '';
     });
 });
 
-
-
 // Generar secciones según equipos seleccionados
-/* $('.equipo-select').on('change', function() {
-  generarObservacionesMultimedia();
-}); */
 $(document).ready(generarObservacionesMultimedia);
 
 // Consolidar al enviar
@@ -698,8 +827,7 @@ document.getElementById('formReporte').addEventListener('submit', function(e) {
   document.querySelectorAll('.observacion-texto').forEach(txt => {
     const index = txt.dataset.index;
     const nombre = $(`.equipo-select[data-index='${index}'] option:selected`).text().trim();
-    const preview = document.getElementById(`preview-${index}`);
-    const rutas = preview?.dataset?.rutas ? JSON.parse(preview.dataset.rutas) : [];
+    const rutas = imagenesGuardadas[index] || [];
 
     if (nombre && txt.value.trim()) {
       data.push({
@@ -712,8 +840,6 @@ document.getElementById('formReporte').addEventListener('submit', function(e) {
 
   document.getElementById('observacionesFinal').value = JSON.stringify(data, null, 2);
 });
-
-
 </script>
 </body>
 </html>
