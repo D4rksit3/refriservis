@@ -51,11 +51,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $equiposGuardados = [];
     for ($i = 1; $i <= 7; $i++) {
         $val = $equipos[$i]['id_equipo'] ?? null;
-        $equiposGuardados[$i] = ($val === '' ? null : $val);
+        $equiposGuardados[$i] = ($val === '' ? null : $val); // si es '', guardamos NULL
     }
         
-    $nombre_cliente = $_POST['nombre_cliente'] ?? null;
-    $nombre_supervisor = $_POST['nombre_supervisor'] ?? null;
+
 
     // ✅ UPDATE en la tabla mantenimientos
     $actividades = $_POST['actividades'] ?? [];
@@ -70,11 +69,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
     }
 
+          
+  $nombre_cliente = $_POST['nombre_cliente'] ?? null;
+  $nombre_supervisor = $_POST['nombre_supervisor'] ?? null;
+
+
+
+
+
+     // ✅ UPDATE en la tabla mantenimientos
     $stmt = $pdo->prepare("UPDATE mantenimientos SET 
         trabajos = ?, 
         observaciones = ?, 
         parametros = ?, 
-        actividades = ?, 
         firma_cliente = ?, 
         firma_supervisor = ?, 
         firma_tecnico = ?, 
@@ -92,18 +99,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         modificado_en = NOW(),
         modificado_por = ?,
         estado = 'finalizado'
-        WHERE id = ?");
+    WHERE id = ?");
     $stmt->execute([
         $trabajos,
         $observaciones,
-        json_encode($parametros, JSON_UNESCAPED_UNICODE),
-        json_encode($actividadesLimpias, JSON_UNESCAPED_UNICODE),
+        json_encode($parametros),
         $firma_cliente,
         $firma_supervisor,
         $firma_tecnico,
         $nombre_cliente,
         $nombre_supervisor,
-        json_encode($fotos_guardadas, JSON_UNESCAPED_UNICODE),
+        json_encode($fotos_guardadas),
         $equiposGuardados[1],
         $equiposGuardados[2],
         $equiposGuardados[3],
@@ -115,14 +121,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mantenimiento_id
     ]);
 
+
+
+    // Si confirmación viene por POST, redirige al dashboard
     $confirmado = $_POST['confirmado'] ?? 'no';
     if($confirmado === 'si'){
         header("Location: https://refriservis.seguricloud.com/operador/mis_mantenimientos.php");
     } else {
-        header("Location: guardar_reporte_bombas.php?id=$mantenimiento_id");
+        header("Location: guardar_reporte_chillers.php?id=$mantenimiento_id");
     }
     exit;
+
+
+
 }
+
 
 // 🚩 Si es GET → Mostrar formulario
 $id = $_GET['id'] ?? null;
@@ -151,10 +164,8 @@ if (!empty($m['actividades'])) {
     $actividadesGuardadas = json_decode($m['actividades'], true) ?: [];
 }
 
-$nombre_tecnico = $m['nombre_tecnico'] ?? '';
-
 // Lista de equipos desde inventario
-$equiposList = $pdo->query("SELECT id_equipo AS id_equipo, Nombre ,Identificador, Marca, Modelo, Ubicacion, Voltaje 
+$equiposList = $pdo->query("SELECT id_equipo AS id_equipo, Nombre, Identificador, Marca, Modelo, Ubicacion, Voltaje 
                             FROM equipos ORDER BY Identificador ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 // Preparar equipos del mantenimiento
@@ -173,6 +184,7 @@ for ($i = 1; $i <= 7; $i++) {
     $equiposMantenimiento[$i] = $eq;
 }
 
+
 include __DIR__ . '/modal_equipo.php';
 
 ?>
@@ -188,87 +200,29 @@ include __DIR__ . '/modal_equipo.php';
   canvas { width:100%; height:150px; }
   .img-preview { max-width:100%; max-height:150px; object-fit:contain; border:1px solid #ddd; padding:4px; background:#fff; }
   @media (max-width:576px){ .firma-box { height:120px } canvas{ height:120px } }
-  
-  /* Estilos para preview de imágenes */
-  .image-preview-container {
-    position: relative;
-    display: inline-block;
-    margin: 5px;
-  }
-  
-  .image-preview-container img {
-    max-width: 120px;
-    max-height: 120px;
-    object-fit: cover;
-    border: 2px solid #dee2e6;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  
-  .image-preview-container img:hover {
-    border-color: #0d6efd;
-    transform: scale(1.05);
-  }
-  
-  .btn-delete-image {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: #dc3545;
-    color: white;
-    border: 2px solid white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    font-weight: bold;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    transition: all 0.2s ease;
-  }
-  
-  .btn-delete-image:hover {
-    background: #bb2d3b;
-    transform: scale(1.1);
-  }
-  
-  .loading-spinner {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255,255,255,.3);
-    border-radius: 50%;
-    border-top-color: #fff;
-    animation: spin 1s ease-in-out infinite;
-  }
-  
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
 </style>
 </head>
 <body class="bg-light">
 <div class="container py-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
+    <!-- <h5>Reporte de Servicio Técnico — Mantenimiento #<?=htmlspecialchars($m['id'])?></h5> -->
     <a class="btn btn-secondary btn-sm" href="/operador/mis_mantenimientos.php">Volver</a>
     <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
     ➕ Agregar Equipo
   </button>
   </div>
-  
+
 <table border="1" cellspacing="0" cellpadding="4" width="100%" style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;">
   <tr>
+    <!-- Logo -->
     <td width="20%" align="center">
       <img src="/../../lib/logo.jpeg" alt="Logo" style="max-height:60px;">
     </td>
     
+    <!-- Título y datos -->
     <td width="60%" align="center" style="font-weight: bold; font-size: 13px;">
       <div style="background:#cfe2f3; padding:2px; margin-bottom:3px;">FORMATO DE CALIDAD</div>
-      CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA <br>
+      CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – CHILLER <br>
       <span style="font-weight: normal;">
         Oficina: (01) 6557907 <br>
         Emergencias: +51 943 048 606 <br>
@@ -276,6 +230,8 @@ include __DIR__ . '/modal_equipo.php';
       </span>
     </td>
     
+    <!-- Número de reporte -->
+     
     <td width="20%" align="center" style="font-size: 12px;">
         <div style="background:#cfe2f3; padding:2px; margin-bottom:3px;">FORMATO DE CALIDAD</div>
         <br>
@@ -283,9 +239,12 @@ include __DIR__ . '/modal_equipo.php';
       001-N°<?php echo str_pad($id, 6, "0", STR_PAD_LEFT); ?>
       <br>
       <br>
+      
     </td>
   </tr>
 </table>
+
+
 
   <div class="card mb-3 p-3">
     <div><strong>CLIENTE:</strong> <?=htmlspecialchars($m['cliente'] ?? '-')?></div>
@@ -294,7 +253,7 @@ include __DIR__ . '/modal_equipo.php';
     <div><strong>FECHA:</strong> <?=htmlspecialchars($m['fecha'] ?? date('Y-m-d'))?></div>
   </div>
 
-  <form action="bombas.php"  id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
+  <form action="chillers.php"  id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
     <input type="hidden" name="mantenimiento_id" value="<?=htmlspecialchars($m['id'])?>">
 
     <!-- TABLA DE EQUIPOS -->
@@ -305,6 +264,7 @@ include __DIR__ . '/modal_equipo.php';
           <tr>
             <th>#</th>
             <th>Identificador</th>
+            <th>Nombre</th>
             <th>Marca</th>
             <th>Modelo</th>
             <th>Ubicación</th>
@@ -380,6 +340,8 @@ include __DIR__ . '/modal_equipo.php';
       </table>
     </div>
 
+
+
 <!-- ACTIVIDADES A REALIZAR -->
 <h6>ACTIVIDADES A REALIZAR</h6>
 <div class="table-responsive mb-3">
@@ -403,27 +365,26 @@ include __DIR__ . '/modal_equipo.php';
     <tbody>
       <?php
       $actividades = [
-        "Inspección ocular del equipo en funcionamiento",
-        "Verificación del estado de superficies y aseo general del equipo",
-        "Medición y registro de parámetros de operación (amperaje, voltaje, potencia)",
-        "Inspección de estado del sello mecánico",
-        "Inspección de manómetros y termómetros",
-        "Inspección de rodamientos de motor y bomba centrifuga",
-        "Inspección del acoplamiento y ajuste de prisioneros",
-        "Medición y registro de consumos eléctricos",
-        "Ajuste de conexiones eléctricas del motor",
-        "Revisión de variador de velocidad",
-        "Lubricación de rodamientos de acuerdo a recomendaciones del fabricante",
-        "Revisión de los pernos de la base y motor (requiere uso de torquímetro)",
-        "Pintado externo del motor y bomba manteniendo color original (dieléctrica)",
-        "Prueba de funcionamiento y verificación de condiciones operativas",
-        "Lubricación y engrase de la bomba.",
-        "Revisión y Ajuste de la prensa estopa y/o sello mecánico",
-        "Revisión y/o cambio de empaquetaduras de O-rings",
-        "Revisión y cambio de borneras eléctricas",
-        "Cambio de empaquetaduras, sellos y rodamientos en caso se requiera",
-        "Pintado de las válvulas y de las tuberías de distribución si lo requiere",
-        "Megar y registrar el estado del aislamiento del motor eléctrico"
+        "Revisión de Presión de Aceite",
+        "Revisión de Presión de Descarga y Succión de cada unidad",
+        "Ajuste y revisión de la operación de las válvulas de capacidad del equipo",
+        "Revisión del estado operativo de motores eléctricos y componentes mecánicos",
+        "Ajustes de válvulas reguladoras de presión",
+        "Revisión de fugas en el sistema",
+        "Revisión de Niveles de Refrigerante",
+        "Revisión de Gases no Condensables en el Sistema",
+        "Revisión del estado físico de tuberías de Refrigerante",
+        "Revisión de válvula de expansión termostáticas detectadas con falla en el sistema",
+        "Ajuste de la operación de los controles eléctricos del sistema",
+        "Revisión de Contactores y ajuste de componentes eléctricos",
+        "Revisión/Limpieza de componentes electrónicos",
+        "Revisión de la operación de los instrumentos de control del sistema",
+        "Lubricación de componentes mecánicos exteriores",
+        "Análisis de Vibraciones",
+        "Lubricación de componentes mecánicos interiores",
+        "Análisis de Acidez en el aceite",
+        "Megado de motores",
+        "Lavado químico de intercambiador"
       ];
 
       foreach($actividades as $index => $act):
@@ -457,6 +418,12 @@ include __DIR__ . '/modal_equipo.php';
   </table>
 </div>
 
+
+
+
+
+
+
     <!-- TRABAJOS / OBSERVACIONES -->
     <div class="mb-3">
       <label>Trabajos realizados</label>
@@ -464,7 +431,7 @@ include __DIR__ . '/modal_equipo.php';
     </div>
 
     <!-- OBSERVACIONES MULTIMEDIA -->
-    <h6>Observaciones y recomendaciones (Multimedia por equipo)</h6>
+    <h6>Observaciones y recomendaciones (Multimedia por equipo) *</h6>
 
     <div id="observacionesMultimedia"></div>
 
@@ -473,6 +440,17 @@ include __DIR__ . '/modal_equipo.php';
 
     <hr>
 
+    <!-- FOTOS -->
+     <!-- <div class="mb-3">
+      <label>Fotos del/los equipos (múltiples)</label>
+      <input type="file" class="form-control" name="fotos[]" accept="image/*" multiple>
+    </div> -->
+    <!-- FOTOS -->
+    <!-- <div class="mb-3">
+      <label>Fotos del/los equipos (múltiples)</label>
+      <input type="file" class="form-control" name="fotos[]" accept="image/*" multiple>
+    </div> -->
+
     <!-- FIRMAS -->
     <h6>Firmas</h6>
     <div class="row g-3">
@@ -480,9 +458,8 @@ include __DIR__ . '/modal_equipo.php';
         <label class="form-label">Firma Cliente</label>
         <div class="firma-box"><canvas id="firmaClienteCanvas"></canvas></div>
         <div class="mt-1">
-        <input type="text" id="nombreCliente" name="nombre_cliente" class="form-control mt-2" placeholder="Nombre del cliente">
-            
-        <button type="button" class="btn btn-sm btn-secondary" onclick="sigCliente.clear()">Limpiar</button>
+          <input type="text" id="nombreCliente" name="nombre_cliente" class="form-control mt-2" placeholder="Nombre del cliente">
+          <button type="button" class="btn btn-sm btn-secondary" onclick="sigCliente.clear()">Limpiar</button>
         </div>
         
         <input type="hidden" name="firma_cliente" id="firma_cliente_input">
@@ -491,8 +468,7 @@ include __DIR__ . '/modal_equipo.php';
         <label class="form-label">Firma Supervisor</label>
         <div class="firma-box"><canvas id="firmaSupervisorCanvas"></canvas></div>
           <div class="mt-1">
-            <input type="text" id="nombreSupervisor" name="nombre_supervisor" class="form-control mt-2" placeholder="Nombre del supervisor">
-        
+             <input type="text" id="nombreSupervisor" name="nombre_supervisor" class="form-control mt-2" placeholder="Nombre del supervisor">
         <button type="button" class="btn btn-sm btn-secondary" onclick="sigSupervisor.clear()">Limpiar</button>
       </div>
         <input type="hidden" name="firma_supervisor" id="firma_supervisor_input">
@@ -515,11 +491,13 @@ include __DIR__ . '/modal_equipo.php';
   </form>
 </div>
 
+
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 
 <script>
 // Firmas
