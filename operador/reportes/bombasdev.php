@@ -56,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
     $nombre_cliente = $_POST['nombre_cliente'] ?? null;
     $nombre_supervisor = $_POST['nombre_supervisor'] ?? null;
+    $nombre_digitador = $_POST['nombre_digitador'] ?? null;
 
     // ✅ UPDATE en la tabla mantenimientos
     $actividades = $_POST['actividades'] ?? [];
@@ -80,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         firma_tecnico = ?, 
         nombre_cliente = ?, 
         nombre_supervisor = ?, 
+        nombre_digitador = ?,
         fotos = ?, 
         equipo1 = ?, 
         equipo2 = ?, 
@@ -103,6 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $firma_tecnico,
         $nombre_cliente,
         $nombre_supervisor,
+        $nombre_digitador,
         json_encode($fotos_guardadas, JSON_UNESCAPED_UNICODE),
         $equiposGuardados[1],
         $equiposGuardados[2],
@@ -135,10 +138,12 @@ $stmt = $pdo->prepare("
       c.direccion, 
       c.responsable, 
       c.telefono,
-      u.nombre AS nombre_tecnico
+      u.nombre AS nombre_tecnico,
+      dig.nombre AS nombre_digitador
   FROM mantenimientos m
   LEFT JOIN clientes c ON c.id = m.cliente_id
   LEFT JOIN usuarios u ON u.id = m.operador_id
+  LEFT JOIN usuarios dig ON dig.id = m.digitador_id
   WHERE m.id = ?
 ");
 $stmt->execute([$id]);
@@ -152,6 +157,7 @@ if (!empty($m['actividades'])) {
 }
 
 $nombre_tecnico = $m['nombre_tecnico'] ?? '';
+$nombre_digitador = $m['nombre_digitador'] ?? '';
 
 // Lista de equipos desde inventario
 $equiposList = $pdo->query("SELECT id_equipo AS id_equipo, Nombre ,Identificador, Marca, Modelo, Ubicacion, Voltaje 
@@ -184,191 +190,120 @@ include __DIR__ . '/modal_equipo.php';
 <title>Generar Reporte - Mantenimiento #<?=htmlspecialchars($m['id'])?></title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 <style>
   :root {
     --primary-color: #0d6efd;
-    --primary-dark: #0a58ca;
-    --primary-light: #6ea8fe;
-    --bg-light: #f8f9fa;
-    --border-color: #dee2e6;
-    --shadow-sm: 0 2px 4px rgba(13, 110, 253, 0.1);
-    --shadow-md: 0 4px 12px rgba(13, 110, 253, 0.15);
-    --shadow-lg: 0 8px 24px rgba(13, 110, 253, 0.2);
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --danger-color: #dc3545;
   }
 
   body {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
+    padding: 20px 0;
   }
 
-  .container {
-    max-width: 1400px;
-  }
-
-  /* Header mejorado */
-  .page-header {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-    color: white;
-    padding: 2rem 0;
-    margin: -1rem -15px 2rem;
-    box-shadow: var(--shadow-lg);
-    border-radius: 0 0 20px 20px;
-  }
-
-  .page-header h5 {
-    font-weight: 600;
-    margin: 0;
-    font-size: 1.5rem;
-  }
-
-  .page-header .btn-back {
-    background: rgba(255, 255, 255, 0.2);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    color: white;
-    transition: all 0.3s ease;
-  }
-
-  .page-header .btn-back:hover {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
-    transform: translateX(-5px);
-  }
-
-  .page-header .btn-add-equipo {
+  .main-container {
     background: white;
-    color: var(--primary-color);
-    border: none;
-    font-weight: 600;
-    transition: all 0.3s ease;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    padding: 30px;
+    margin-bottom: 30px;
   }
 
-  .page-header .btn-add-equipo:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
-  }
-
-  /* Tabla del encabezado */
-  .header-table {
-    background: white;
+  .header-card {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #0a58ca 100%);
+    color: white;
     border-radius: 15px;
-    overflow: hidden;
-    box-shadow: var(--shadow-md);
-    margin-bottom: 1.5rem;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
   }
 
-  .header-table table {
-    margin: 0;
-  }
-
-  .header-table td {
-    padding: 1rem;
-    vertical-align: middle;
-  }
-
-  .header-table .formato-badge {
-    background: linear-gradient(135deg, #cfe2f3 0%, #b3d4ea 100%);
-    padding: 0.5rem;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.9rem;
-  }
-
-  /* Cards mejoradas */
   .info-card {
-    background: white;
-    border-radius: 15px;
-    padding: 1.5rem;
-    box-shadow: var(--shadow-sm);
-    border: none;
-    margin-bottom: 1.5rem;
-    transition: all 0.3s ease;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--primary-color);
   }
 
-  .info-card:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+  .info-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 10px;
   }
 
-  .info-card .info-row {
+  .info-item {
     display: flex;
-    align-items: center;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--bg-light);
+    flex-direction: column;
   }
 
-  .info-card .info-row:last-child {
-    border-bottom: none;
-  }
-
-  .info-card .info-label {
+  .info-label {
+    font-weight: 600;
     color: var(--primary-color);
-    font-weight: 600;
-    min-width: 120px;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
-  .info-card .info-value {
-    color: #495057;
-  }
-
-  /* Sección de título */
-  .section-title {
-    background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-light) 100%);
-    color: white;
-    padding: 1rem 1.5rem;
-    border-radius: 10px;
-    margin: 2rem 0 1rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    box-shadow: var(--shadow-sm);
-  }
-
-  /* Tablas mejoradas */
-  .custom-table {
+  .info-value {
+    font-size: 1rem;
+    color: #2d3748;
+    padding: 8px 12px;
     background: white;
-    border-radius: 15px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .section-title {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #0a58ca 100%);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    margin: 25px 0 15px 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .table-responsive {
+    border-radius: 10px;
     overflow: hidden;
-    box-shadow: var(--shadow-sm);
-    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   }
 
-  .custom-table table {
-    margin: 0;
+  .table {
+    margin-bottom: 0;
   }
 
-  .custom-table thead {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  .table thead {
+    background: var(--primary-color);
     color: white;
   }
 
-  .custom-table thead th {
+  .table thead th {
     border: none;
-    padding: 1rem;
+    padding: 12px;
     font-weight: 600;
-    text-align: center;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
   }
 
-  .custom-table tbody td {
-    padding: 0.75rem;
-    vertical-align: middle;
-    border-color: var(--border-color);
+  .table tbody tr:hover {
+    background-color: #f8f9fa;
   }
 
-  .custom-table tbody tr:hover {
-    background-color: rgba(13, 110, 253, 0.05);
-  }
-
-  /* Inputs mejorados */
   .form-control, .form-select {
-    border: 2px solid var(--border-color);
     border-radius: 8px;
-    padding: 0.5rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    padding: 10px 15px;
     transition: all 0.3s ease;
   }
 
@@ -377,553 +312,241 @@ include __DIR__ . '/modal_equipo.php';
     box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
   }
 
-  /* Firma boxes */
-  .firma-container {
-    background: white;
+  .firma-section {
+    background: #f8f9fa;
     border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.3s ease;
+    padding: 20px;
+    margin-top: 30px;
   }
 
-  .firma-container:hover {
-    box-shadow: var(--shadow-md);
-  }
-
-  .firma-label {
-    color: var(--primary-color);
-    font-weight: 600;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .firma-box {
-    border: 3px dashed var(--primary-light);
-    border-radius: 12px;
+  .firma-box { 
+    border: 2px dashed #cbd5e0;
+    border-radius: 10px;
     height: 150px;
-    background: var(--bg-light);
-    position: relative;
-    overflow: hidden;
+    background: white;
+    cursor: crosshair;
     transition: all 0.3s ease;
   }
 
   .firma-box:hover {
     border-color: var(--primary-color);
-    background: white;
+    background: #f8f9fa;
   }
 
-  canvas {
-    width: 100%;
+  canvas { 
+    width: 100%; 
     height: 150px;
-    cursor: crosshair;
-  }
-
-  /* Botones mejorados */
-  .btn-primary {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-    border: none;
-    border-radius: 10px;
-    padding: 0.75rem 1.5rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-  }
-
-  .btn-secondary {
-    background: #6c757d;
-    border: none;
     border-radius: 8px;
-    transition: all 0.3s ease;
   }
 
-  .btn-secondary:hover {
-    background: #5a6268;
-    transform: translateY(-2px);
-  }
-
-  .btn-success {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  .btn-submit {
+    background: linear-gradient(135deg, var(--success-color) 0%, #146c43 100%);
     border: none;
-    border-radius: 12px;
-    padding: 1rem 2rem;
+    padding: 15px 40px;
     font-size: 1.1rem;
     font-weight: 600;
-    box-shadow: var(--shadow-md);
+    border-radius: 50px;
+    box-shadow: 0 5px 15px rgba(25, 135, 84, 0.3);
     transition: all 0.3s ease;
   }
 
-  .btn-success:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-lg);
+  .btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(25, 135, 84, 0.4);
   }
 
-  /* Observaciones multimedia */
+  .image-preview-container {
+    position: relative;
+    display: inline-block;
+    margin: 5px;
+  }
+  
+  .image-preview-container img {
+    max-width: 120px;
+    max-height: 120px;
+    object-fit: cover;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .image-preview-container img:hover {
+    border-color: var(--primary-color);
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+  
+  .btn-delete-image {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--danger-color);
+    color: white;
+    border: 2px solid white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+  }
+  
+  .btn-delete-image:hover {
+    background: #bb2d3b;
+    transform: scale(1.1);
+  }
+  
+  .loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
   .observacion-card {
     background: white;
+    border: 2px solid #e2e8f0;
     border-radius: 12px;
-    border: 2px solid var(--primary-light);
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: var(--shadow-sm);
+    padding: 20px;
+    margin-bottom: 20px;
     transition: all 0.3s ease;
   }
 
   .observacion-card:hover {
-    box-shadow: var(--shadow-md);
     border-color: var(--primary-color);
+    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.1);
   }
 
-  .observacion-card h6 {
-    color: var(--primary-color);
-    font-weight: 600;
-    display: flex;
+  .btn-icon {
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
-
-  /* Preview de imágenes */
-  .img-preview {
-    max-width: 100%;
-    max-height: 150px;
-    object-fit: contain;
-    border: 2px solid var(--border-color);
+    gap: 8px;
+    padding: 10px 20px;
     border-radius: 8px;
-    padding: 0.25rem;
-    background: white;
+    font-weight: 500;
     transition: all 0.3s ease;
   }
 
-  .img-preview:hover {
-    border-color: var(--primary-color);
-    transform: scale(1.05);
+  .btn-icon:hover {
+    transform: translateY(-2px);
   }
 
-  /* Checkboxes y radios personalizados */
-  input[type="checkbox"], input[type="radio"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    accent-color: var(--primary-color);
-  }
-
-  /* Responsive - Mobile First */
   @media (max-width: 768px) {
-    body {
-      font-size: 14px;
+    .main-container {
+      padding: 15px;
+      border-radius: 10px;
     }
 
-    .container {
-      padding: 0;
+    .header-card {
+      padding: 15px;
     }
 
-    .page-header {
-      padding: 1rem 0.5rem;
-      margin: 0 0 1rem;
-      border-radius: 0;
+    .info-row {
+      grid-template-columns: 1fr;
     }
 
-    .page-header h5 {
+    .section-title {
       font-size: 1rem;
-      line-height: 1.3;
+      padding: 10px 15px;
     }
 
-    .page-header .btn-back,
-    .page-header .btn-add-equipo {
-      font-size: 0.85rem;
-      padding: 0.5rem 0.75rem;
-    }
-
-    .section-title {
-      font-size: 0.9rem;
-      padding: 0.75rem;
-      margin: 1rem 0 0.75rem;
-    }
-
-    .section-title i {
-      font-size: 0.85rem;
-    }
-
-    /* Tablas en móvil */
-    .custom-table {
-      border-radius: 10px;
-      margin-bottom: 1rem;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .custom-table table {
-      font-size: 0.75rem;
-      min-width: 800px;
-    }
-
-    .custom-table thead th {
-      padding: 0.5rem 0.25rem;
-      font-size: 0.7rem;
-      white-space: nowrap;
-    }
-
-    .custom-table tbody td {
-      padding: 0.4rem 0.2rem;
-    }
-
-    .custom-table input[type="text"] {
-      font-size: 0.75rem;
-      padding: 0.25rem;
-      min-width: 60px;
-    }
-
-    .custom-table input[type="checkbox"],
-    .custom-table input[type="radio"] {
-      width: 16px;
-      height: 16px;
-    }
-
-    /* Select más pequeño en móvil */
-    .form-select-sm {
-      font-size: 0.75rem;
-      padding: 0.25rem 0.5rem;
-    }
-
-    /* Info card responsive */
-    .info-card {
-      padding: 1rem;
-      margin-bottom: 1rem;
-      border-radius: 10px;
-    }
-
-    .info-card .info-row {
-      flex-direction: column;
-      align-items: flex-start;
-      padding: 0.5rem 0;
-      gap: 0.25rem;
-    }
-
-    .info-card .info-label {
-      min-width: auto;
-      font-size: 0.85rem;
-    }
-
-    .info-card .info-value {
-      font-size: 0.9rem;
-      padding-left: 1.5rem;
-    }
-
-    /* Header table en móvil */
-    .header-table {
-      border-radius: 10px;
-      margin-bottom: 1rem;
-      overflow-x: auto;
-    }
-
-    .header-table table {
-      font-size: 0.7rem;
-      min-width: 600px;
-    }
-
-    .header-table td {
-      padding: 0.5rem;
-    }
-
-    .header-table img {
-      max-height: 40px !important;
-    }
-
-    .formato-badge {
-      font-size: 0.7rem !important;
-      padding: 0.25rem !important;
-    }
-
-    .report-number {
-      font-size: 0.85rem;
-      padding: 0.5rem;
-    }
-
-    /* Firmas en móvil */
-    .firma-container {
-      padding: 1rem;
-      margin-bottom: 1rem;
-      border-radius: 10px;
-    }
-
-    .firma-label {
-      font-size: 0.9rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .firma-box {
-      height: 120px;
-      border-width: 2px;
-    }
-
-    canvas {
-      height: 120px;
-    }
-
-    .firma-container input[type="text"] {
-      font-size: 0.85rem;
-      padding: 0.5rem;
-    }
-
-    .firma-container .btn {
-      font-size: 0.85rem;
-      padding: 0.5rem;
-    }
-
-    /* Observaciones en móvil */
-    .observacion-card {
-      padding: 1rem;
-      margin-bottom: 1rem;
-      border-radius: 10px;
-    }
-
-    .observacion-card h6 {
-      font-size: 0.95rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .observacion-card textarea {
-      font-size: 0.85rem;
-    }
-
-    .observacion-card .form-label {
-      font-size: 0.85rem;
-    }
-
-    /* Textarea general */
-    textarea.form-control {
-      font-size: 0.85rem;
-      min-height: 80px;
-    }
-
-    /* Botón principal */
-    .btn-success {
-      font-size: 0.95rem;
-      padding: 0.875rem 1.25rem;
+    .btn-submit {
       width: 100%;
+      padding: 12px 30px;
     }
 
-    /* Preview de imágenes */
-    .img-thumbnail {
-      max-width: 80px !important;
-      max-height: 80px !important;
+    .firma-box, canvas {
+      height: 120px;
     }
-
-    /* Ajuste para scrollbar de tablas */
-    .table-responsive {
-      margin-bottom: 0.5rem;
-    }
-
-    .table-responsive::-webkit-scrollbar {
-      height: 8px;
-    }
-
-    .table-responsive::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 10px;
-    }
-
-    .table-responsive::-webkit-scrollbar-thumb {
-      background: var(--primary-color);
-      border-radius: 10px;
-    }
-  }
-
-  @media (max-width: 576px) {
-    .page-header h5 {
-      font-size: 0.9rem;
-    }
-
-    .page-header .d-flex {
-      gap: 0.5rem !important;
-    }
-
-    .btn-back {
-      padding: 0.4rem 0.6rem !important;
-    }
-
-    .btn-back i {
-      font-size: 0.9rem;
-    }
-
-    .btn-add-equipo {
-      font-size: 0.75rem !important;
-      padding: 0.4rem 0.6rem !important;
-    }
-
-    .section-title {
-      font-size: 0.85rem;
-      padding: 0.6rem;
-    }
-
-    .custom-table table {
-      font-size: 0.7rem;
-    }
-
-    .info-card .info-label {
-      font-size: 0.8rem;
-    }
-
-    .info-card .info-value {
-      font-size: 0.85rem;
-    }
-  }
-
-  /* Mejora de scroll horizontal para tablas */
-  .table-responsive {
-    position: relative;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* Indicador visual de scroll */
-  @media (max-width: 768px) {
-    .custom-table::after {
-      content: '← Desliza para ver más →';
-      display: block;
-      text-align: center;
-      padding: 0.5rem;
-      font-size: 0.75rem;
-      color: var(--primary-color);
-      background: rgba(13, 110, 253, 0.05);
-      border-radius: 0 0 10px 10px;
-    }
-
-    .custom-table.scrolled::after {
-      content: '';
-      display: none;
-    }
-  }
-
-  /* Animaciones */
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .info-card, .custom-table, .observacion-card, .firma-container {
-    animation: fadeIn 0.5s ease-out;
-  }
-
-  /* Select2 personalizado */
-  .select2-container--default .select2-selection--single {
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    height: auto;
-    padding: 0.25rem;
-  }
-
-  .select2-container--default.select2-container--focus .select2-selection--single {
-    border-color: var(--primary-color);
-  }
-
-  /* Textarea mejorado */
-  textarea.form-control {
-    resize: vertical;
-    min-height: 100px;
-  }
-
-  /* Badge de número de reporte */
-  .report-number {
-    background: linear-gradient(135deg, #cfe2f3 0%, #b3d4ea 100%);
-    padding: 0.75rem;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 1rem;
-    text-align: center;
   }
 </style>
 </head>
 <body>
-
-<div class="page-header">
-  <div class="container">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-      <div class="d-flex align-items-center gap-3">
-        <a class="btn btn-back" href="/operador/mis_mantenimientos.php">
-          <i class="bi bi-arrow-left"></i> Volver
-        </a>
-        <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Reporte de Mantenimiento #<?=htmlspecialchars($m['id'])?></h5>
-      </div>
-      <button class="btn btn-add-equipo" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
-        <i class="bi bi-plus-circle"></i> Agregar Equipo
+<div class="container">
+  <div class="main-container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <a class="btn btn-secondary btn-icon" href="/operador/mis_mantenimientos.php">
+        ← Volver
+      </a>
+      <button class="btn btn-primary btn-icon" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
+        ➕ Agregar Equipo
       </button>
     </div>
-  </div>
-</div>
 
-<div class="container py-3">
-  
-  <!-- Tabla de encabezado -->
-  <div class="header-table">
-    <table class="table table-bordered mb-0">
-      <tr>
-        <td width="20%" class="text-center">
-          <img src="/../../lib/logo.jpeg" alt="Logo" style="max-height:60px;">
-        </td>
-        <td width="60%" class="text-center">
-          <div class="formato-badge mb-2">FORMATO DE CALIDAD</div>
-          <strong style="font-size: 13px;">CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA</strong><br>
-          <small>
-            Oficina: (01) 6557907 | Emergencias: +51 943 048 606<br>
-            ventas@refriservissac.com
-          </small>
-        </td>
-        <td width="20%" class="text-center">
-          <div class="formato-badge mb-2">FORMATO DE CALIDAD</div>
-          <div class="report-number">
-            001-N°<?php echo str_pad($id, 6, "0", STR_PAD_LEFT); ?>
-          </div>
-        </td>
-      </tr>
-    </table>
-  </div>
-
-  <!-- Info del cliente -->
-  <div class="info-card">
-    <div class="info-row">
-      <div class="info-label"><i class="bi bi-building"></i> CLIENTE:</div>
-      <div class="info-value"><?=htmlspecialchars($m['cliente'] ?? '-')?></div>
-    </div>
-    <div class="info-row">
-      <div class="info-label"><i class="bi bi-geo-alt"></i> DIRECCIÓN:</div>
-      <div class="info-value"><?=htmlspecialchars($m['direccion'] ?? '-')?></div>
-    </div>
-    <div class="info-row">
-      <div class="info-label"><i class="bi bi-person"></i> RESPONSABLE:</div>
-      <div class="info-value"><?=htmlspecialchars($m['responsable'] ?? '-')?></div>
-    </div>
-    <div class="info-row">
-      <div class="info-label"><i class="bi bi-calendar"></i> FECHA:</div>
-      <div class="info-value"><?=htmlspecialchars($m['fecha'] ?? date('Y-m-d'))?></div>
-    </div>
-  </div>
-
-  <form action="bombas.php" id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
-    <input type="hidden" name="mantenimiento_id" value="<?=htmlspecialchars($m['id'])?>">
-
-    <!-- EQUIPOS -->
-    <div class="section-title">
-      <i class="bi bi-gear-fill"></i>
-      DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS A INTERVENIR
+    <!-- Logo Header -->
+    <div class="header-card text-center">
+      <img src="/../../lib/logo.jpeg" alt="Logo" style="max-height:80px; margin-bottom: 15px;">
+      <h5 class="mb-2">FORMATO DE CALIDAD</h5>
+      <h6 class="mb-3">CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA</h6>
+      <div style="font-size: 0.9rem;">
+        📞 Oficina: (01) 6557907 | 📱 Emergencias: +51 943 048 606<br>
+        📧 ventas@refriservissac.com
+      </div>
+      <div class="mt-3">
+        <span class="badge bg-light text-dark fs-6">
+          N°<?= str_pad($id, 6, "0", STR_PAD_LEFT) ?>
+        </span>
+      </div>
     </div>
 
-    <div class="custom-table">
-      <div class="table-responsive">
-        <table class="table table-bordered align-middle text-center mb-0">
+    <!-- Datos del Cliente -->
+    <div class="info-card">
+      <h6 class="text-primary mb-3">📋 DATOS DEL CLIENTE</h6>
+      <div class="info-row">
+        <div class="info-item">
+          <span class="info-label">Cliente</span>
+          <span class="info-value"><?= htmlspecialchars($m['cliente'] ?? '-') ?></span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Responsable</span>
+          <span class="info-value"><?= htmlspecialchars($m['responsable'] ?? '-') ?></span>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-item">
+          <span class="info-label">Dirección</span>
+          <span class="info-value"><?= htmlspecialchars($m['direccion'] ?? '-') ?></span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Teléfono</span>
+          <span class="info-value"><?= htmlspecialchars($m['telefono'] ?? '-') ?></span>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-item">
+          <span class="info-label">Fecha</span>
+          <span class="info-value"><?= htmlspecialchars($m['fecha'] ?? date('Y-m-d')) ?></span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">MT - Digitador (Nombre y Apellido)</span>
+          <input type="text" class="form-control" id="nombre_digitador" name="nombre_digitador" 
+                 value="<?= htmlspecialchars($nombre_digitador ?? '') ?>" 
+                 placeholder="Ingrese nombre del digitador" form="formReporte">
+        </div>
+      </div>
+    </div>
+
+    <form action="bombas.php" id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
+      <input type="hidden" name="mantenimiento_id" value="<?= htmlspecialchars($m['id']) ?>">
+
+      <!-- TABLA DE EQUIPOS -->
+      <h6 class="section-title">🔧 DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS</h6>
+      <div class="table-responsive mb-3">
+        <table class="table table-bordered align-middle text-center">
           <thead>
             <tr>
               <th>#</th>
@@ -936,11 +559,11 @@ include __DIR__ . '/modal_equipo.php';
             </tr>
           </thead>
           <tbody>
-            <?php for($i=1;$i<=7;$i++): 
+            <?php for($i=1; $i<=7; $i++): 
               $eq = $equiposMantenimiento[$i];
             ?>
             <tr>
-              <td><strong><?= $i ?></strong></td>
+              <td><?= $i ?></td>
               <td>
                 <select class="form-select form-select-sm equipo-select" 
                         name="equipos[<?= $i ?>][id_equipo]" 
@@ -953,37 +576,31 @@ include __DIR__ . '/modal_equipo.php';
                   <?php endforeach; ?>
                 </select>
               </td>
-              <td><input type="text" class="form-control form-control-sm nombre-<?= $i ?>" name="equipos[<?= $i ?>][Nombre]" value="<?=htmlspecialchars($eq['Nombre'] ?? '')?>" readonly></td>
-              <td><input type="text" class="form-control form-control-sm marca-<?= $i ?>" name="equipos[<?= $i ?>][marca]" value="<?=htmlspecialchars($eq['Marca'] ?? '')?>" readonly></td>
-              <td><input type="text" class="form-control form-control-sm modelo-<?= $i ?>" name="equipos[<?= $i ?>][modelo]" value="<?=htmlspecialchars($eq['Modelo'] ?? '')?>" readonly></td>
-              <td><input type="text" class="form-control form-control-sm ubicacion-<?= $i ?>" name="equipos[<?= $i ?>][ubicacion]" value="<?=htmlspecialchars($eq['Ubicacion'] ?? '')?>" readonly></td>
-              <td><input type="text" class="form-control form-control-sm voltaje-<?= $i ?>" name="equipos[<?= $i ?>][voltaje]" value="<?=htmlspecialchars($eq['Voltaje'] ?? '')?>" readonly></td>
+              <td><input type="text" class="form-control form-control-sm nombre-<?= $i ?>" name="equipos[<?= $i ?>][Nombre]" value="<?= htmlspecialchars($eq['Nombre'] ?? '') ?>" readonly></td>
+              <td><input type="text" class="form-control form-control-sm marca-<?= $i ?>" name="equipos[<?= $i ?>][marca]" value="<?= htmlspecialchars($eq['Marca'] ?? '') ?>" readonly></td>
+              <td><input type="text" class="form-control form-control-sm modelo-<?= $i ?>" name="equipos[<?= $i ?>][modelo]" value="<?= htmlspecialchars($eq['Modelo'] ?? '') ?>" readonly></td>
+              <td><input type="text" class="form-control form-control-sm ubicacion-<?= $i ?>" name="equipos[<?= $i ?>][ubicacion]" value="<?= htmlspecialchars($eq['Ubicacion'] ?? '') ?>" readonly></td>
+              <td><input type="text" class="form-control form-control-sm voltaje-<?= $i ?>" name="equipos[<?= $i ?>][voltaje]" value="<?= htmlspecialchars($eq['Voltaje'] ?? '') ?>" readonly></td>
             </tr>
             <?php endfor; ?>
           </tbody>
         </table>
       </div>
-    </div>
 
-    <!-- PARÁMETROS -->
-    <div class="section-title">
-      <i class="bi bi-speedometer2"></i>
-      PARÁMETROS DE FUNCIONAMIENTO (Antes / Después)
-    </div>
-
-    <div class="custom-table">
-      <div class="table-responsive">
-        <table class="table table-bordered table-sm mb-0">
+      <!-- TABLA DE PARÁMETROS -->
+      <h6 class="section-title">📊 PARÁMETROS DE FUNCIONAMIENTO</h6>
+      <div class="table-responsive mb-3">
+        <table class="table table-bordered table-sm">
           <thead>
             <tr>
               <th>Medida</th>
-              <?php for($i=1;$i<=7;$i++): ?>
+              <?php for($i=1; $i<=7; $i++): ?>
                 <th colspan="2" class="text-center">Equipo <?= $i ?></th>
               <?php endfor; ?>
             </tr>
             <tr>
               <th></th>
-              <?php for($i=1;$i<=7;$i++): ?>
+              <?php for($i=1; $i<=7; $i++): ?>
                 <th>Antes</th><th>Desp.</th>
               <?php endfor; ?>
             </tr>
@@ -998,8 +615,8 @@ include __DIR__ . '/modal_equipo.php';
             ];
             foreach($parametros as $p): ?>
               <tr>
-                <td style="min-width:200px;"><strong><?=htmlspecialchars($p)?></strong></td>
-                <?php for($i=1;$i<=7;$i++): ?>
+                <td style="min-width:200px;"><?= htmlspecialchars($p) ?></td>
+                <?php for($i=1; $i<=7; $i++): ?>
                   <td><input type="text" class="form-control form-control-sm" name="parametros[<?= md5($p) ?>][<?= $i ?>][antes]"></td>
                   <td><input type="text" class="form-control form-control-sm" name="parametros[<?= md5($p) ?>][<?= $i ?>][despues]"></td>
                 <?php endfor; ?>
@@ -1008,25 +625,19 @@ include __DIR__ . '/modal_equipo.php';
           </tbody>
         </table>
       </div>
-    </div>
 
-    <!-- ACTIVIDADES -->
-    <div class="section-title">
-      <i class="bi bi-list-check"></i>
-      ACTIVIDADES A REALIZAR
-    </div>
-
-    <div class="custom-table">
-      <div class="table-responsive">
-        <table class="table table-bordered table-sm text-center align-middle mb-0">
-          <thead>
+      <!-- ACTIVIDADES A REALIZAR -->
+      <h6 class="section-title">✅ ACTIVIDADES A REALIZAR</h6>
+      <div class="table-responsive mb-3">
+        <table class="table table-bordered table-sm text-center align-middle">
+          <thead class="table-primary">
             <tr>
               <th rowspan="2" class="align-middle">ACTIVIDADES A REALIZAR</th>
               <th colspan="7">Equipos</th>
               <th colspan="4">Frecuencia</th>
             </tr>
             <tr>
-              <?php for($i=1;$i<=7;$i++): ?>
+              <?php for($i=1; $i<=7; $i++): ?>
                 <th><?= str_pad($i, 2, "0", STR_PAD_LEFT) ?></th>
               <?php endfor; ?>
               <th>B.</th>
@@ -1065,8 +676,7 @@ include __DIR__ . '/modal_equipo.php';
             ?>
             <tr>
               <td class="text-start"><?= htmlspecialchars($act) ?></td>
-
-              <?php for($i=1;$i<=7;$i++): ?>
+              <?php for($i=1; $i<=7; $i++): ?>
                 <td>
                   <input type="checkbox"
                   name="actividades[<?= $index ?>][dias][<?= $i ?>]" 
@@ -1074,7 +684,6 @@ include __DIR__ . '/modal_equipo.php';
                   <?= (isset($actividadesGuardadas[$index]['dias']) && in_array($i, $actividadesGuardadas[$index]['dias'])) ? 'checked' : '' ?>>
                 </td>
               <?php endfor; ?>
-
               <?php foreach(["B","T","S","A"] as $f): ?>
                 <td>
                   <input type="radio" 
@@ -1088,94 +697,60 @@ include __DIR__ . '/modal_equipo.php';
           </tbody>
         </table>
       </div>
-    </div>
 
-    <!-- TRABAJOS REALIZADOS -->
-    <div class="section-title">
-      <i class="bi bi-tools"></i>
-      TRABAJOS REALIZADOS
-    </div>
+      <!-- TRABAJOS REALIZADOS -->
+      <h6 class="section-title">📝 TRABAJOS REALIZADOS</h6>
+      <div class="mb-4">
+        <textarea class="form-control" name="trabajos" rows="5" 
+                  placeholder="Describa los trabajos realizados durante el mantenimiento..."></textarea>
+      </div>
 
-    <div class="mb-4">
-      <textarea class="form-control" name="trabajos" rows="5" placeholder="Describa los trabajos realizados durante el mantenimiento..."></textarea>
-    </div>
+      <!-- OBSERVACIONES MULTIMEDIA -->
+      <h6 class="section-title">📸 OBSERVACIONES Y RECOMENDACIONES</h6>
+      <div id="observacionesMultimedia" class="mb-4"></div>
+      <textarea name="observaciones" id="observacionesFinal" hidden></textarea>
 
-    <!-- OBSERVACIONES MULTIMEDIA -->
-    <div class="section-title">
-      <i class="bi bi-camera-fill"></i>
-      OBSERVACIONES Y RECOMENDACIONES (Multimedia por equipo)
-    </div>
-
-    <div id="observacionesMultimedia"></div>
-    <textarea name="observaciones" id="observacionesFinal" hidden></textarea>
-
-    <!-- FIRMAS -->
-    <div class="section-title">
-      <i class="bi bi-pen-fill"></i>
-      FIRMAS DE CONFORMIDAD
-    </div>
-
-    <div class="row g-3 mb-4">
-      <div class="col-12 col-md-4">
-        <div class="firma-container">
-          <div class="firma-label">
-            <i class="bi bi-person-check-fill"></i>
-            Firma Cliente
+      <!-- FIRMAS -->
+      <div class="firma-section">
+        <h6 class="section-title">✍️ FIRMAS Y CONFORMIDAD</h6>
+        <div class="row g-3">
+          <div class="col-12 col-md-4">
+            <label class="form-label fw-bold">Firma Cliente</label>
+            <div class="firma-box"><canvas id="firmaClienteCanvas"></canvas></div>
+            <input type="text" id="nombreCliente" name="nombre_cliente" 
+                   class="form-control mt-2" placeholder="Nombre del cliente">
+            <button type="button" class="btn btn-sm btn-secondary mt-2 w-100" 
+                    onclick="sigCliente.clear()">🗑️ Limpiar</button>
+            <input type="hidden" name="firma_cliente" id="firma_cliente_input">
           </div>
-          <div class="firma-box">
-            <canvas id="firmaClienteCanvas"></canvas>
+          <div class="col-12 col-md-4">
+            <label class="form-label fw-bold">Firma Supervisor</label>
+            <div class="firma-box"><canvas id="firmaSupervisorCanvas"></canvas></div>
+            <input type="text" id="nombreSupervisor" name="nombre_supervisor" 
+                   class="form-control mt-2" placeholder="Nombre del supervisor">
+            <button type="button" class="btn btn-sm btn-secondary mt-2 w-100" 
+                    onclick="sigSupervisor.clear()">🗑️ Limpiar</button>
+            <input type="hidden" name="firma_supervisor" id="firma_supervisor_input">
           </div>
-          <input type="text" id="nombreCliente" name="nombre_cliente" class="form-control mt-3" placeholder="Nombre del cliente">
-          <button type="button" class="btn btn-secondary btn-sm mt-2 w-100" onclick="sigCliente.clear()">
-            <i class="bi bi-eraser"></i> Limpiar
-          </button>
-          <input type="hidden" name="firma_cliente" id="firma_cliente_input">
+          <div class="col-12 col-md-4">
+            <label class="form-label fw-bold">Firma Técnico</label>
+            <div class="firma-box"><canvas id="firmaTecnicoCanvas"></canvas></div>
+            <input type="text" class="form-control mt-2" id="nombre_tecnico" name="nombre_tecnico" 
+                   value="<?= htmlspecialchars($nombre_tecnico ?? '') ?>" readonly>
+            <button type="button" class="btn btn-sm btn-secondary mt-2 w-100" 
+                    onclick="sigTecnico.clear()">🗑️ Limpiar</button>
+            <input type="hidden" name="firma_tecnico" id="firma_tecnico_input">
+          </div>
         </div>
       </div>
 
-      <div class="col-12 col-md-4">
-        <div class="firma-container">
-          <div class="firma-label">
-            <i class="bi bi-person-badge-fill"></i>
-            Firma Supervisor
-          </div>
-          <div class="firma-box">
-            <canvas id="firmaSupervisorCanvas"></canvas>
-          </div>
-          <input type="text" id="nombreSupervisor" name="nombre_supervisor" class="form-control mt-3" placeholder="Nombre del supervisor">
-          <button type="button" class="btn btn-secondary btn-sm mt-2 w-100" onclick="sigSupervisor.clear()">
-            <i class="bi bi-eraser"></i> Limpiar
-          </button>
-          <input type="hidden" name="firma_supervisor" id="firma_supervisor_input">
-        </div>
+      <div class="text-center mt-5">
+        <button type="submit" class="btn btn-success btn-submit">
+          📄 Guardar y Generar Reporte PDF
+        </button>
       </div>
-
-      <div class="col-12 col-md-4">
-        <div class="firma-container">
-          <div class="firma-label">
-            <i class="bi bi-tools"></i>
-            Firma Técnico
-          </div>
-          <div class="firma-box">
-            <canvas id="firmaTecnicoCanvas"></canvas>
-          </div>
-          <input type="text" class="form-control mt-3" id="nombre_tecnico" name="nombre_tecnico" 
-                 value="<?= htmlspecialchars($nombre_tecnico ?? '') ?>" readonly>
-          <button type="button" class="btn btn-secondary btn-sm mt-2 w-100" onclick="sigTecnico.clear()">
-            <i class="bi bi-eraser"></i> Limpiar
-          </button>
-          <input type="hidden" name="firma_tecnico" id="firma_tecnico_input">
-        </div>
-      </div>
-    </div>
-
-    <!-- BOTÓN ENVIAR -->
-    <div class="text-center mt-5">
-      <button type="submit" class="btn btn-success btn-lg">
-        <i class="bi bi-save"></i> Guardar y Generar Reporte (PDF)
-      </button>
-    </div>
-  </form>
+    </form>
+  </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -1188,20 +763,6 @@ include __DIR__ . '/modal_equipo.php';
 const sigCliente = new SignaturePad(document.getElementById('firmaClienteCanvas'));
 const sigSupervisor = new SignaturePad(document.getElementById('firmaSupervisorCanvas'));
 const sigTecnico = new SignaturePad(document.getElementById('firmaTecnicoCanvas'));
-
-// Detectar cuando se hace scroll en tablas (para ocultar el indicador)
-document.addEventListener('DOMContentLoaded', function() {
-  const tablas = document.querySelectorAll('.table-responsive');
-  tablas.forEach(tabla => {
-    tabla.addEventListener('scroll', function() {
-      if (this.scrollLeft > 10) {
-        this.closest('.custom-table')?.classList.add('scrolled');
-      } else {
-        this.closest('.custom-table')?.classList.remove('scrolled');
-      }
-    });
-  });
-});
 
 document.getElementById('formReporte').addEventListener('submit', function(e){
   if (!sigCliente.isEmpty()) {
@@ -1226,12 +787,7 @@ document.getElementById('formReporte').addEventListener('submit', function(e){
 });
 
 $(document).ready(function(){
-  $('.equipo-select').select2({ 
-    placeholder:"Buscar equipo...", 
-    allowClear:true, 
-    width:'100%',
-    dropdownAutoWidth: true
-  });
+  $('.equipo-select').select2({ placeholder:"Buscar equipo...", allowClear:true, width:'100%' });
 
   $('.equipo-select').each(function(){
     let id = $(this).val();
@@ -1304,28 +860,43 @@ function generarObservacionesMultimedia() {
     const index = $(this).data('index');
     const id = $(this).val();
     const texto = $(this).find('option:selected').text().trim();
-    const nombre = $(this).data('nombre') || $(`.nombre-${index}`).val() || '';
+    const nombre = $(`.nombre-${index}`).val() || '';
 
     if (id && texto && texto !== '-- Seleccione --') {
       const bloque = document.createElement('div');
       bloque.className = 'observacion-card';
       bloque.innerHTML = `
-        <h6><i class="bi bi-wrench-adjustable"></i> ${texto}${nombre ? ' - ' + nombre : ''}</h6>
+        <h6 class="text-primary mb-3">🔧 ${texto}${nombre ? ' - ' + nombre : ''}</h6>
         <div class="mb-3">
-          <label class="form-label"><i class="bi bi-text-left"></i> Observaciones y recomendaciones:</label>
+          <label class="form-label fw-bold">Texto / Recomendación:</label>
           <textarea class="form-control observacion-texto" data-index="${index}" rows="3"
             placeholder="Escribe observaciones específicas para ${texto}..." required></textarea>
         </div>
         <div class="mb-2">
-          <label class="form-label"><i class="bi bi-images"></i> Imágenes del equipo:</label>
+          <label class="form-label fw-bold">Imágenes:</label>
+          <div class="d-flex gap-2 mb-3 flex-wrap">
+            <button type="button" class="btn btn-primary btn-icon btn-select-image" data-index="${index}">
+              📁 Seleccionar de Galería
+            </button>
+            <button type="button" class="btn btn-success btn-icon btn-camera-image" data-index="${index}">
+              📷 Tomar Foto
+            </button>
+          </div>
           <input 
             type="file" 
-            class="form-control observacion-imagen" 
+            class="d-none observacion-imagen" 
+            id="input-imagen-${index}"
             data-index="${index}" 
             accept="image/*" 
-            capture="camera" 
             multiple>
-          <div id="preview-${index}" class="d-flex flex-wrap gap-2 mt-3"></div>
+          <input 
+            type="file" 
+            class="d-none observacion-camera" 
+            id="input-camera-${index}"
+            data-index="${index}" 
+            accept="image/*" 
+            capture="environment">
+          <div id="preview-${index}" class="d-flex flex-wrap gap-2 mt-3" data-rutas="[]"></div>
         </div>
       `;
       contenedor.appendChild(bloque);
@@ -1333,20 +904,88 @@ function generarObservacionesMultimedia() {
   });
 }
 
+// === Manejadores de botones para galería y cámara ===
+$(document).on('click', '.btn-select-image', function() {
+  const index = $(this).data('index');
+  $(`#input-imagen-${index}`).click();
+});
+
+$(document).on('click', '.btn-camera-image', function() {
+  const index = $(this).data('index');
+  $(`#input-camera-${index}`).click();
+});
+
+// === Almacenamiento de imágenes por equipo ===
 const imagenesGuardadas = {};
 
-$(document).on('change', '.observacion-imagen', function() {
+// === Función para eliminar imagen ===
+function eliminarImagen(index, rutaImagen) {
+  if (!confirm('¿Deseas eliminar esta imagen?')) return;
+
+  const rutasActuales = imagenesGuardadas[index] || [];
+  const nuevasRutas = rutasActuales.filter(r => r !== rutaImagen);
+  imagenesGuardadas[index] = nuevasRutas;
+
+  const preview = document.getElementById(`preview-${index}`);
+  preview.dataset.rutas = JSON.stringify(nuevasRutas);
+
+  fetch('eliminar_imagen.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ruta: rutaImagen })
+  }).catch(err => console.error('Error eliminando imagen del servidor:', err));
+
+  actualizarPreview(index);
+}
+
+// === Función para actualizar el preview ===
+function actualizarPreview(index) {
+  const preview = document.getElementById(`preview-${index}`);
+  const rutas = imagenesGuardadas[index] || [];
+  
+  preview.innerHTML = '';
+  
+  rutas.forEach(ruta => {
+    const container = document.createElement('div');
+    container.className = 'image-preview-container';
+    
+    const img = document.createElement('img');
+    img.src = ruta;
+    img.className = 'img-thumbnail';
+    img.onclick = () => window.open(ruta, '_blank');
+    
+    const btnDelete = document.createElement('button');
+    btnDelete.className = 'btn-delete-image';
+    btnDelete.innerHTML = '×';
+    btnDelete.type = 'button';
+    btnDelete.onclick = (e) => {
+      e.stopPropagation();
+      eliminarImagen(index, ruta);
+    };
+    
+    container.appendChild(img);
+    container.appendChild(btnDelete);
+    preview.appendChild(container);
+  });
+}
+
+// === Manejo de carga de imágenes ===
+$(document).on('change', '.observacion-imagen, .observacion-camera', function() {
   const index = $(this).data('index');
   const files = this.files;
-  const preview = document.getElementById(`preview-${index}`);
-  if (!imagenesGuardadas[index]) imagenesGuardadas[index] = [];
 
   if (files.length === 0) return;
+
+  if (!imagenesGuardadas[index]) imagenesGuardadas[index] = [];
 
   const formData = new FormData();
   for (const f of files) formData.append('imagenes[]', f);
 
-  console.log('📸 Subiendo nueva imagen de equipo', index);
+  const preview = document.getElementById(`preview-${index}`);
+  const loadingDiv = document.createElement('div');
+  loadingDiv.className = 'text-center p-2';
+  loadingDiv.innerHTML = '<div class="loading-spinner"></div> Subiendo...';
+  preview.appendChild(loadingDiv);
 
   fetch('subir_imagen.php', { method: 'POST', body: formData })
     .then(res => {
@@ -1354,27 +993,31 @@ $(document).on('change', '.observacion-imagen', function() {
       return res.json();
     })
     .then(rutas => {
-      console.log('🟢 Rutas devueltas:', rutas);
+      loadingDiv.remove();
 
       if (!Array.isArray(rutas) || rutas.length === 0) {
-        console.warn('⚠️ No se devolvieron rutas válidas');
+        alert('⚠️ No se pudieron subir las imágenes');
         return;
       }
 
       imagenesGuardadas[index].push(...rutas);
       preview.dataset.rutas = JSON.stringify(imagenesGuardadas[index]);
 
-      rutas.forEach(ruta => {
-        const img = document.createElement('img');
-        img.src = ruta;
-        img.className = 'img-thumbnail';
-        img.style.maxWidth = '120px';
-        img.style.maxHeight = '120px';
-        preview.appendChild(img);
-      });
+      actualizarPreview(index);
+
+      const msg = document.createElement('div');
+      msg.className = 'alert alert-success alert-dismissible fade show mt-2';
+      msg.innerHTML = `
+        ✅ ${rutas.length} imagen(es) cargada(s) correctamente
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      `;
+      preview.parentElement.insertBefore(msg, preview);
+      setTimeout(() => msg.remove(), 3000);
     })
     .catch(err => {
-      console.error('🔴 Error subiendo imagen:', err);
+      loadingDiv.remove();
+      console.error('Error subiendo imagen:', err);
+      alert('❌ Error al subir las imágenes. Intenta nuevamente.');
     })
     .finally(() => {
       this.value = '';
@@ -1389,8 +1032,7 @@ document.getElementById('formReporte').addEventListener('submit', function(e) {
   document.querySelectorAll('.observacion-texto').forEach(txt => {
     const index = txt.dataset.index;
     const nombre = $(`.equipo-select[data-index='${index}'] option:selected`).text().trim();
-    const preview = document.getElementById(`preview-${index}`);
-    const rutas = preview?.dataset?.rutas ? JSON.parse(preview.dataset.rutas) : [];
+    const rutas = imagenesGuardadas[index] || [];
 
     if (nombre && txt.value.trim()) {
       data.push({
