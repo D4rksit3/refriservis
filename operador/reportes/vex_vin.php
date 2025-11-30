@@ -51,10 +51,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $equiposGuardados = [];
     for ($i = 1; $i <= 7; $i++) {
         $val = $equipos[$i]['id_equipo'] ?? null;
-        $equiposGuardados[$i] = ($val === '' ? null : $val); // si es '', guardamos NULL
+        $equiposGuardados[$i] = ($val === '' ? null : $val);
     }
         
-
+    $nombre_cliente = $_POST['nombre_cliente'] ?? null;
+    $nombre_supervisor = $_POST['nombre_supervisor'] ?? null;
+    $nombre_digitador = $_POST['nombre_digitador'] ?? null;
 
     // ✅ UPDATE en la tabla mantenimientos
     $actividades = $_POST['actividades'] ?? [];
@@ -69,24 +71,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
     }
 
-
-
-          
-  $nombre_cliente = $_POST['nombre_cliente'] ?? null;
-  $nombre_supervisor = $_POST['nombre_supervisor'] ?? null;
-
-
-
-     // ✅ UPDATE en la tabla mantenimientos
     $stmt = $pdo->prepare("UPDATE mantenimientos SET 
         trabajos = ?, 
         observaciones = ?, 
         parametros = ?, 
+        actividades = ?,
         firma_cliente = ?, 
         firma_supervisor = ?, 
         firma_tecnico = ?, 
         nombre_cliente = ?, 
         nombre_supervisor = ?, 
+        nombre_digitador = ?,
         fotos = ?, 
         equipo1 = ?, 
         equipo2 = ?, 
@@ -99,17 +94,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         modificado_en = NOW(),
         modificado_por = ?,
         estado = 'finalizado'
-    WHERE id = ?");
+        WHERE id = ?");
     $stmt->execute([
         $trabajos,
         $observaciones,
-        json_encode($parametros),
+        json_encode($parametros, JSON_UNESCAPED_UNICODE),
+        json_encode($actividadesLimpias, JSON_UNESCAPED_UNICODE),
         $firma_cliente,
         $firma_supervisor,
         $firma_tecnico,
         $nombre_cliente,
         $nombre_supervisor,
-        json_encode($fotos_guardadas),
+        $nombre_digitador,
+        json_encode($fotos_guardadas, JSON_UNESCAPED_UNICODE),
         $equiposGuardados[1],
         $equiposGuardados[2],
         $equiposGuardados[3],
@@ -121,9 +118,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mantenimiento_id
     ]);
 
-
-
-    // Si confirmación viene por POST, redirige al dashboard
     $confirmado = $_POST['confirmado'] ?? 'no';
     if($confirmado === 'si'){
         header("Location: https://refriservis.seguricloud.com/operador/mis_mantenimientos.php");
@@ -132,7 +126,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     exit;
 }
-
 
 // 🚩 Si es GET → Mostrar formulario
 $id = $_GET['id'] ?? null;
@@ -145,10 +138,12 @@ $stmt = $pdo->prepare("
       c.direccion, 
       c.responsable, 
       c.telefono,
-      u.nombre AS nombre_tecnico
+      u.nombre AS nombre_tecnico,
+      dig.nombre AS nombre_digitador
   FROM mantenimientos m
   LEFT JOIN clientes c ON c.id = m.cliente_id
   LEFT JOIN usuarios u ON u.id = m.operador_id
+  LEFT JOIN usuarios dig ON dig.id = m.digitador_id
   WHERE m.id = ?
 ");
 $stmt->execute([$id]);
@@ -162,9 +157,10 @@ if (!empty($m['actividades'])) {
 }
 
 $nombre_tecnico = $m['nombre_tecnico'] ?? '';
+$nombre_digitador = $m['nombre_digitador'] ?? '';
 
 // Lista de equipos desde inventario
-$equiposList = $pdo->query("SELECT id_equipo AS id_equipo,Nombre, Identificador, Marca, Modelo, Ubicacion, Voltaje 
+$equiposList = $pdo->query("SELECT id_equipo AS id_equipo, Nombre, Identificador, Marca, Modelo, Ubicacion, Voltaje 
                             FROM equipos ORDER BY Identificador ASC")->fetchAll(PDO::FETCH_ASSOC);
 
 // Preparar equipos del mantenimiento
@@ -192,14 +188,247 @@ include __DIR__ . '/modal_equipo.php';
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Generar Reporte - Mantenimiento #<?=htmlspecialchars($m['id'])?></title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
 <style>
-  .firma-box { border:1px solid #ccc; height:150px; background:#fff; }
-  canvas { width:100%; height:150px; }
-  .img-preview { max-width:100%; max-height:150px; object-fit:contain; border:1px solid #ddd; padding:4px; background:#fff; }
-  @media (max-width:576px){ .firma-box { height:120px } canvas{ height:120px } }
+  body {
+    background: #f5f5f5;
+    font-family: Arial, sans-serif;
+  }
 
+  .container {
+    max-width: 1400px;
+  }
 
-    /* Estilos para preview de imágenes */
+  .main-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 20px;
+    margin: 20px auto;
+  }
+
+  /* Cabecera estilo PDF */
+  .pdf-header {
+    display: grid;
+    grid-template-columns: 80px 1fr 120px;
+    border: 2px solid #0d6efd;
+    margin-bottom: 20px;
+  }
+
+  .pdf-header-logo {
+    border-right: 2px solid #0d6efd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+  }
+
+  .pdf-header-logo img {
+    max-width: 100%;
+    max-height: 60px;
+  }
+
+  .pdf-header-center {
+    border-right: 2px solid #0d6efd;
+    padding: 15px;
+    text-align: center;
+  }
+
+  .pdf-header-title {
+    background: #e3f2fd;
+    padding: 4px;
+    font-weight: bold;
+    font-size: 11px;
+    margin-bottom: 8px;
+    color: #0d6efd;
+  }
+
+  .pdf-header-subtitle {
+    font-weight: bold;
+    font-size: 11px;
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+
+  .pdf-header-contact {
+    font-size: 9px;
+    line-height: 1.3;
+    color: #666;
+  }
+
+  .pdf-header-number {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+  }
+
+  .pdf-header-number-title {
+    background: #e3f2fd;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: bold;
+    color: #0d6efd;
+    margin-bottom: 10px;
+  }
+
+  .pdf-header-number-value {
+    font-size: 14px;
+    font-weight: bold;
+    color: #0d6efd;
+  }
+
+  /* Secciones */
+  .section-header {
+    background: #0d6efd;
+    color: white;
+    padding: 8px 15px;
+    font-weight: bold;
+    font-size: 13px;
+    margin: 20px 0 10px 0;
+    border-radius: 4px;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .info-item {
+    display: flex;
+    border: 1px solid #dee2e6;
+    background: #f8f9fa;
+  }
+
+  .info-label {
+    background: #e3f2fd;
+    color: #0d6efd;
+    font-weight: bold;
+    font-size: 11px;
+    padding: 8px 10px;
+    min-width: 100px;
+    border-right: 1px solid #dee2e6;
+  }
+
+  .info-value {
+    padding: 8px 10px;
+    font-size: 12px;
+    flex: 1;
+    background: white;
+  }
+
+  .info-value input {
+    border: none;
+    background: transparent;
+    width: 100%;
+    padding: 0;
+    font-size: 12px;
+  }
+
+  .info-value input:focus {
+    outline: none;
+  }
+
+  /* Tablas */
+  .table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 20px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+  }
+
+  .table {
+    margin: 0;
+    font-size: 11px;
+  }
+
+  .table thead {
+    background: #0d6efd;
+    color: white;
+  }
+
+  .table thead th {
+    border: 1px solid #0a58ca;
+    padding: 8px 4px;
+    font-weight: 600;
+    text-align: center;
+    font-size: 10px;
+  }
+
+  .table tbody td {
+    border: 1px solid #dee2e6;
+    padding: 6px 4px;
+    vertical-align: middle;
+  }
+
+  .table tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+  }
+
+  .table .form-control, .table .form-select {
+    font-size: 10px;
+    padding: 4px 6px;
+    min-height: 28px;
+  }
+
+  /* Firmas */
+  .firma-section {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 4px;
+  }
+
+  .firma-box { 
+    border: 2px dashed #cbd5e0;
+    border-radius: 4px;
+    height: 120px;
+    background: white;
+    cursor: crosshair;
+    margin-bottom: 8px;
+  }
+
+  canvas { 
+    width: 100%; 
+    height: 120px;
+  }
+
+  /* Observaciones */
+  .observacion-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+
+  .observacion-card h6 {
+    color: #0d6efd;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e3f2fd;
+  }
+
+  /* Botones */
+  .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+  }
+
+  .btn-submit {
+    padding: 12px 30px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  /* Preview de imágenes */
   .image-preview-container {
     position: relative;
     display: inline-block;
@@ -207,26 +436,24 @@ include __DIR__ . '/modal_equipo.php';
   }
   
   .image-preview-container img {
-    max-width: 120px;
-    max-height: 120px;
+    max-width: 100px;
+    max-height: 100px;
     object-fit: cover;
     border: 2px solid #dee2e6;
-    border-radius: 8px;
+    border-radius: 4px;
     cursor: pointer;
-    transition: all 0.3s ease;
   }
   
   .image-preview-container img:hover {
     border-color: #0d6efd;
-    transform: scale(1.05);
   }
   
   .btn-delete-image {
     position: absolute;
     top: -8px;
     right: -8px;
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     background: #dc3545;
     color: white;
@@ -235,315 +462,424 @@ include __DIR__ . '/modal_equipo.php';
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: bold;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    transition: all 0.2s ease;
   }
   
   .btn-delete-image:hover {
     background: #bb2d3b;
-    transform: scale(1.1);
   }
   
   .loading-spinner {
     display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255,255,255,.3);
+    width: 18px;
+    height: 18px;
+    border: 3px solid rgba(13, 110, 253, .3);
     border-radius: 50%;
-    border-top-color: #fff;
+    border-top-color: #0d6efd;
     animation: spin 1s ease-in-out infinite;
   }
   
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .pdf-header {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto;
+    }
+
+    .pdf-header-logo,
+    .pdf-header-center,
+    .pdf-header-number {
+      border-right: none;
+      border-bottom: 2px solid #0d6efd;
+    }
+
+    .pdf-header-number {
+      border-bottom: none;
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .table-wrapper {
+      font-size: 9px;
+    }
+
+    .section-header {
+      font-size: 12px;
+      padding: 6px 12px;
+    }
+
+    .main-container {
+      padding: 10px;
+    }
+
+    /* Mejoras para inputs en tablas en móviles */
+    .table .form-control-sm {
+      font-size: 14px !important;
+      padding: 6px 4px !important;
+      min-height: 32px !important;
+    }
+
+    .table input[type="text"] {
+      font-size: 14px !important;
+      min-width: 50px;
+    }
+
+    .table thead th {
+      font-size: 9px;
+      padding: 4px 2px;
+    }
+
+    .table tbody td {
+      padding: 4px 2px;
+    }
+
+    /* Hacer la tabla de parámetros más grande en móvil */
+    .parametros-table {
+      min-width: 800px;
+    }
+
+    .parametros-table input {
+      font-size: 14px !important;
+      padding: 8px 4px !important;
+      min-height: 36px !important;
+      width: 100%;
+    }
+  }
+
+  /* Para pantallas muy pequeñas */
+  @media (max-width: 576px) {
+    .table .form-control-sm,
+    .table input[type="text"] {
+      font-size: 16px !important; /* iOS no hace zoom con 16px+ */
+      padding: 8px 6px !important;
+      min-height: 38px !important;
+    }
+
+    .parametros-table input {
+      font-size: 16px !important;
+      padding: 10px 6px !important;
+      min-height: 40px !important;
+    }
+  }
+
+  /* Select2 adjustments */
+  .select2-container--default .select2-selection--single {
+    height: 32px;
+    font-size: 11px;
+  }
+
+  .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 30px;
+    font-size: 11px;
+  }
+
+  .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 30px;
+  }
+
+  /* Ajustes para inputs pequeños */
+  .form-control-sm {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  textarea.form-control {
+    font-size: 12px;
+  }
 </style>
 </head>
-<body class="bg-light">
-<div class="container py-3">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <!-- <h5>Reporte de Servicio Técnico — Mantenimiento #<?=htmlspecialchars($m['id'])?></h5> -->
-    <a class="btn btn-secondary btn-sm" href="/operador/mis_mantenimientos.php">Volver</a>
-    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
-    ➕ Agregar Equipo
-  </button>
-  </div>
-
-<table border="1" cellspacing="0" cellpadding="4" width="100%" style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;">
-  <tr>
-    <!-- Logo -->
-    <td width="20%" align="center">
-      <img src="/../../lib/logo.jpeg" alt="Logo" style="max-height:60px;">
-    </td>
-    
-    <!-- Título y datos -->
-    <td width="60%" align="center" style="font-weight: bold; font-size: 13px;">
-      <div style="background:#cfe2f3; padding:2px; margin-bottom:3px;">FORMATO DE CALIDAD</div>
-      CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – VENTILACIÓN MECÁNICA (VEX-VIN) <br>
-      <span style="font-weight: normal;">
-        Oficina: (01) 6557907 <br>
-        Emergencias: +51 943 048 606 <br>
-        ventas@refriservissac.com
-      </span>
-    </td>
-    
-    <!-- Número de reporte -->
-     
-    <td width="20%" align="center" style="font-size: 12px;">
-        <div style="background:#cfe2f3; padding:2px; margin-bottom:3px;">FORMATO DE CALIDAD</div>
-        <br>
-        <br>
-      001-N°<?php echo str_pad($id, 6, "0", STR_PAD_LEFT); ?>
-      <br>
-      <br>
-      
-    </td>
-  </tr>
-</table>
-
-
-
-  <div class="card mb-3 p-3">
-    <div><strong>CLIENTE:</strong> <?=htmlspecialchars($m['cliente'] ?? '-')?></div>
-    <div><strong>DIRECCIÓN:</strong> <?=htmlspecialchars($m['direccion'] ?? '-')?></div>
-    <div><strong>RESPONSABLE:</strong> <?=htmlspecialchars($m['responsable'] ?? '-')?></div>
-    <div><strong>FECHA:</strong> <?=htmlspecialchars($m['fecha'] ?? date('Y-m-d'))?></div>
-  </div>
-
-  <form action="vex_vin.php"  id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
-    <input type="hidden" name="mantenimiento_id" value="<?=htmlspecialchars($m['id'])?>">
-
-    <!-- TABLA DE EQUIPOS -->
-    <h6>DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS A INTERVENIR</h6>
-    <div class="table-responsive mb-3">
-      <table class="table table-bordered align-middle text-center">
-        <thead class="table-light">
-          <tr>
-            <th>#</th>
-            <th>Identificador</th>
-            <th>Nombre</th>
-            <th>Marca</th>
-            <th>Modelo</th>
-            <th>Ubicación</th>
-            <th>Voltaje</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php for($i=1;$i<=7;$i++): 
-            $eq = $equiposMantenimiento[$i];
-          ?>
-          <tr>
-            <td><?= $i ?></td>
-            <td>
-              <select class="form-select form-select-sm equipo-select" 
-                      name="equipos[<?= $i ?>][id_equipo]" 
-                      data-index="<?= $i ?>">
-                <option value="">-- Seleccione --</option>
-                <?php foreach($equiposList as $e): ?>
-                    <option value="<?= $e['id_equipo'] ?>" <?= ($eq && $eq['id_equipo']==$e['id_equipo'] ? 'selected' : '') ?>>
-                        <?= htmlspecialchars($e['Identificador']) ?>
-                    </option>
-                <?php endforeach; ?>
-              </select>
-            </td>
-            <td><input type="text" class="form-control form-control-sm nombre-<?= $i ?>" name="equipos[<?= $i ?>][Nombre]" value="<?=htmlspecialchars($eq['Nombre'] ?? '')?>" readonly></td>
-            
-            <td><input type="text" class="form-control form-control-sm marca-<?= $i ?>" name="equipos[<?= $i ?>][marca]" value="<?=htmlspecialchars($eq['Marca'] ?? '')?>" readonly></td>
-            <td><input type="text" class="form-control form-control-sm modelo-<?= $i ?>" name="equipos[<?= $i ?>][modelo]" value="<?=htmlspecialchars($eq['Modelo'] ?? '')?>" readonly></td>
-            <td><input type="text" class="form-control form-control-sm ubicacion-<?= $i ?>" name="equipos[<?= $i ?>][ubicacion]" value="<?=htmlspecialchars($eq['Ubicacion'] ?? '')?>" readonly></td>
-            <td><input type="text" class="form-control form-control-sm voltaje-<?= $i ?>" name="equipos[<?= $i ?>][voltaje]" value="<?=htmlspecialchars($eq['Voltaje'] ?? '')?>" readonly></td>
-          </tr>
-          <?php endfor; ?>
-        </tbody>
-      </table>
+<body>
+<div class="container">
+  <div class="main-container">
+    <!-- Botones superiores -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <a class="btn btn-secondary btn-sm btn-icon" href="/operador/mis_mantenimientos.php">
+        ← Volver
+      </a>
+      <button class="btn btn-primary btn-sm btn-icon" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
+        ➕ Agregar Equipo
+      </button>
     </div>
 
-    <!-- TABLA DE PARÁMETROS -->
-    <h6>PARÁMETROS DE FUNCIONAMIENTO (Antes / Después)</h6>
-    <div class="table-responsive mb-3">
-      <table class="table table-bordered table-sm">
-        <thead class="table-light">
-          <tr>
-            <th>Medida</th>
-            <?php for($i=1;$i<=7;$i++): ?>
-              <th colspan="2" class="text-center">Equipo <?= $i ?></th>
-            <?php endfor; ?>
-          </tr>
-          <tr>
-            <th></th>
-            <?php for($i=1;$i<=7;$i++): ?>
-              <th>Antes</th><th>Desp.</th>
-            <?php endfor; ?>
-          </tr>
-        </thead>
-        <tbody>
-          <?php
-          $parametros = [
-            'Corriente eléctrica nominal (Amperios) L1',
-            'Corriente L2','Corriente L3',
-            'Tensión eléctrica nominal V1','Tensión V2','Tensión V3'
-          ];
-          foreach($parametros as $p): ?>
+    <!-- Cabecera estilo PDF -->
+    <div class="pdf-header">
+      <div class="pdf-header-logo">
+        <img src="/../../lib/logo.jpeg" alt="Logo">
+      </div>
+      <div class="pdf-header-center">
+        <div class="pdf-header-title">FORMATO DE CALIDAD</div>
+        <div class="pdf-header-subtitle">
+          CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – VENTILACIÓN MECÁNICA (VEX-VIN)
+        </div>
+        <div class="pdf-header-contact">
+          Oficina: (01) 6557907 | Emergencias: +51 943 048 606<br>
+          ventas@refriservissac.com
+        </div>
+      </div>
+      <div class="pdf-header-number">
+        <div class="pdf-header-number-title">FORMATO</div>
+        <div class="pdf-header-number-value">N°<?= str_pad($id, 6, "0", STR_PAD_LEFT) ?></div>
+      </div>
+    </div>
+
+    <!-- Datos del Cliente -->
+    <div class="section-header">DATOS DEL CLIENTE</div>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">Cliente:</div>
+        <div class="info-value"><?= htmlspecialchars($m['cliente'] ?? '-') ?></div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Responsable:</div>
+        <div class="info-value"><?= htmlspecialchars($m['responsable'] ?? '-') ?></div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Dirección:</div>
+        <div class="info-value"><?= htmlspecialchars($m['direccion'] ?? '-') ?></div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Teléfono:</div>
+        <div class="info-value"><?= htmlspecialchars($m['telefono'] ?? '-') ?></div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Fecha:</div>
+        <div class="info-value"><?= htmlspecialchars($m['fecha'] ?? date('Y-m-d')) ?></div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">MT - Digitador:</div>
+        <div class="info-value">
+          <input type="text" id="nombre_digitador" name="nombre_digitador" 
+                 value="<?= htmlspecialchars($nombre_digitador ?? '') ?>" 
+                 placeholder="Nombre y Apellido" form="formReporte">
+        </div>
+      </div>
+    </div>
+
+    <form action="vex_vin.php" id="formReporte" method="post" enctype="multipart/form-data" class="mb-4">
+      <input type="hidden" name="mantenimiento_id" value="<?= htmlspecialchars($m['id']) ?>">
+
+      <!-- TABLA DE EQUIPOS -->
+      <div class="section-header">DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS</div>
+      <div class="table-wrapper">
+        <table class="table table-bordered mb-0">
+          <thead>
             <tr>
-              <td style="min-width:200px;"><?=htmlspecialchars($p)?></td>
-              <?php for($i=1;$i<=7;$i++): ?>
-                <td><input type="text" class="form-control form-control-sm" name="parametros[<?= md5($p) ?>][<?= $i ?>][antes]"></td>
-                <td><input type="text" class="form-control form-control-sm" name="parametros[<?= md5($p) ?>][<?= $i ?>][despues]"></td>
+              <th style="width:30px;">#</th>
+              <th style="width:150px;">Identificador</th>
+              <th style="width:150px;">Nombre</th>
+              <th>Marca</th>
+              <th>Modelo</th>
+              <th>Ubicación</th>
+              <th style="width:80px;">Voltaje</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php for($i=1; $i<=7; $i++): 
+              $eq = $equiposMantenimiento[$i];
+            ?>
+            <tr>
+              <td class="text-center"><?= $i ?></td>
+              <td>
+                <select class="form-select form-select-sm equipo-select" 
+                        name="equipos[<?= $i ?>][id_equipo]" 
+                        data-index="<?= $i ?>">
+                  <option value="">-- Seleccione --</option>
+                  <?php foreach($equiposList as $e): ?>
+                      <option value="<?= $e['id_equipo'] ?>" <?= ($eq && $eq['id_equipo']==$e['id_equipo'] ? 'selected' : '') ?>>
+                          <?= htmlspecialchars($e['Identificador']) ?>
+                      </option>
+                  <?php endforeach; ?>
+                </select>
+              </td>
+              <td><input type="text" class="form-control form-control-sm nombre-<?= $i ?>" name="equipos[<?= $i ?>][Nombre]" value="<?= htmlspecialchars($eq['Nombre'] ?? '') ?>" readonly></td>
+              <td><input type="text" class="form-control form-control-sm marca-<?= $i ?>" name="equipos[<?= $i ?>][marca]" value="<?= htmlspecialchars($eq['Marca'] ?? '') ?>" readonly></td>
+              <td><input type="text" class="form-control form-control-sm modelo-<?= $i ?>" name="equipos[<?= $i ?>][modelo]" value="<?= htmlspecialchars($eq['Modelo'] ?? '') ?>" readonly></td>
+              <td><input type="text" class="form-control form-control-sm ubicacion-<?= $i ?>" name="equipos[<?= $i ?>][ubicacion]" value="<?= htmlspecialchars($eq['Ubicacion'] ?? '') ?>" readonly></td>
+              <td><input type="text" class="form-control form-control-sm voltaje-<?= $i ?>" name="equipos[<?= $i ?>][voltaje]" value="<?= htmlspecialchars($eq['Voltaje'] ?? '') ?>" readonly></td>
+            </tr>
+            <?php endfor; ?>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- TABLA DE PARÁMETROS -->
+      <div class="section-header">PARÁMETROS DE FUNCIONAMIENTO (Antes / Después)</div>
+      <div class="table-wrapper">
+        <table class="table table-bordered mb-0 parametros-table">
+          <thead>
+            <tr>
+              <th style="min-width:180px;">Medida</th>
+              <?php for($i=1; $i<=7; $i++): ?>
+                <th colspan="2" class="text-center">Eq. <?= $i ?></th>
               <?php endfor; ?>
             </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
-    </div>
+            <tr>
+              <th></th>
+              <?php for($i=1; $i<=7; $i++): ?>
+                <th style="width:50px;">A</th><th style="width:50px;">D</th>
+              <?php endfor; ?>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
+            $parametros = [
+              'Corriente eléctrica nominal (Amperios) L1',
+              'Corriente L2','Corriente L3',
+              'Tensión eléctrica nominal V1','Tensión V2','Tensión V3'
+            ];
+            foreach($parametros as $p): ?>
+              <tr>
+                <td><?= htmlspecialchars($p) ?></td>
+                <?php for($i=1; $i<=7; $i++): ?>
+                  <td>
+                    <input type="text" 
+                           class="form-control form-control-sm" 
+                           name="parametros[<?= md5($p) ?>][<?= $i ?>][antes]"
+                           inputmode="decimal">
+                  </td>
+                  <td>
+                    <input type="text" 
+                           class="form-control form-control-sm" 
+                           name="parametros[<?= md5($p) ?>][<?= $i ?>][despues]"
+                           inputmode="decimal">
+                  </td>
+                <?php endfor; ?>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
 
+      <!-- ACTIVIDADES A REALIZAR -->
+      <div class="section-header">ACTIVIDADES A REALIZAR</div>
+      <div class="table-wrapper">
+        <table class="table table-bordered mb-0">
+          <thead>
+            <tr>
+              <th rowspan="2" style="min-width:300px;">ACTIVIDADES</th>
+              <th colspan="7">Equipos</th>
+              <th colspan="4">Frecuencia</th>
+            </tr>
+            <tr>
+              <?php for($i=1; $i<=7; $i++): ?>
+                <th style="width:30px;"><?= str_pad($i, 2, "0", STR_PAD_LEFT) ?></th>
+              <?php endfor; ?>
+              <th style="width:30px;">B</th>
+              <th style="width:30px;">T</th>
+              <th style="width:30px;">S</th>
+              <th style="width:30px;">A</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
+            $actividades = [
+              "Inspección tensión de línea, L1, L2, L3",
+              "Inspección corriente de línea",
+              "Verificar presión estática Ventilador",
+              "Verificar caudal de aire Ventilador",
+              "Verificar fugas de aire en red de ductos",
+              "Verificar obstrucciones de aire en red de ductos",
+              "Inspección mecánica de ventiladores, rodajes, chumaceras y lubricación",
+              "Inspección mecánica de ventiladores, fajas y poleas, ajuste y tensado",
+              "Inspecciones chavetas de transmisión en ejes y poleas, limpieza del eje",
+              "Revisión de estado de fajas transmisión y apuntar modelo",
+              "Verificar ruido y vibración de unidad",
+              "Limpieza de rejillas de inyección y extracción"
+            ];
 
+            foreach($actividades as $index => $act):
+            ?>
+            <tr>
+              <td style="font-size:10px;"><?= htmlspecialchars($act) ?></td>
+              <?php for($i=1; $i<=7; $i++): ?>
+                <td class="text-center">
+                  <input type="checkbox"
+                  name="actividades[<?= $index ?>][dias][<?= $i ?>]" 
+                  value="1"
+                  <?= (isset($actividadesGuardadas[$index]['dias']) && in_array($i, $actividadesGuardadas[$index]['dias'])) ? 'checked' : '' ?>>
+                </td>
+              <?php endfor; ?>
+              <?php foreach(["B","T","S","A"] as $f): ?>
+                <td class="text-center">
+                  <input type="radio" 
+                  name="actividades[<?= $index ?>][frecuencia]" 
+                  value="<?= $f ?>"
+                  <?= (isset($actividadesGuardadas[$index]['frecuencia']) && $actividadesGuardadas[$index]['frecuencia'] == $f) ? 'checked' : '' ?>>
+                </td>
+              <?php endforeach; ?>
+            </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
 
-<!-- ACTIVIDADES A REALIZAR -->
-<h6>ACTIVIDADES A REALIZAR</h6>
-<div class="table-responsive mb-3">
-  <table class="table table-bordered table-sm text-center align-middle">
-    <thead class="table-primary">
-      <tr>
-        <th rowspan="2" class="align-middle">ACTIVIDADES A REALIZAR</th>
-        <th colspan="7"> </th>
-        <th colspan="4">Frecuencia</th>
-      </tr>
-      <tr>
-        <?php for($i=1;$i<=7;$i++): ?>
-          <th><?= str_pad($i, 2, "0", STR_PAD_LEFT) ?></th>
-        <?php endfor; ?>
-        <th>B.</th>
-        <th>T.</th>
-        <th>S.</th>
-        <th>A.</th>
-      </tr>
-    </thead>
-    <tbody>
-      <?php
-      $actividades = [
-        "Inspección tensión de línea, L1, L2, L3",
-        "Inspección corriente de línea",
-        "Verificar presión estática Ventilador",
-        "Verificar caudal de aire Ventilador",
-        "Verificar fugas de aire en red de ductos",
-        "Verificar obstrucciones de aire en red de ductos",
-        "Inspección mecánica de ventiladores, rodajes, chumaceras y lubricación",
-        "Inspección mecánica de ventiladores, fajas y poleas, ajuste y tensado",
-        "Inspecciones chavetas de transmisión en ejes y poleas, limpieza del eje",
-        "Revisión de estado de fajas transmisión y apuntar modelo",
-        "Verificar ruido y vibración de unidad",
-        "Limpieza de rejillas de inyección y extracción"
+      <!-- TRABAJOS REALIZADOS -->
+      <div class="section-header">TRABAJOS REALIZADOS</div>
+      <div class="mb-3">
+        <textarea class="form-control" name="trabajos" rows="4" 
+                  placeholder="Describa los trabajos realizados durante el mantenimiento..."></textarea>
+      </div>
 
-      ];
+      <!-- OBSERVACIONES MULTIMEDIA -->
+      <div class="section-header">OBSERVACIONES Y RECOMENDACIONES</div>
+      <div id="observacionesMultimedia" class="mb-3"></div>
+      <textarea name="observaciones" id="observacionesFinal" hidden></textarea>
 
-      foreach($actividades as $index => $act):
-      ?>
-      <tr>
-        <td class="text-start"><?= htmlspecialchars($act) ?></td>
-
-        <!-- Columnas 01-07 -->
-        <?php for($i=1;$i<=7;$i++): ?>
-          <td>
-            <input type="checkbox"
-            name="actividades[<?= $index ?>][dias][<?= $i ?>]" 
-            value="1"
-            <?= (isset($actividadesGuardadas[$index]['dias']) && in_array($i, $actividadesGuardadas[$index]['dias'])) ? 'checked' : '' ?>>
-          </td>
-        <?php endfor; ?>
-
-        <!-- Frecuencias -->
-        <?php foreach(["B","T","S","A"] as $f): ?>
-          <td>
-            <input type="radio" 
-            name="actividades[<?= $index ?>][frecuencia]" 
-            value="<?= $f ?>"
-            <?= (isset($actividadesGuardadas[$index]['frecuencia']) && $actividadesGuardadas[$index]['frecuencia'] == $f) ? 'checked' : '' ?>>
-
-          </td>
-        <?php endforeach; ?>
-      </tr>
-      <?php endforeach; ?>
-    </tbody>
-  </table>
-</div>
-
-
-
-
-
-
-
-    <!-- TRABAJOS / OBSERVACIONES -->
-    <div class="mb-3">
-      <label>Trabajos realizados</label>
-      <textarea class="form-control" name="trabajos" rows="4"></textarea>
-    </div>
-
-    <!-- OBSERVACIONES MULTIMEDIA -->
-    <h6>Observaciones y recomendaciones (Multimedia por equipo)</h6>
-
-    <div id="observacionesMultimedia"></div>
-
-    <!-- Campo oculto donde se almacenará todo el contenido final -->
-    <textarea name="observaciones" id="observacionesFinal" hidden></textarea>
-
-    <hr>
-
-    <!-- FOTOS -->
-   <!--  <div class="mb-3">
-      <label>Fotos del/los equipos (múltiples)</label>
-      <input type="file" class="form-control" name="fotos[]" accept="image/*" multiple>
-    </div> -->
-
-    <!-- FIRMAS -->
-    <h6>Firmas</h6>
-    <div class="row g-3">
-      <div class="col-12 col-md-4">
-        <label class="form-label">Firma Cliente</label>
-        <div class="firma-box"><canvas id="firmaClienteCanvas"></canvas></div>
-        <div class="mt-1">
-          <input type="text" id="nombreCliente" name="nombre_cliente" class="form-control mt-2" placeholder="Nombre del cliente">
-          <button type="button" class="btn btn-sm btn-secondary" onclick="sigCliente.clear()">Limpiar</button>
+      <!-- FIRMAS -->
+      <div class="firma-section">
+        <div class="section-header">FIRMAS Y CONFORMIDAD</div>
+        <div class="row g-3">
+          <div class="col-12 col-md-4">
+            <label class="form-label fw-bold small">Firma Cliente</label>
+            <div class="firma-box"><canvas id="firmaClienteCanvas"></canvas></div>
+            <input type="text" id="nombreCliente" name="nombre_cliente" 
+                   class="form-control form-control-sm" placeholder="Nombre del cliente">
+            <button type="button" class="btn btn-sm btn-secondary mt-2 w-100" 
+                    onclick="sigCliente.clear()">Limpiar</button>
+            <input type="hidden" name="firma_cliente" id="firma_cliente_input">
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label fw-bold small">Firma Supervisor</label>
+            <div class="firma-box"><canvas id="firmaSupervisorCanvas"></canvas></div>
+            <input type="text" id="nombreSupervisor" name="nombre_supervisor" 
+                   class="form-control form-control-sm" placeholder="Nombre del supervisor">
+            <button type="button" class="btn btn-sm btn-secondary mt-2 w-100" 
+                    onclick="sigSupervisor.clear()">Limpiar</button>
+            <input type="hidden" name="firma_supervisor" id="firma_supervisor_input">
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label fw-bold small">Firma Técnico</label>
+            <div class="firma-box"><canvas id="firmaTecnicoCanvas"></canvas></div>
+            <input type="text" class="form-control form-control-sm" id="nombre_tecnico" name="nombre_tecnico" 
+                   value="<?= htmlspecialchars($nombre_tecnico ?? '') ?>" readonly>
+            <button type="button" class="btn btn-sm btn-secondary mt-2 w-100" 
+                    onclick="sigTecnico.clear()">Limpiar</button>
+            <input type="hidden" name="firma_tecnico" id="firma_tecnico_input">
+          </div>
         </div>
-        
-        <input type="hidden" name="firma_cliente" id="firma_cliente_input">
       </div>
-      <div class="col-12 col-md-4">
-        <label class="form-label">Firma Supervisor</label>
-        <div class="firma-box"><canvas id="firmaSupervisorCanvas"></canvas></div>
-          <div class="mt-1">
-             <input type="text" id="nombreSupervisor" name="nombre_supervisor" class="form-control mt-2" placeholder="Nombre del supervisor">
-        <button type="button" class="btn btn-sm btn-secondary" onclick="sigSupervisor.clear()">Limpiar</button>
-      </div>
-        <input type="hidden" name="firma_supervisor" id="firma_supervisor_input">
-      </div>
-      <div class="col-12 col-md-4">
-        <label class="form-label">Firma Técnico</label>
-        <div class="firma-box"><canvas id="firmaTecnicoCanvas"></canvas></div>
-        <div class="mt-1">
-          <input type="text" class="form-control" id="nombre_tecnico" name="nombre_tecnico" 
-         value="<?= htmlspecialchars($nombre_tecnico ?? '') ?>" readonly>
-    <button type="button" class="btn btn-sm btn-secondary" onclick="sigTecnico.clear()">Limpiar</button>
-  </div>
-        <input type="hidden" name="firma_tecnico" id="firma_tecnico_input">
-      </div>
-    </div>
 
-    <div class="text-center mt-4">
-      <button type="submit" class="btn btn-success btn-lg">Guardar y Generar Reporte (PDF)</button>
-    </div>
-  </form>
+      <div class="text-center mt-4">
+        <button type="submit" class="btn btn-success btn-submit">
+          Guardar y Generar Reporte PDF
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-
 
 <script>
 // Firmas
@@ -597,7 +933,8 @@ $(document).ready(function(){
     let id = $(this).val();
     let index = $(this).data('index');
     if(!id) {
-      $(`.marca-${index}, .modelo-${index}, .ubicacion-${index}, .voltaje-${index}`).val('');
+      $(`.nombre-${index}, .marca-${index}, .modelo-${index}, .ubicacion-${index}, .voltaje-${index}`).val('');
+      generarObservacionesMultimedia();
       return;
     }
     $.getJSON('/operador/ajax_get_equipo.php', { id_equipo: id }, function(data){
@@ -646,26 +983,26 @@ function generarObservacionesMultimedia() {
     const index = $(this).data('index');
     const id = $(this).val();
     const texto = $(this).find('option:selected').text().trim();
-    const nombre = $(this).data('nombre') || $(`.nombre-${index}`).val() || '';
+    const nombre = $(`.nombre-${index}`).val() || '';
 
     if (id && texto && texto !== '-- Seleccione --') {
       const bloque = document.createElement('div');
-      bloque.className = 'card p-3 mb-3';
+      bloque.className = 'observacion-card';
       bloque.innerHTML = `
-        <h6 class="text-primary mb-2">🔧 ${texto}${nombre ? ' - ' + nombre : ''}</h6>
+        <h6>🔧 ${texto}${nombre ? ' - ' + nombre : ''}</h6>
         <div class="mb-2">
-          <label>Texto / Recomendación:</label>
-          <textarea class="form-control observacion-texto" data-index="${index}" rows="3"
-            placeholder="Escribe observaciones específicas para ${texto}..." required></textarea>
+          <label class="form-label small fw-bold">Texto / Recomendación:</label>
+          <textarea class="form-control form-control-sm observacion-texto" data-index="${index}" rows="3"
+            placeholder="Escribe observaciones específicas..." required></textarea>
         </div>
         <div class="mb-2">
-          <label>Imágenes:</label>
+          <label class="form-label small fw-bold">Imágenes:</label>
           <div class="d-flex gap-2 mb-2 flex-wrap">
             <button type="button" class="btn btn-sm btn-primary btn-select-image" data-index="${index}">
               📁 Galería
             </button>
             <button type="button" class="btn btn-sm btn-success btn-camera-image" data-index="${index}">
-              📷 Tomar Foto
+              📷 Cámara
             </button>
           </div>
           <input 
@@ -682,7 +1019,7 @@ function generarObservacionesMultimedia() {
             data-index="${index}" 
             accept="image/*" 
             capture="environment">
-          <div id="preview-${index}" class="d-flex flex-wrap gap-2 mt-3" data-rutas="[]"></div>
+          <div id="preview-${index}" class="d-flex flex-wrap gap-2 mt-2" data-rutas="[]"></div>
         </div>
       `;
       contenedor.appendChild(bloque);
@@ -690,7 +1027,6 @@ function generarObservacionesMultimedia() {
   });
 }
 
-// === Manejadores de botones para galería y cámara ===
 $(document).on('click', '.btn-select-image', function() {
   const index = $(this).data('index');
   $(`#input-imagen-${index}`).click();
@@ -701,34 +1037,27 @@ $(document).on('click', '.btn-camera-image', function() {
   $(`#input-camera-${index}`).click();
 });
 
-// === Almacenamiento de imágenes por equipo ===
 const imagenesGuardadas = {};
 
-// === Función para eliminar imagen ===
 function eliminarImagen(index, rutaImagen) {
   if (!confirm('¿Deseas eliminar esta imagen?')) return;
 
-  // Buscar y eliminar del array
   const rutasActuales = imagenesGuardadas[index] || [];
   const nuevasRutas = rutasActuales.filter(r => r !== rutaImagen);
   imagenesGuardadas[index] = nuevasRutas;
 
-  // Actualizar el preview
   const preview = document.getElementById(`preview-${index}`);
   preview.dataset.rutas = JSON.stringify(nuevasRutas);
 
-  // Eliminar del servidor (opcional - puedes implementar un endpoint)
   fetch('eliminar_imagen.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ruta: rutaImagen })
-  }).catch(err => console.error('Error eliminando imagen del servidor:', err));
+  }).catch(err => console.error('Error:', err));
 
-  // Redibujar preview
   actualizarPreview(index);
 }
 
-// === Función para actualizar el preview ===
 function actualizarPreview(index) {
   const preview = document.getElementById(`preview-${index}`);
   const rutas = imagenesGuardadas[index] || [];
@@ -741,7 +1070,6 @@ function actualizarPreview(index) {
     
     const img = document.createElement('img');
     img.src = ruta;
-    img.className = 'img-thumbnail';
     img.onclick = () => window.open(ruta, '_blank');
     
     const btnDelete = document.createElement('button');
@@ -759,11 +1087,9 @@ function actualizarPreview(index) {
   });
 }
 
-// === Manejo de carga de imágenes (galería y cámara) ===
 $(document).on('change', '.observacion-imagen, .observacion-camera', function() {
   const index = $(this).data('index');
   const files = this.files;
-  const isCamera = $(this).hasClass('observacion-camera');
 
   if (files.length === 0) return;
 
@@ -772,7 +1098,6 @@ $(document).on('change', '.observacion-imagen, .observacion-camera', function() 
   const formData = new FormData();
   for (const f of files) formData.append('imagenes[]', f);
 
-  // Mostrar indicador de carga
   const preview = document.getElementById(`preview-${index}`);
   const loadingDiv = document.createElement('div');
   loadingDiv.className = 'text-center p-2';
@@ -780,10 +1105,7 @@ $(document).on('change', '.observacion-imagen, .observacion-camera', function() 
   preview.appendChild(loadingDiv);
 
   fetch('subir_imagen.php', { method: 'POST', body: formData })
-    .then(res => {
-      if (!res.ok) throw new Error('Error HTTP ' + res.status);
-      return res.json();
-    })
+    .then(res => res.json())
     .then(rutas => {
       loadingDiv.remove();
 
@@ -792,37 +1114,23 @@ $(document).on('change', '.observacion-imagen, .observacion-camera', function() 
         return;
       }
 
-      // Agregar nuevas rutas
       imagenesGuardadas[index].push(...rutas);
       preview.dataset.rutas = JSON.stringify(imagenesGuardadas[index]);
 
-      // Actualizar preview
       actualizarPreview(index);
-
-      // Mostrar notificación
-      const msg = document.createElement('div');
-      msg.className = 'alert alert-success alert-dismissible fade show mt-2';
-      msg.innerHTML = `
-        ✅ ${rutas.length} imagen(es) cargada(s) correctamente
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-      `;
-      preview.parentElement.insertBefore(msg, preview);
-      setTimeout(() => msg.remove(), 3000);
     })
     .catch(err => {
       loadingDiv.remove();
-      console.error('Error subiendo imagen:', err);
-      alert('❌ Error al subir las imágenes. Intenta nuevamente.');
+      console.error('Error:', err);
+      alert('❌ Error al subir las imágenes');
     })
     .finally(() => {
       this.value = '';
     });
 });
 
-// Generar secciones según equipos seleccionados
 $(document).ready(generarObservacionesMultimedia);
 
-// Consolidar al enviar
 document.getElementById('formReporte').addEventListener('submit', function(e) {
   const data = [];
 
