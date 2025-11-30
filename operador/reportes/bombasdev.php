@@ -191,170 +191,245 @@ include __DIR__ . '/modal_equipo.php';
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
 <style>
-  :root {
-    --primary-color: #0d6efd;
-    --secondary-color: #6c757d;
-    --success-color: #198754;
-    --danger-color: #dc3545;
+  body {
+    background: #f5f5f5;
+    font-family: Arial, sans-serif;
   }
 
-  body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
-    padding: 20px 0;
+  .container {
+    max-width: 1400px;
   }
 
   .main-container {
     background: white;
-    border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-    padding: 30px;
-    margin-bottom: 30px;
-  }
-
-  .header-card {
-    background: linear-gradient(135deg, var(--primary-color) 0%, #0a58ca 100%);
-    color: white;
-    border-radius: 15px;
-    padding: 25px;
-    margin-bottom: 30px;
-    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
-  }
-
-  .info-card {
-    background: #f8f9fa;
-    border-radius: 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     padding: 20px;
-    margin-bottom: 20px;
-    border-left: 4px solid var(--primary-color);
+    margin: 20px auto;
   }
 
-  .info-row {
+  /* Cabecera estilo PDF */
+  .pdf-header {
+    display: grid;
+    grid-template-columns: 80px 1fr 120px;
+    border: 2px solid #0d6efd;
+    margin-bottom: 20px;
+  }
+
+  .pdf-header-logo {
+    border-right: 2px solid #0d6efd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+  }
+
+  .pdf-header-logo img {
+    max-width: 100%;
+    max-height: 60px;
+  }
+
+  .pdf-header-center {
+    border-right: 2px solid #0d6efd;
+    padding: 15px;
+    text-align: center;
+  }
+
+  .pdf-header-title {
+    background: #e3f2fd;
+    padding: 4px;
+    font-weight: bold;
+    font-size: 11px;
+    margin-bottom: 8px;
+    color: #0d6efd;
+  }
+
+  .pdf-header-subtitle {
+    font-weight: bold;
+    font-size: 11px;
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+
+  .pdf-header-contact {
+    font-size: 9px;
+    line-height: 1.3;
+    color: #666;
+  }
+
+  .pdf-header-number {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+  }
+
+  .pdf-header-number-title {
+    background: #e3f2fd;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: bold;
+    color: #0d6efd;
+    margin-bottom: 10px;
+  }
+
+  .pdf-header-number-value {
+    font-size: 14px;
+    font-weight: bold;
+    color: #0d6efd;
+  }
+
+  /* Secciones */
+  .section-header {
+    background: #0d6efd;
+    color: white;
+    padding: 8px 15px;
+    font-weight: bold;
+    font-size: 13px;
+    margin: 20px 0 10px 0;
+    border-radius: 4px;
+  }
+
+  .info-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 15px;
-    margin-bottom: 10px;
+    gap: 10px;
+    margin-bottom: 15px;
   }
 
   .info-item {
     display: flex;
-    flex-direction: column;
+    border: 1px solid #dee2e6;
+    background: #f8f9fa;
   }
 
   .info-label {
-    font-weight: 600;
-    color: var(--primary-color);
-    font-size: 0.85rem;
-    margin-bottom: 5px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    background: #e3f2fd;
+    color: #0d6efd;
+    font-weight: bold;
+    font-size: 11px;
+    padding: 8px 10px;
+    min-width: 100px;
+    border-right: 1px solid #dee2e6;
   }
 
   .info-value {
-    font-size: 1rem;
-    color: #2d3748;
-    padding: 8px 12px;
+    padding: 8px 10px;
+    font-size: 12px;
+    flex: 1;
     background: white;
-    border-radius: 6px;
-    border: 1px solid #e2e8f0;
   }
 
-  .section-title {
-    background: linear-gradient(135deg, var(--primary-color) 0%, #0a58ca 100%);
-    color: white;
-    padding: 12px 20px;
-    border-radius: 10px;
-    margin: 25px 0 15px 0;
-    font-weight: 600;
-    font-size: 1.1rem;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  .info-value input {
+    border: none;
+    background: transparent;
+    width: 100%;
+    padding: 0;
+    font-size: 12px;
   }
 
-  .table-responsive {
-    border-radius: 10px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  .info-value input:focus {
+    outline: none;
+  }
+
+  /* Tablas */
+  .table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 20px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
   }
 
   .table {
-    margin-bottom: 0;
+    margin: 0;
+    font-size: 11px;
   }
 
   .table thead {
-    background: var(--primary-color);
+    background: #0d6efd;
     color: white;
   }
 
   .table thead th {
-    border: none;
-    padding: 12px;
+    border: 1px solid #0a58ca;
+    padding: 8px 4px;
     font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
+    text-align: center;
+    font-size: 10px;
   }
 
-  .table tbody tr:hover {
+  .table tbody td {
+    border: 1px solid #dee2e6;
+    padding: 6px 4px;
+    vertical-align: middle;
+  }
+
+  .table tbody tr:nth-child(even) {
     background-color: #f8f9fa;
   }
 
-  .form-control, .form-select {
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    padding: 10px 15px;
-    transition: all 0.3s ease;
+  .table .form-control, .table .form-select {
+    font-size: 10px;
+    padding: 4px 6px;
+    min-height: 28px;
   }
 
-  .form-control:focus, .form-select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
-  }
-
+  /* Firmas */
   .firma-section {
-    background: #f8f9fa;
-    border-radius: 12px;
-    padding: 20px;
     margin-top: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 4px;
   }
 
   .firma-box { 
     border: 2px dashed #cbd5e0;
-    border-radius: 10px;
-    height: 150px;
+    border-radius: 4px;
+    height: 120px;
     background: white;
     cursor: crosshair;
-    transition: all 0.3s ease;
-  }
-
-  .firma-box:hover {
-    border-color: var(--primary-color);
-    background: #f8f9fa;
+    margin-bottom: 8px;
   }
 
   canvas { 
     width: 100%; 
-    height: 150px;
-    border-radius: 8px;
+    height: 120px;
+  }
+
+  /* Observaciones */
+  .observacion-card {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+
+  .observacion-card h6 {
+    color: #0d6efd;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e3f2fd;
+  }
+
+  /* Botones */
+  .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
   }
 
   .btn-submit {
-    background: linear-gradient(135deg, var(--success-color) 0%, #146c43 100%);
-    border: none;
-    padding: 15px 40px;
-    font-size: 1.1rem;
+    padding: 12px 30px;
+    font-size: 14px;
     font-weight: 600;
-    border-radius: 50px;
-    box-shadow: 0 5px 15px rgba(25, 135, 84, 0.3);
-    transition: all 0.3s ease;
   }
 
-  .btn-submit:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(25, 135, 84, 0.4);
-  }
-
+  /* Preview de imágenes */
   .image-preview-container {
     position: relative;
     display: inline-block;
@@ -362,53 +437,48 @@ include __DIR__ . '/modal_equipo.php';
   }
   
   .image-preview-container img {
-    max-width: 120px;
-    max-height: 120px;
+    max-width: 100px;
+    max-height: 100px;
     object-fit: cover;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
+    border: 2px solid #dee2e6;
+    border-radius: 4px;
     cursor: pointer;
-    transition: all 0.3s ease;
   }
   
   .image-preview-container img:hover {
-    border-color: var(--primary-color);
-    transform: scale(1.05);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-color: #0d6efd;
   }
   
   .btn-delete-image {
     position: absolute;
     top: -8px;
     right: -8px;
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: var(--danger-color);
+    background: #dc3545;
     color: white;
     border: 2px solid white;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: bold;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    transition: all 0.2s ease;
   }
   
   .btn-delete-image:hover {
     background: #bb2d3b;
-    transform: scale(1.1);
   }
   
   .loading-spinner {
     display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255,255,255,.3);
+    width: 18px;
+    height: 18px;
+    border: 3px solid rgba(13, 110, 253, .3);
     border-radius: 50%;
-    border-top-color: #fff;
+    border-top-color: #0d6efd;
     animation: spin 1s ease-in-out infinite;
   }
   
@@ -416,146 +486,151 @@ include __DIR__ . '/modal_equipo.php';
     to { transform: rotate(360deg); }
   }
 
-  .observacion-card {
-    background: white;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-    transition: all 0.3s ease;
-  }
-
-  .observacion-card:hover {
-    border-color: var(--primary-color);
-    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.1);
-  }
-
-  .btn-icon {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-  }
-
-  .btn-icon:hover {
-    transform: translateY(-2px);
-  }
-
+  /* Responsive */
   @media (max-width: 768px) {
-    .main-container {
-      padding: 15px;
-      border-radius: 10px;
+    .pdf-header {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto;
     }
 
-    .header-card {
-      padding: 15px;
+    .pdf-header-logo,
+    .pdf-header-center,
+    .pdf-header-number {
+      border-right: none;
+      border-bottom: 2px solid #0d6efd;
     }
 
-    .info-row {
+    .pdf-header-number {
+      border-bottom: none;
+    }
+
+    .info-grid {
       grid-template-columns: 1fr;
     }
 
-    .section-title {
-      font-size: 1rem;
-      padding: 10px 15px;
+    .table-wrapper {
+      font-size: 9px;
     }
 
-    .btn-submit {
-      width: 100%;
-      padding: 12px 30px;
+    .section-header {
+      font-size: 12px;
+      padding: 6px 12px;
     }
 
-    .firma-box, canvas {
-      height: 120px;
+    .main-container {
+      padding: 10px;
     }
+  }
+
+  /* Select2 adjustments */
+  .select2-container--default .select2-selection--single {
+    height: 32px;
+    font-size: 11px;
+  }
+
+  .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 30px;
+    font-size: 11px;
+  }
+
+  .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 30px;
+  }
+
+  /* Ajustes para inputs pequeños */
+  .form-control-sm {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  textarea.form-control {
+    font-size: 12px;
   }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="main-container">
-    <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <a class="btn btn-secondary btn-icon" href="/operador/mis_mantenimientos.php">
+    <!-- Botones superiores -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <a class="btn btn-secondary btn-sm btn-icon" href="/operador/mis_mantenimientos.php">
         ← Volver
       </a>
-      <button class="btn btn-primary btn-icon" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
+      <button class="btn btn-primary btn-sm btn-icon" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
         ➕ Agregar Equipo
       </button>
     </div>
 
-    <!-- Logo Header -->
-    <div class="header-card text-center">
-      <img src="/../../lib/logo.jpeg" alt="Logo" style="max-height:80px; margin-bottom: 15px;">
-      <h5 class="mb-2">FORMATO DE CALIDAD</h5>
-      <h6 class="mb-3">CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA</h6>
-      <div style="font-size: 0.9rem;">
-        📞 Oficina: (01) 6557907 | 📱 Emergencias: +51 943 048 606<br>
-        📧 ventas@refriservissac.com
+    <!-- Cabecera estilo PDF -->
+    <div class="pdf-header">
+      <div class="pdf-header-logo">
+        <img src="/../../lib/logo.jpeg" alt="Logo">
       </div>
-      <div class="mt-3">
-        <span class="badge bg-light text-dark fs-6">
-          N°<?= str_pad($id, 6, "0", STR_PAD_LEFT) ?>
-        </span>
+      <div class="pdf-header-center">
+        <div class="pdf-header-title">FORMATO DE CALIDAD</div>
+        <div class="pdf-header-subtitle">
+          CHECK LIST DE MANTENIMIENTO PREVENTIVO DE EQUIPOS – BOMBA DE AGUA
+        </div>
+        <div class="pdf-header-contact">
+          Oficina: (01) 6557907 | Emergencias: +51 943 048 606<br>
+          ventas@refriservissac.com
+        </div>
+      </div>
+      <div class="pdf-header-number">
+        <div class="pdf-header-number-title">FORMATO</div>
+        <div class="pdf-header-number-value">N°<?= str_pad($id, 6, "0", STR_PAD_LEFT) ?></div>
       </div>
     </div>
 
     <!-- Datos del Cliente -->
-    <div class="info-card">
-      <h6 class="text-primary mb-3">📋 DATOS DEL CLIENTE</h6>
-      <div class="info-row">
-        <div class="info-item">
-          <span class="info-label">Cliente</span>
-          <span class="info-value"><?= htmlspecialchars($m['cliente'] ?? '-') ?></span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Responsable</span>
-          <span class="info-value"><?= htmlspecialchars($m['responsable'] ?? '-') ?></span>
-        </div>
+    <div class="section-header">DATOS DEL CLIENTE</div>
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="info-label">Cliente:</div>
+        <div class="info-value"><?= htmlspecialchars($m['cliente'] ?? '-') ?></div>
       </div>
-      <div class="info-row">
-        <div class="info-item">
-          <span class="info-label">Dirección</span>
-          <span class="info-value"><?= htmlspecialchars($m['direccion'] ?? '-') ?></span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Teléfono</span>
-          <span class="info-value"><?= htmlspecialchars($m['telefono'] ?? '-') ?></span>
-        </div>
+      <div class="info-item">
+        <div class="info-label">Responsable:</div>
+        <div class="info-value"><?= htmlspecialchars($m['responsable'] ?? '-') ?></div>
       </div>
-      <div class="info-row">
-        <div class="info-item">
-          <span class="info-label">Fecha</span>
-          <span class="info-value"><?= htmlspecialchars($m['fecha'] ?? date('Y-m-d')) ?></span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">MT - Digitador (Nombre y Apellido)</span>
-          <input type="text" class="form-control" id="nombre_digitador" name="nombre_digitador" 
+      <div class="info-item">
+        <div class="info-label">Dirección:</div>
+        <div class="info-value"><?= htmlspecialchars($m['direccion'] ?? '-') ?></div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Teléfono:</div>
+        <div class="info-value"><?= htmlspecialchars($m['telefono'] ?? '-') ?></div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Fecha:</div>
+        <div class="info-value"><?= htmlspecialchars($m['fecha'] ?? date('Y-m-d')) ?></div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">MT - Digitador:</div>
+        <div class="info-value">
+          <input type="text" id="nombre_digitador" name="nombre_digitador" 
                  value="<?= htmlspecialchars($nombre_digitador ?? '') ?>" 
-                 placeholder="Ingrese nombre del digitador" form="formReporte">
+                 placeholder="Nombre y Apellido" form="formReporte">
         </div>
       </div>
     </div>
 
-    <form action="bombas.php" id="formReporte" method="post" enctype="multipart/form-data" class="mb-5">
+    <form action="bombas.php" id="formReporte" method="post" enctype="multipart/form-data" class="mb-4">
       <input type="hidden" name="mantenimiento_id" value="<?= htmlspecialchars($m['id']) ?>">
 
       <!-- TABLA DE EQUIPOS -->
-      <h6 class="section-title">🔧 DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS</h6>
-      <div class="table-responsive mb-3">
-        <table class="table table-bordered align-middle text-center">
+      <div class="section-header">DATOS DE IDENTIFICACIÓN DE LOS EQUIPOS</div>
+      <div class="table-wrapper">
+        <table class="table table-bordered mb-0">
           <thead>
             <tr>
-              <th>#</th>
-              <th>Identificador</th>
-              <th>Nombre</th>
+              <th style="width:30px;">#</th>
+              <th style="width:150px;">Identificador</th>
+              <th style="width:150px;">Nombre</th>
               <th>Marca</th>
               <th>Modelo</th>
               <th>Ubicación</th>
-              <th>Voltaje</th>
+              <th style="width:80px;">Voltaje</th>
             </tr>
           </thead>
           <tbody>
@@ -563,7 +638,7 @@ include __DIR__ . '/modal_equipo.php';
               $eq = $equiposMantenimiento[$i];
             ?>
             <tr>
-              <td><?= $i ?></td>
+              <td class="text-center"><?= $i ?></td>
               <td>
                 <select class="form-select form-select-sm equipo-select" 
                         name="equipos[<?= $i ?>][id_equipo]" 
@@ -588,20 +663,20 @@ include __DIR__ . '/modal_equipo.php';
       </div>
 
       <!-- TABLA DE PARÁMETROS -->
-      <h6 class="section-title">📊 PARÁMETROS DE FUNCIONAMIENTO</h6>
-      <div class="table-responsive mb-3">
-        <table class="table table-bordered table-sm">
+      <div class="section-header">PARÁMETROS DE FUNCIONAMIENTO (Antes / Después)</div>
+      <div class="table-wrapper">
+        <table class="table table-bordered mb-0">
           <thead>
             <tr>
-              <th>Medida</th>
+              <th style="min-width:180px;">Medida</th>
               <?php for($i=1; $i<=7; $i++): ?>
-                <th colspan="2" class="text-center">Equipo <?= $i ?></th>
+                <th colspan="2" class="text-center">Eq. <?= $i ?></th>
               <?php endfor; ?>
             </tr>
             <tr>
               <th></th>
               <?php for($i=1; $i<=7; $i++): ?>
-                <th>Antes</th><th>Desp.</th>
+                <th style="width:45px;">A</th><th style="width:45px;">D</th>
               <?php endfor; ?>
             </tr>
           </thead>
@@ -615,7 +690,7 @@ include __DIR__ . '/modal_equipo.php';
             ];
             foreach($parametros as $p): ?>
               <tr>
-                <td style="min-width:200px;"><?= htmlspecialchars($p) ?></td>
+                <td><?= htmlspecialchars($p) ?></td>
                 <?php for($i=1; $i<=7; $i++): ?>
                   <td><input type="text" class="form-control form-control-sm" name="parametros[<?= md5($p) ?>][<?= $i ?>][antes]"></td>
                   <td><input type="text" class="form-control form-control-sm" name="parametros[<?= md5($p) ?>][<?= $i ?>][despues]"></td>
@@ -627,23 +702,23 @@ include __DIR__ . '/modal_equipo.php';
       </div>
 
       <!-- ACTIVIDADES A REALIZAR -->
-      <h6 class="section-title">✅ ACTIVIDADES A REALIZAR</h6>
-      <div class="table-responsive mb-3">
-        <table class="table table-bordered table-sm text-center align-middle">
-          <thead class="table-primary">
+      <div class="section-header">ACTIVIDADES A REALIZAR</div>
+      <div class="table-wrapper">
+        <table class="table table-bordered mb-0">
+          <thead>
             <tr>
-              <th rowspan="2" class="align-middle">ACTIVIDADES A REALIZAR</th>
+              <th rowspan="2" style="min-width:300px;">ACTIVIDADES</th>
               <th colspan="7">Equipos</th>
               <th colspan="4">Frecuencia</th>
             </tr>
             <tr>
               <?php for($i=1; $i<=7; $i++): ?>
-                <th><?= str_pad($i, 2, "0", STR_PAD_LEFT) ?></th>
+                <th style="width:30px;"><?= str_pad($i, 2, "0", STR_PAD_LEFT) ?></th>
               <?php endfor; ?>
-              <th>B.</th>
-              <th>T.</th>
-              <th>S.</th>
-              <th>A.</th>
+              <th style="width:30px;">B</th>
+              <th style="width:30px;">T</th>
+              <th style="width:30px;">S</th>
+              <th style="width:30px;">A</th>
             </tr>
           </thead>
           <tbody>
@@ -675,9 +750,9 @@ include __DIR__ . '/modal_equipo.php';
             foreach($actividades as $index => $act):
             ?>
             <tr>
-              <td class="text-start"><?= htmlspecialchars($act) ?></td>
+              <td style="font-size:10px;"><?= htmlspecialchars($act) ?></td>
               <?php for($i=1; $i<=7; $i++): ?>
-                <td>
+                <td class="text-center">
                   <input type="checkbox"
                   name="actividades[<?= $index ?>][dias][<?= $i ?>]" 
                   value="1"
@@ -685,7 +760,7 @@ include __DIR__ . '/modal_equipo.php';
                 </td>
               <?php endfor; ?>
               <?php foreach(["B","T","S","A"] as $f): ?>
-                <td>
+                <td class="text-center">
                   <input type="radio" 
                   name="actividades[<?= $index ?>][frecuencia]" 
                   value="<?= $f ?>"
@@ -699,54 +774,54 @@ include __DIR__ . '/modal_equipo.php';
       </div>
 
       <!-- TRABAJOS REALIZADOS -->
-      <h6 class="section-title">📝 TRABAJOS REALIZADOS</h6>
-      <div class="mb-4">
-        <textarea class="form-control" name="trabajos" rows="5" 
+      <div class="section-header">TRABAJOS REALIZADOS</div>
+      <div class="mb-3">
+        <textarea class="form-control" name="trabajos" rows="4" 
                   placeholder="Describa los trabajos realizados durante el mantenimiento..."></textarea>
       </div>
 
       <!-- OBSERVACIONES MULTIMEDIA -->
-      <h6 class="section-title">📸 OBSERVACIONES Y RECOMENDACIONES</h6>
-      <div id="observacionesMultimedia" class="mb-4"></div>
+      <div class="section-header">OBSERVACIONES Y RECOMENDACIONES</div>
+      <div id="observacionesMultimedia" class="mb-3"></div>
       <textarea name="observaciones" id="observacionesFinal" hidden></textarea>
 
       <!-- FIRMAS -->
       <div class="firma-section">
-        <h6 class="section-title">✍️ FIRMAS Y CONFORMIDAD</h6>
+        <div class="section-header">FIRMAS Y CONFORMIDAD</div>
         <div class="row g-3">
           <div class="col-12 col-md-4">
-            <label class="form-label fw-bold">Firma Cliente</label>
+            <label class="form-label fw-bold small">Firma Cliente</label>
             <div class="firma-box"><canvas id="firmaClienteCanvas"></canvas></div>
             <input type="text" id="nombreCliente" name="nombre_cliente" 
-                   class="form-control mt-2" placeholder="Nombre del cliente">
+                   class="form-control form-control-sm" placeholder="Nombre del cliente">
             <button type="button" class="btn btn-sm btn-secondary mt-2 w-100" 
-                    onclick="sigCliente.clear()">🗑️ Limpiar</button>
+                    onclick="sigCliente.clear()">Limpiar</button>
             <input type="hidden" name="firma_cliente" id="firma_cliente_input">
           </div>
           <div class="col-12 col-md-4">
-            <label class="form-label fw-bold">Firma Supervisor</label>
+            <label class="form-label fw-bold small">Firma Supervisor</label>
             <div class="firma-box"><canvas id="firmaSupervisorCanvas"></canvas></div>
             <input type="text" id="nombreSupervisor" name="nombre_supervisor" 
-                   class="form-control mt-2" placeholder="Nombre del supervisor">
+                   class="form-control form-control-sm" placeholder="Nombre del supervisor">
             <button type="button" class="btn btn-sm btn-secondary mt-2 w-100" 
-                    onclick="sigSupervisor.clear()">🗑️ Limpiar</button>
+                    onclick="sigSupervisor.clear()">Limpiar</button>
             <input type="hidden" name="firma_supervisor" id="firma_supervisor_input">
           </div>
           <div class="col-12 col-md-4">
-            <label class="form-label fw-bold">Firma Técnico</label>
+            <label class="form-label fw-bold small">Firma Técnico</label>
             <div class="firma-box"><canvas id="firmaTecnicoCanvas"></canvas></div>
-            <input type="text" class="form-control mt-2" id="nombre_tecnico" name="nombre_tecnico" 
+            <input type="text" class="form-control form-control-sm" id="nombre_tecnico" name="nombre_tecnico" 
                    value="<?= htmlspecialchars($nombre_tecnico ?? '') ?>" readonly>
             <button type="button" class="btn btn-sm btn-secondary mt-2 w-100" 
-                    onclick="sigTecnico.clear()">🗑️ Limpiar</button>
+                    onclick="sigTecnico.clear()">Limpiar</button>
             <input type="hidden" name="firma_tecnico" id="firma_tecnico_input">
           </div>
         </div>
       </div>
 
-      <div class="text-center mt-5">
+      <div class="text-center mt-4">
         <button type="submit" class="btn btn-success btn-submit">
-          📄 Guardar y Generar Reporte PDF
+          Guardar y Generar Reporte PDF
         </button>
       </div>
     </form>
@@ -866,20 +941,20 @@ function generarObservacionesMultimedia() {
       const bloque = document.createElement('div');
       bloque.className = 'observacion-card';
       bloque.innerHTML = `
-        <h6 class="text-primary mb-3">🔧 ${texto}${nombre ? ' - ' + nombre : ''}</h6>
-        <div class="mb-3">
-          <label class="form-label fw-bold">Texto / Recomendación:</label>
-          <textarea class="form-control observacion-texto" data-index="${index}" rows="3"
-            placeholder="Escribe observaciones específicas para ${texto}..." required></textarea>
+        <h6>🔧 ${texto}${nombre ? ' - ' + nombre : ''}</h6>
+        <div class="mb-2">
+          <label class="form-label small fw-bold">Texto / Recomendación:</label>
+          <textarea class="form-control form-control-sm observacion-texto" data-index="${index}" rows="3"
+            placeholder="Escribe observaciones específicas..." required></textarea>
         </div>
         <div class="mb-2">
-          <label class="form-label fw-bold">Imágenes:</label>
-          <div class="d-flex gap-2 mb-3 flex-wrap">
-            <button type="button" class="btn btn-primary btn-icon btn-select-image" data-index="${index}">
-              📁 Seleccionar de Galería
+          <label class="form-label small fw-bold">Imágenes:</label>
+          <div class="d-flex gap-2 mb-2 flex-wrap">
+            <button type="button" class="btn btn-sm btn-primary btn-select-image" data-index="${index}">
+              📁 Galería
             </button>
-            <button type="button" class="btn btn-success btn-icon btn-camera-image" data-index="${index}">
-              📷 Tomar Foto
+            <button type="button" class="btn btn-sm btn-success btn-camera-image" data-index="${index}">
+              📷 Cámara
             </button>
           </div>
           <input 
@@ -896,7 +971,7 @@ function generarObservacionesMultimedia() {
             data-index="${index}" 
             accept="image/*" 
             capture="environment">
-          <div id="preview-${index}" class="d-flex flex-wrap gap-2 mt-3" data-rutas="[]"></div>
+          <div id="preview-${index}" class="d-flex flex-wrap gap-2 mt-2" data-rutas="[]"></div>
         </div>
       `;
       contenedor.appendChild(bloque);
@@ -904,7 +979,6 @@ function generarObservacionesMultimedia() {
   });
 }
 
-// === Manejadores de botones para galería y cámara ===
 $(document).on('click', '.btn-select-image', function() {
   const index = $(this).data('index');
   $(`#input-imagen-${index}`).click();
@@ -915,10 +989,8 @@ $(document).on('click', '.btn-camera-image', function() {
   $(`#input-camera-${index}`).click();
 });
 
-// === Almacenamiento de imágenes por equipo ===
 const imagenesGuardadas = {};
 
-// === Función para eliminar imagen ===
 function eliminarImagen(index, rutaImagen) {
   if (!confirm('¿Deseas eliminar esta imagen?')) return;
 
@@ -933,12 +1005,11 @@ function eliminarImagen(index, rutaImagen) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ruta: rutaImagen })
-  }).catch(err => console.error('Error eliminando imagen del servidor:', err));
+  }).catch(err => console.error('Error:', err));
 
   actualizarPreview(index);
 }
 
-// === Función para actualizar el preview ===
 function actualizarPreview(index) {
   const preview = document.getElementById(`preview-${index}`);
   const rutas = imagenesGuardadas[index] || [];
@@ -951,7 +1022,6 @@ function actualizarPreview(index) {
     
     const img = document.createElement('img');
     img.src = ruta;
-    img.className = 'img-thumbnail';
     img.onclick = () => window.open(ruta, '_blank');
     
     const btnDelete = document.createElement('button');
@@ -969,7 +1039,6 @@ function actualizarPreview(index) {
   });
 }
 
-// === Manejo de carga de imágenes ===
 $(document).on('change', '.observacion-imagen, .observacion-camera', function() {
   const index = $(this).data('index');
   const files = this.files;
@@ -988,10 +1057,7 @@ $(document).on('change', '.observacion-imagen, .observacion-camera', function() 
   preview.appendChild(loadingDiv);
 
   fetch('subir_imagen.php', { method: 'POST', body: formData })
-    .then(res => {
-      if (!res.ok) throw new Error('Error HTTP ' + res.status);
-      return res.json();
-    })
+    .then(res => res.json())
     .then(rutas => {
       loadingDiv.remove();
 
@@ -1004,20 +1070,11 @@ $(document).on('change', '.observacion-imagen, .observacion-camera', function() 
       preview.dataset.rutas = JSON.stringify(imagenesGuardadas[index]);
 
       actualizarPreview(index);
-
-      const msg = document.createElement('div');
-      msg.className = 'alert alert-success alert-dismissible fade show mt-2';
-      msg.innerHTML = `
-        ✅ ${rutas.length} imagen(es) cargada(s) correctamente
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-      `;
-      preview.parentElement.insertBefore(msg, preview);
-      setTimeout(() => msg.remove(), 3000);
     })
     .catch(err => {
       loadingDiv.remove();
-      console.error('Error subiendo imagen:', err);
-      alert('❌ Error al subir las imágenes. Intenta nuevamente.');
+      console.error('Error:', err);
+      alert('❌ Error al subir las imágenes');
     })
     .finally(() => {
       this.value = '';
