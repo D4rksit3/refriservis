@@ -520,6 +520,55 @@ include __DIR__ . '/modal_equipo.php';
     .main-container {
       padding: 10px;
     }
+
+    /* Mejoras para inputs en tablas en móviles */
+    .table .form-control-sm {
+      font-size: 14px !important;
+      padding: 6px 4px !important;
+      min-height: 32px !important;
+    }
+
+    .table input[type="text"] {
+      font-size: 14px !important;
+      min-width: 50px;
+    }
+
+    .table thead th {
+      font-size: 9px;
+      padding: 4px 2px;
+    }
+
+    .table tbody td {
+      padding: 4px 2px;
+    }
+
+    /* Hacer la tabla de parámetros más grande en móvil */
+    .parametros-table {
+      min-width: 800px;
+    }
+
+    .parametros-table input {
+      font-size: 14px !important;
+      padding: 8px 4px !important;
+      min-height: 36px !important;
+      width: 100%;
+    }
+  }
+
+  /* Para pantallas muy pequeñas */
+  @media (max-width: 576px) {
+    .table .form-control-sm,
+    .table input[type="text"] {
+      font-size: 16px !important; /* iOS no hace zoom con 16px+ */
+      padding: 8px 6px !important;
+      min-height: 38px !important;
+    }
+
+    .parametros-table input {
+      font-size: 16px !important;
+      padding: 10px 6px !important;
+      min-height: 40px !important;
+    }
   }
 
   /* Select2 adjustments */
@@ -665,7 +714,7 @@ include __DIR__ . '/modal_equipo.php';
       <!-- TABLA DE PARÁMETROS -->
       <div class="section-header">PARÁMETROS DE FUNCIONAMIENTO (Antes / Después)</div>
       <div class="table-wrapper">
-        <table class="table table-bordered mb-0">
+        <table class="table table-bordered mb-0 parametros-table">
           <thead>
             <tr>
               <th style="min-width:180px;">Medida</th>
@@ -676,7 +725,7 @@ include __DIR__ . '/modal_equipo.php';
             <tr>
               <th></th>
               <?php for($i=1; $i<=7; $i++): ?>
-                <th style="width:45px;">A</th><th style="width:45px;">D</th>
+                <th style="width:50px;">A</th><th style="width:50px;">D</th>
               <?php endfor; ?>
             </tr>
           </thead>
@@ -692,8 +741,18 @@ include __DIR__ . '/modal_equipo.php';
               <tr>
                 <td><?= htmlspecialchars($p) ?></td>
                 <?php for($i=1; $i<=7; $i++): ?>
-                  <td><input type="text" class="form-control form-control-sm" name="parametros[<?= md5($p) ?>][<?= $i ?>][antes]"></td>
-                  <td><input type="text" class="form-control form-control-sm" name="parametros[<?= md5($p) ?>][<?= $i ?>][despues]"></td>
+                  <td>
+                    <input type="text" 
+                           class="form-control form-control-sm" 
+                           name="parametros[<?= md5($p) ?>][<?= $i ?>][antes]"
+                           inputmode="decimal">
+                  </td>
+                  <td>
+                    <input type="text" 
+                           class="form-control form-control-sm" 
+                           name="parametros[<?= md5($p) ?>][<?= $i ?>][despues]"
+                           inputmode="decimal">
+                  </td>
                 <?php endfor; ?>
               </tr>
             <?php endforeach; ?>
