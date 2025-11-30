@@ -268,6 +268,9 @@ function generarPDF(PDO $pdo, int $id) {
     $pdf->AddPage();
     $pdf->SetFont('Arial','',9);
 
+    $pageHeight = 297;
+    $bottomMargin = 15;
+
     // ---------- DATOS DEL CLIENTE ----------
     $pdf->SetFont('Arial','B',9.5);
     $pdf->SetFillColor(13, 110, 253);
@@ -445,7 +448,6 @@ function generarPDF(PDO $pdo, int $id) {
     $dayW  = 10;
     $freqW = 8;
     $lineH = 5;
-    $bottomMargin = 15;
 
     $totalWidth = $nameW + ($dayW * 7) + ($freqW * 4);
 
@@ -550,7 +552,6 @@ function generarPDF(PDO $pdo, int $id) {
         $nb = $getNbLines($pdf, $nameW - 2, $nombre);
         $h = $nb * $lineH;
 
-        $pageHeight = 297;
         if ($pdf->GetY() + $h + $bottomMargin > $pageHeight) {
             $pdf->AddPage();
             $printHeader();
@@ -749,6 +750,18 @@ function generarPDF(PDO $pdo, int $id) {
         $colCounter = 0;
         
         foreach ($fotos as $foto) {
+            // Verificar si hay espacio suficiente para la imagen
+            if ($pdf->GetY() + $imgCellH > $pageHeight - $bottomMargin) {
+                $pdf->AddPage();
+                $pdf->SetFont('Arial','B',9.5);
+                $pdf->SetFillColor(13, 110, 253);
+                $pdf->SetTextColor(255, 255, 255);
+                $pdf->Cell(0,8, txt("FOTOS DEL SERVICIO (continuación)"), 1, 1, 'C', true);
+                $pdf->SetTextColor(0, 0, 0);
+                $pdf->Ln(3);
+                $colCounter = 0;
+            }
+            
             $x = $pdf->GetX();
             $y = $pdf->GetY();
             
@@ -789,6 +802,14 @@ function generarPDF(PDO $pdo, int $id) {
     }
 
     // ---------- FIRMAS ----------
+    $sigH = 35;
+    $sigLabelH = 7 + 6; // altura de las etiquetas y nombres
+
+    // Verificar si hay espacio suficiente para toda la sección de firmas
+    if ($pdf->GetY() + $sigH + $sigLabelH + 20 > $pageHeight - $bottomMargin) {
+        $pdf->AddPage();
+    }
+
     $pdf->Ln(6);
     $pdf->SetFont('Arial','B',9.5);
     $pdf->SetFillColor(13, 110, 253);
@@ -799,7 +820,6 @@ function generarPDF(PDO $pdo, int $id) {
 
     $firmaBase = __DIR__ . "/../../uploads/firmas/";
     $sigW = ($usableW - 4) / 3;
-    $sigH = 35;
     
     $sigFiles = [
         $m['firma_cliente'] ?? null,
