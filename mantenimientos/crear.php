@@ -1,4 +1,5 @@
 <?php
+//mantenimientos/crear.php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -47,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['titulo'])) {
 $clientes = $pdo->query('SELECT id, cliente, direccion, telefono, responsable FROM clientes ORDER BY cliente')->fetchAll();
 $operadores = $pdo->query('SELECT id, nombre FROM usuarios')->fetchAll();
 $categorias = $pdo->query('SELECT nombre FROM categoria ORDER BY nombre')->fetchAll();
+$categorias_equipos = $pdo->query('SELECT DISTINCT Categoria FROM equipos ORDER BY Categoria')->fetchAll();
 ?>
 
 <div class="card p-3">
@@ -107,13 +109,16 @@ $categorias = $pdo->query('SELECT nombre FROM categoria ORDER BY nombre')->fetch
             </select>
         </div>
 
-        <!-- Select de Equipos vacío al inicio -->
+        <!-- Select de Equipos con botón para agregar -->
         <div class="col-12">
             <label class="form-label">Equipos (máx 7)</label>
-            <select name="equipos[]" id="equipos" class="form-select selectpicker" multiple 
-                    data-live-search="true" data-max-options="7" title="Selecciona equipos...">
-                <option disabled>Selecciona un cliente primero</option>
-            </select>
+            <div class="input-group">
+                <select name="equipos[]" id="equipos" class="form-select selectpicker" multiple 
+                        data-live-search="true" data-max-options="7" title="Selecciona equipos...">
+                    <option disabled>Selecciona un cliente primero</option>
+                </select>
+                <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalNuevoEquipo" id="btnNuevoEquipo" disabled>+ Nuevo Equipo</button>
+            </div>
         </div>
 
         <div class="col-12 text-end">
@@ -161,6 +166,77 @@ $categorias = $pdo->query('SELECT nombre FROM categoria ORDER BY nombre')->fetch
   </div>
 </div>
 
+<!-- Modal Nuevo Equipo -->
+<div class="modal fade" id="modalNuevoEquipo" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <form id="formNuevoEquipo" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Agregar Equipo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body row g-3">
+        <div class="col-md-6">
+            <label class="form-label">Identificador*</label>
+            <input type="text" name="Identificador" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Nombre*</label>
+            <input type="text" name="Nombre" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Marca</label>
+            <input type="text" name="marca" class="form-control">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Modelo</label>
+            <input type="text" name="modelo" class="form-control">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Ubicación</label>
+            <input type="text" name="ubicacion" class="form-control">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Voltaje</label>
+            <input type="text" name="voltaje" class="form-control">
+        </div>
+        <div class="col-12">
+            <label class="form-label">Descripción</label>
+            <textarea name="Descripcion" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Categoría*</label>
+            <select name="Categoria" class="form-select" required>
+                <option value="">-- Selecciona --</option>
+                <?php foreach($categorias_equipos as $cat_eq): ?>
+                    <option value="<?=htmlspecialchars($cat_eq['Categoria'])?>">
+                        <?=htmlspecialchars($cat_eq['Categoria'])?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Estatus*</label>
+            <select name="Estatus" class="form-select" required>
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+                <option value="Mantenimiento">Mantenimiento</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Fecha de Validez</label>
+            <input type="date" name="Fecha_validad" class="form-control">
+        </div>
+        <input type="hidden" name="Cliente" id="equipoClienteId">
+        <input type="hidden" name="accion" value="agregar">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-success">Guardar Equipo</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- jQuery y dependencias -->
 <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
@@ -182,22 +258,84 @@ $(document).ready(function(){
                     .val(data.id)
                     .selectpicker('refresh');
                 $('#modalNuevoCliente').modal('hide');
+                
+                // Habilitar botón de nuevo equipo
+                $('#btnNuevoEquipo').prop('disabled', false);
             } else {
                 alert(data.error || 'Error al guardar cliente');
             }
         }, 'json');
     });
 
+    // Guardar nuevo equipo
+    $('#formNuevoEquipo').on('submit', function(e){
+        e.preventDefault();
+        
+        let clienteId = $('#cliente_id').val();
+        if (!clienteId) {
+            alert('Debes seleccionar un cliente primero');
+            return;
+        }
+        
+        $('#equipoClienteId').val(clienteId);
+        
+        $.post('/admin/equipos_add_crud.php', $(this).serialize(), function(data){
+            if (data.success) {
+                // Recargar equipos del cliente
+                $.getJSON('/mantenimientos/equipos_por_cliente.php', { id: clienteId })
+                    .done(function(equipos){
+                        let selectEquipos = $('select[name="equipos[]"]');
+                        selectEquipos.html('');
+                        
+                        if (equipos && equipos.length > 0) {
+                            $.each(equipos, function(_, e){
+                                selectEquipos.append(
+                                    $('<option>', {
+                                        value: e.id_equipo,
+                                        text: `${e.Identificador} | ${e.nombre_equipo} | ${e.Categoria} | ${e.Estatus}`
+                                    })
+                                );
+                            });
+                        }
+                        
+                        selectEquipos.selectpicker('refresh');
+                        
+                        // Seleccionar el equipo recién creado
+                        if (data.last_id) {
+                            selectEquipos.selectpicker('val', data.last_id);
+                        }
+                    });
+                
+                $('#modalNuevoEquipo').modal('hide');
+                $('#formNuevoEquipo')[0].reset();
+                
+                alert('Equipo agregado correctamente');
+            } else {
+                alert(data.message || 'Error al guardar equipo');
+            }
+        }, 'json').fail(function(){
+            alert('Error de conexión al guardar equipo');
+        });
+    });
+
     // Al cambiar el cliente
     $('#cliente_id').off('changed.bs.select').on('changed.bs.select', function(){
         let idCliente = $(this).val();
         let selectEquipos = $('select[name="equipos[]"]');
+        let btnNuevoEquipo = $('#btnNuevoEquipo');
+        
         console.log("cliente cambiado ->", idCliente);
 
         // 🔹 Limpia completamente el selectpicker (interno y visible)
         selectEquipos.html('').selectpicker('destroy').selectpicker();
 
-        if (!idCliente) return;
+        if (!idCliente) {
+            btnNuevoEquipo.prop('disabled', true);
+            return;
+        }
+        
+        // Habilitar botón de nuevo equipo
+        btnNuevoEquipo.prop('disabled', false);
 
         $.getJSON('/mantenimientos/equipos_por_cliente.php', { id: idCliente })
             .done(function(data){
