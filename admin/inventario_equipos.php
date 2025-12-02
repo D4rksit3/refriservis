@@ -233,9 +233,16 @@ require_once __DIR__.'/../includes/header.php';
 // ========================================
 
 $(document).ready(function() {
-  // Esperar a que la tabla esté inicializada
-  setTimeout(function() {
-    if (typeof tablaEquipos !== 'undefined') {
+  // Esperar a que la tabla esté completamente inicializada
+  let intentos = 0;
+  const maxIntentos = 20;
+  
+  const inicializarBusqueda = setInterval(function() {
+    intentos++;
+    
+    // Verificar si tablaEquipos existe y está inicializado
+    if (typeof tablaEquipos !== 'undefined' && $.fn.DataTable.isDataTable('#tablaEquipos')) {
+      clearInterval(inicializarBusqueda);
       
       // Búsqueda global
       $('#busquedaGlobal').on('keyup', function() {
@@ -256,15 +263,19 @@ $(document).ready(function() {
         $('#contador-resultados').text(`Mostrando ${info.recordsDisplay} de ${info.recordsTotal} equipos`);
       }
 
-      // Actualizar contador inicial
+      // Actualizar contador cuando se redibuja la tabla
       tablaEquipos.on('draw', function() {
         actualizarContador();
       });
 
       // Contador inicial
       actualizarContador();
+      
+    } else if (intentos >= maxIntentos) {
+      clearInterval(inicializarBusqueda);
+      console.error('No se pudo inicializar la búsqueda: tablaEquipos no está disponible');
     }
-  }, 500);
+  }, 100);
 });
 
 // ========================================
@@ -395,8 +406,8 @@ $('#btnProcesarCSV').on('click', function(){
         $('#resumen-importacion').html(resumenHTML).show();
         
         // Recargar tabla si existe
-        if (typeof tablaEquipos !== 'undefined' && tablaEquipos.ajax) {
-          tablaEquipos.ajax.reload();
+        if (typeof tablaEquipos !== 'undefined' && $.fn.DataTable.isDataTable('#tablaEquipos')) {
+          tablaEquipos.ajax.reload(null, false); // false para mantener la página actual
         } else {
           // Recargar página si no hay tabla ajax
           setTimeout(function(){
@@ -425,7 +436,7 @@ $('#btnProcesarCSV').on('click', function(){
         const response = JSON.parse(xhr.responseText);
         alert('Error: ' + (response.message || error));
       } catch(e) {
-        alert('Error de conexión: ' + error + '\n\nRespuesta del servidor: ' + xhr.responseText);
+        alert('Error de conexión: ' + error);
       }
     }
   });
@@ -440,7 +451,6 @@ $('#modalImportar').on('hidden.bs.modal', function(){
   datosCSV = [];
 });
 </script>
-
 <?php 
 require_once __DIR__.'/../includes/footer.php';
 ?>
