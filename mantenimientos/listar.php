@@ -1,4 +1,5 @@
 <?php
+//$mantenimientos/listar.php
 session_start();
 if (!isset($_SESSION['usuario'])) { header('Location: /index.php'); exit; }
 require_once __DIR__.'/../config/db.php';
