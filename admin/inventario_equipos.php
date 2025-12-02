@@ -320,7 +320,7 @@ $('#btnProcesarCSV').on('click', function(){
       
       if (response.success) {
         // Mostrar resumen
-        const resumen = `
+        let resumenHTML = `
           <div class="alert alert-success">
             <h6>✅ Importación completada</h6>
             <ul class="mb-0">
@@ -333,14 +333,19 @@ $('#btnProcesarCSV').on('click', function(){
         
         if (response.detalles_errores && response.detalles_errores.length > 0) {
           const erroresHTML = response.detalles_errores.map(e => `<li>Fila ${e.fila}: ${e.error}</li>`).join('');
-          resumen += `<div class="alert alert-warning"><h6>⚠️ Detalles de errores:</h6><ul>${erroresHTML}</ul></div>`;
+          resumenHTML += `<div class="alert alert-warning"><h6>⚠️ Detalles de errores:</h6><ul>${erroresHTML}</ul></div>`;
         }
         
-        $('#resumen-importacion').html(resumen).show();
+        $('#resumen-importacion').html(resumenHTML).show();
         
-        // Recargar tabla
-        if (typeof tablaEquipos !== 'undefined') {
+        // Recargar tabla si existe
+        if (typeof tablaEquipos !== 'undefined' && tablaEquipos.ajax) {
           tablaEquipos.ajax.reload();
+        } else {
+          // Recargar página si no hay tabla ajax
+          setTimeout(function(){
+            location.reload();
+          }, 2000);
         }
         
         // Limpiar formulario
@@ -357,7 +362,15 @@ $('#btnProcesarCSV').on('click', function(){
     error: function(xhr, status, error) {
       $('#spinner-import').addClass('d-none');
       $('#btnProcesarCSV').prop('disabled', false);
-      alert('Error de conexión: ' + error);
+      
+      console.error('Error completo:', xhr.responseText);
+      
+      try {
+        const response = JSON.parse(xhr.responseText);
+        alert('Error: ' + (response.message || error));
+      } catch(e) {
+        alert('Error de conexión: ' + error + '\n\nRespuesta del servidor: ' + xhr.responseText);
+      }
     }
   });
 });
