@@ -367,7 +367,7 @@ include __DIR__ . '/modal_equipo.php';
       <table class="table table-bordered table-sm">
         <thead class="table-light">
           <tr>
-            <th>Medida</th>
+            <th>Circuito</th>
             <?php for($i=1;$i<=7;$i++): ?>
               <th colspan="2" class="text-center">Equipo <?= $i ?></th>
             <?php endfor; ?>

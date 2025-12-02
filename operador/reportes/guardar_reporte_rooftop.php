@@ -385,10 +385,12 @@ function corregirOrientacion($ruta)
     $colW = ($usableW - $labelW) / $totalCols; // ajusta todo el ancho exacto
 
     $pdf->SetFont('Arial','B',7);
-    $pdf->Cell($labelW,7, txt("Medida"), 1, 0, 'C');
+    $pdf->Cell($labelW,7, txt("Circuito"), 1, 0, 'C');
     for ($i = 1; $i <= 7; $i++) {
-        $pdf->Cell($colW,7, txt("Eq{$i} A"), 1, 0, 'C');
-        $pdf->Cell($colW,7, txt("Eq{$i} D"), 1, 0, 'C');
+        #$pdf->Cell($colW,7, txt("Eq{$i} A"), 1, 0, 'C');
+        #$pdf->Cell($colW,7, txt("Eq{$i} D"), 1, 0, 'C');
+        $pdf->Cell($colW,7, txt("1"), 1, 0, 'C');
+        $pdf->Cell($colW,7, txt("2"), 1, 0, 'C');
     }
     $pdf->Ln();
 
