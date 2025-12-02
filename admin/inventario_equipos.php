@@ -31,11 +31,7 @@ require_once __DIR__.'/../includes/header.php';
   <div class="row mb-3">
     <div class="col-md-6">
       <div class="input-group">
-        <span class="input-group-text">🔍</span>
-        <input type="text" class="form-control" id="busquedaGlobal" placeholder="Buscar en todas las columnas (Identificador, Nombre, Marca, Modelo, Ubicación, Voltaje, Cliente)...">
-        <button class="btn btn-outline-secondary" type="button" id="btnLimpiarBusqueda">
-          <i class="bi bi-x-circle"></i> Limpiar
-        </button>
+       
       </div>
     </div>
     <div class="col-md-6 text-end">
