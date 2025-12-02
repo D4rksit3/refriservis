@@ -10,22 +10,38 @@ require_once __DIR__.'/../includes/header.php';
 <div class="container my-4">
 
   <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-  <h2 class="h4 mb-2">📋 Inventario de Equipos</h2>
+    <h2 class="h4 mb-2">📋 Inventario de Equipos</h2>
 
-  <div class="d-flex gap-2 mb-2">
-    <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
-      ➕ Nuevo
-    </button>
+    <div class="d-flex gap-2 mb-2">
+      <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalAgregarEquipo">
+        ➕ Nuevo
+      </button>
 
-    <button class="btn btn-primary btn-sm" id="btnExportar">
-      📥 Exportar a Excel
-    </button>
+      <button class="btn btn-primary btn-sm" id="btnExportar">
+        📥 Exportar a Excel
+      </button>
 
-    <button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalImportar">
-      📤 Importar desde CSV
-    </button>
+      <button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalImportar">
+        📤 Importar desde CSV
+      </button>
+    </div>
   </div>
-</div>
+
+  <!-- Búsqueda global -->
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <div class="input-group">
+        <span class="input-group-text">🔍</span>
+        <input type="text" class="form-control" id="busquedaGlobal" placeholder="Buscar en todas las columnas (Identificador, Nombre, Marca, Modelo, Ubicación, Voltaje, Cliente)...">
+        <button class="btn btn-outline-secondary" type="button" id="btnLimpiarBusqueda">
+          <i class="bi bi-x-circle"></i> Limpiar
+        </button>
+      </div>
+    </div>
+    <div class="col-md-6 text-end">
+      <small class="text-muted" id="contador-resultados"></small>
+    </div>
+  </div>
 
   <div class="table-responsive shadow-sm rounded">
     <table id="tablaEquipos" class="table table-striped table-bordered align-middle">
@@ -207,10 +223,50 @@ require_once __DIR__.'/../includes/header.php';
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
 <script src="scripts.js"></script>
 
 <script>
+// ========================================
+// BÚSQUEDA GLOBAL EN DATATABLE
+// ========================================
+
+$(document).ready(function() {
+  // Esperar a que la tabla esté inicializada
+  setTimeout(function() {
+    if (typeof tablaEquipos !== 'undefined') {
+      
+      // Búsqueda global
+      $('#busquedaGlobal').on('keyup', function() {
+        tablaEquipos.search(this.value).draw();
+        actualizarContador();
+      });
+
+      // Botón limpiar búsqueda
+      $('#btnLimpiarBusqueda').on('click', function() {
+        $('#busquedaGlobal').val('');
+        tablaEquipos.search('').draw();
+        actualizarContador();
+      });
+
+      // Actualizar contador de resultados
+      function actualizarContador() {
+        const info = tablaEquipos.page.info();
+        $('#contador-resultados').text(`Mostrando ${info.recordsDisplay} de ${info.recordsTotal} equipos`);
+      }
+
+      // Actualizar contador inicial
+      tablaEquipos.on('draw', function() {
+        actualizarContador();
+      });
+
+      // Contador inicial
+      actualizarContador();
+    }
+  }, 500);
+});
+
 // ========================================
 // IMPORTACIÓN CSV
 // ========================================
